@@ -9,62 +9,44 @@
       color-scheme: light;
       --bg: #f5f7f8;
       --panel: #ffffff;
-      --panel-soft: #f0f4f5;
-      --line: #d8e0e3;
-      --line-strong: #a9b8be;
+      --soft: #eef4f5;
+      --line: #d6e0e3;
+      --line-strong: #9fb2b8;
       --text: #172126;
-      --muted: #5b6a70;
-      --accent: #097a76;
-      --accent-strong: #075f5c;
-      --warn: #a75d00;
-      --canvas: #dce6e8;
-      --screen: #10181c;
+      --muted: #5d6d73;
+      --accent: #087b76;
+      --accent-soft: #dcefed;
+      --warn: #9a5b00;
+      --screen: #11191d;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       line-height: 1.4;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
       min-height: 100vh;
+      overflow: hidden;
       background: var(--bg);
       color: var(--text);
-      overflow: hidden;
     }
 
-    button,
-    input,
-    select {
-      font: inherit;
-    }
+    button, input, select, textarea { font: inherit; }
 
     button {
+      min-height: 34px;
       border: 1px solid var(--line);
+      border-radius: 6px;
       background: var(--panel);
       color: var(--text);
-      min-height: 34px;
-      border-radius: 6px;
       padding: 0 10px;
       cursor: pointer;
     }
 
-    button:hover {
-      border-color: var(--line-strong);
-      background: var(--panel-soft);
-    }
-
-    button.primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #ffffff;
-    }
-
-    button.primary:hover {
-      background: var(--accent-strong);
-    }
+    button:hover { border-color: var(--line-strong); background: var(--soft); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button.icon { width: 28px; min-height: 28px; padding: 0; }
 
     .app {
       height: 100vh;
@@ -75,8 +57,8 @@
     .topbar {
       display: grid;
       grid-template-columns: auto 1fr auto;
-      align-items: center;
       gap: 16px;
+      align-items: center;
       padding: 8px 12px;
       border-bottom: 1px solid var(--line);
       background: var(--panel);
@@ -89,31 +71,17 @@
       min-width: 220px;
     }
 
-    .brand h1 {
-      margin: 0;
-      font-size: 18px;
-      letter-spacing: 0;
-      line-height: 1;
-    }
+    .brand h1 { margin: 0; font-size: 18px; line-height: 1; letter-spacing: 0; }
+    .brand span { color: var(--muted); font-size: 12px; white-space: nowrap; }
 
-    .brand span {
-      color: var(--muted);
-      font-size: 12px;
-      white-space: nowrap;
-    }
-
-    .toolbar,
-    .toolbar-right {
+    .toolbar, .toolbar-right {
       display: flex;
       align-items: center;
       gap: 8px;
       min-width: 0;
     }
 
-    .toolbar {
-      overflow-x: auto;
-      padding-bottom: 2px;
-    }
+    .toolbar { overflow-x: auto; padding-bottom: 2px; }
 
     .toolbar-right label {
       display: flex;
@@ -124,8 +92,7 @@
       white-space: nowrap;
     }
 
-    .toolbar-right select,
-    .toolbar-right input {
+    .toolbar-right select {
       height: 34px;
       border: 1px solid var(--line);
       border-radius: 6px;
@@ -137,11 +104,10 @@
     .workspace {
       min-height: 0;
       display: grid;
-      grid-template-columns: 48px 280px minmax(420px, 1fr) 340px;
+      grid-template-columns: 48px 280px minmax(440px, 1fr) 340px;
     }
 
-    .mode-rail {
-      min-height: 0;
+    .rail {
       border-right: 1px solid var(--line);
       background: #edf2f3;
       padding: 8px 6px;
@@ -150,54 +116,39 @@
       gap: 6px;
     }
 
-    .mode-button {
+    .rail button {
       min-height: 92px;
       padding: 6px 3px;
       display: grid;
       place-items: center;
       gap: 6px;
-      font-size: 11px;
-      color: var(--muted);
-      background: transparent;
       border-color: transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
     }
 
-    .mode-button.active {
-      color: var(--accent-strong);
-      background: #dcefed;
+    .rail button.active {
+      background: var(--accent-soft);
       border-color: #9ed0cc;
+      color: #075f5c;
     }
 
-    .mode-icon {
-      font-size: 17px;
-      line-height: 1;
-    }
+    .rail .icon { font-size: 17px; line-height: 1; }
+    .rail .label { writing-mode: vertical-rl; text-orientation: mixed; line-height: 1; letter-spacing: 0; }
 
-    .mode-label {
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      letter-spacing: 0;
-      line-height: 1;
-    }
-
-    .sidebar,
-    .inspector {
+    .pane-list, .inspector {
       min-height: 0;
       overflow: auto;
       background: var(--panel);
     }
 
-    .sidebar {
-      border-right: 1px solid var(--line);
-    }
-
-    .inspector {
-      border-left: 1px solid var(--line);
-    }
+    .pane-list { border-right: 1px solid var(--line); }
+    .inspector { border-left: 1px solid var(--line); }
 
     .section {
-      border-bottom: 1px solid var(--line);
       padding: 12px;
+      border-bottom: 1px solid var(--line);
     }
 
     .section-head {
@@ -208,8 +159,7 @@
       margin-bottom: 8px;
     }
 
-    .section h2,
-    .section h3 {
+    h2, h3 {
       margin: 0;
       font-size: 13px;
       text-transform: uppercase;
@@ -217,121 +167,80 @@
       color: var(--muted);
     }
 
-    .add-button {
-      width: 28px;
-      min-height: 28px;
-      padding: 0;
-      font-size: 18px;
-      line-height: 1;
-    }
-
-    .search {
+    .search, .field input, .field select, .field textarea {
       width: 100%;
-      height: 34px;
+      min-height: 34px;
       border: 1px solid var(--line);
       border-radius: 6px;
-      padding: 0 8px;
-      margin-bottom: 8px;
+      background: var(--panel);
+      color: var(--text);
+      padding: 7px 8px;
     }
 
-    .list {
-      display: grid;
-      gap: 4px;
+    .search { margin-bottom: 8px; }
+    .field textarea { resize: vertical; min-height: 64px; }
+
+    .list, .tree, .form, .cards { display: grid; gap: 6px; }
+
+    .item, .tree-row, .asset-card, .file-row {
+      min-height: 34px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 7px 8px;
+      background: transparent;
     }
 
-    .list-item {
+    .item, .file-row {
       display: grid;
       grid-template-columns: 1fr auto;
       align-items: center;
       gap: 8px;
-      min-height: 34px;
-      padding: 7px 8px;
-      border: 1px solid transparent;
-      border-radius: 6px;
-      color: var(--text);
     }
 
-    .list-item.active {
-      background: #e1f2f0;
+    .item.active, .tree-row.active, .asset-card.active {
       border-color: #8fcac5;
+      background: #e1f2f0;
     }
 
-    .list-item .name {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 14px;
-    }
-
-    .list-item .meta {
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .tree {
-      display: grid;
-      gap: 3px;
-    }
+    .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+    .meta, .hint { color: var(--muted); font-size: 12px; }
+    .warn { color: var(--warn); }
 
     .tree-row {
       display: grid;
       grid-template-columns: 18px 1fr auto auto;
       align-items: center;
       gap: 6px;
-      min-height: 30px;
-      padding: 4px 6px;
-      border-radius: 6px;
       font-size: 13px;
     }
 
-    .tree-row.active {
-      background: #e1f2f0;
-    }
+    .tree-row.depth-1 { padding-left: 20px; }
+    .type { color: var(--muted); font-size: 11px; }
 
-    .tree-row.depth-1 {
-      padding-left: 20px;
-    }
+    .layer-actions { display: inline-flex; gap: 2px; }
+    .layer-actions button { width: 24px; min-height: 24px; padding: 0; border-radius: 4px; }
 
-    .tree-row.depth-2 {
-      padding-left: 36px;
-    }
-
-    .type {
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .layer-actions {
-      display: inline-flex;
-      gap: 2px;
-    }
-
-    .layer-actions button {
-      width: 24px;
-      min-height: 24px;
-      padding: 0;
-      border-radius: 4px;
-      font-size: 13px;
-      line-height: 1;
-    }
-
-    .canvas-area {
+    .main {
       min-width: 0;
       min-height: 0;
-      display: grid;
-      grid-template-rows: 44px 1fr 36px;
-      background: var(--canvas);
+      background: #dce6e8;
     }
 
-    .canvas-toolbar,
-    .statusbar {
+    .main > .mode {
+      min-height: 0;
+      height: 100%;
+      display: grid;
+      grid-template-rows: 44px 1fr 36px;
+    }
+
+    .mainbar, .statusbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
       padding: 6px 10px;
       border-bottom: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.76);
+      background: rgba(255, 255, 255, 0.78);
       backdrop-filter: blur(8px);
     }
 
@@ -342,7 +251,7 @@
       font-size: 12px;
     }
 
-    .device-tabs {
+    .tabs {
       display: inline-flex;
       border: 1px solid var(--line);
       border-radius: 6px;
@@ -350,16 +259,8 @@
       background: var(--panel);
     }
 
-    .device-tabs button {
-      border: 0;
-      border-radius: 0;
-      min-height: 30px;
-    }
-
-    .device-tabs button.active {
-      background: var(--accent);
-      color: #ffffff;
-    }
+    .tabs button { border: 0; border-radius: 0; min-height: 30px; }
+    .tabs button.active { background: var(--accent); color: #fff; }
 
     .stage {
       min-height: 0;
@@ -369,14 +270,14 @@
       overflow: auto;
     }
 
-    .device-shell {
+    .device {
       width: min(82vw, 520px);
       max-width: 100%;
       aspect-ratio: 4 / 3;
+      padding: 18px;
       border: 1px solid #253137;
       border-radius: 8px;
       background: #263238;
-      padding: 18px;
       box-shadow: 0 18px 48px rgba(15, 31, 36, 0.24);
     }
 
@@ -384,116 +285,44 @@
       position: relative;
       width: 100%;
       height: 100%;
-      background: var(--screen);
       overflow: hidden;
-      border: 1px solid #000000;
+      border: 1px solid #000;
+      background: var(--screen);
     }
 
-    .ui-part {
-      position: absolute;
-      border: 1px solid transparent;
+    .ui-part { position: absolute; border: 1px solid transparent; }
+    .ui-part.selected { border-color: #4bd2c8; box-shadow: 0 0 0 1px #4bd2c8 inset; }
+    .header-band { left: 0; top: 0; right: 0; height: 44px; background: #1e2a30; }
+    .title-text { left: 12px; top: 12px; color: #fff; font-size: 16px; font-weight: 650; }
+    .battery { right: 12px; top: 12px; color: #9ce5ac; font-size: 13px; font-weight: 650; }
+    .temp { left: 18px; top: 78px; color: #fff; font-size: 38px; font-weight: 700; }
+    .status-card { left: 18px; right: 18px; bottom: 18px; height: 54px; border: 1px solid #405159; background: #172126; color: #b8c7cc; display: flex; align-items: center; padding: 0 14px; font-size: 13px; }
+
+    .field { display: grid; gap: 5px; }
+    .field label { color: var(--muted); font-size: 12px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .preview-box {
+      min-height: 220px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #f8fafb;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      padding: 16px;
+      text-align: center;
     }
 
-    .ui-part.selected {
-      border-color: #4bd2c8;
-      box-shadow: 0 0 0 1px #4bd2c8 inset;
-    }
-
-    .header-band {
-      left: 0;
-      top: 0;
-      right: 0;
-      height: 44px;
+    .swatch {
+      width: 42px;
+      height: 28px;
+      border-radius: 4px;
+      border: 1px solid var(--line);
       background: #1e2a30;
     }
 
-    .title-text {
-      left: 12px;
-      top: 12px;
-      color: #ffffff;
-      font-size: 16px;
-      font-weight: 650;
-    }
-
-    .battery {
-      right: 12px;
-      top: 12px;
-      color: #9ce5ac;
-      font-size: 13px;
-      font-weight: 650;
-    }
-
-    .temp {
-      left: 18px;
-      top: 78px;
-      color: #ffffff;
-      font-size: 38px;
-      font-weight: 700;
-    }
-
-    .status-card {
-      left: 18px;
-      right: 18px;
-      bottom: 18px;
-      height: 54px;
-      border: 1px solid #405159;
-      background: #172126;
-      color: #b8c7cc;
-      display: flex;
-      align-items: center;
-      padding: 0 14px;
-      font-size: 13px;
-    }
-
-    .grid-form {
-      display: grid;
-      gap: 12px;
-    }
-
-    .field {
-      display: grid;
-      gap: 5px;
-    }
-
-    .field label {
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .field input,
-    .field select,
-    .field textarea {
-      width: 100%;
-      min-height: 34px;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      background: var(--panel);
-      color: var(--text);
-      padding: 7px 8px;
-    }
-
-    .field textarea {
-      resize: vertical;
-      min-height: 64px;
-    }
-
-    .two-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .hint {
-      margin: 8px 0 0;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .warning {
-      color: var(--warn);
-    }
-
-    .code-preview {
+    .code {
       margin: 0;
       padding: 10px;
       border: 1px solid var(--line);
@@ -505,50 +334,18 @@
       line-height: 1.45;
     }
 
+    .mode[hidden] { display: none; }
+
     @media (max-width: 1100px) {
-      body {
-        overflow: auto;
-      }
-
-      .app {
-        height: auto;
-        min-height: 100vh;
-      }
-
-      .topbar {
-        grid-template-columns: 1fr;
-        align-items: stretch;
-      }
-
-      .workspace {
-        grid-template-columns: 1fr;
-      }
-
-      .mode-rail {
-        grid-auto-flow: column;
-        grid-auto-columns: minmax(72px, 1fr);
-        overflow-x: auto;
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-      }
-
-      .mode-button {
-        min-height: 48px;
-      }
-
-      .mode-label {
-        writing-mode: horizontal-tb;
-      }
-
-      .sidebar,
-      .inspector {
-        border: 0;
-        border-bottom: 1px solid var(--line);
-      }
-
-      .canvas-area {
-        min-height: 620px;
-      }
+      body { overflow: auto; }
+      .app { height: auto; min-height: 100vh; }
+      .topbar { grid-template-columns: 1fr; align-items: stretch; }
+      .workspace { grid-template-columns: 1fr; }
+      .rail { grid-auto-flow: column; grid-auto-columns: minmax(72px, 1fr); overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      .rail button { min-height: 48px; }
+      .rail .label { writing-mode: horizontal-tb; }
+      .pane-list, .inspector { border: 0; border-bottom: 1px solid var(--line); }
+      .main { min-height: 620px; }
     }
   </style>
 </head>
@@ -563,8 +360,9 @@
         <button type="button" data-i18n="action.new">New</button>
         <button type="button" data-i18n="action.open">Open</button>
         <button type="button" data-i18n="action.save">Save</button>
+        <button type="button" data-i18n="action.undo">Undo</button>
+        <button type="button" data-i18n="action.redo">Redo</button>
         <button type="button" class="primary" data-i18n="action.export">Export</button>
-        <button type="button" data-i18n="action.screenshot">PNG</button>
       </nav>
       <div class="toolbar-right">
         <label>
@@ -578,219 +376,245 @@
     </header>
 
     <main class="workspace">
-      <nav class="mode-rail" aria-label="Workspace mode">
-        <button class="mode-button active" type="button">
-          <span class="mode-icon">▦</span>
-          <span class="mode-label" data-i18n="rail.design">Design</span>
+      <nav class="rail" aria-label="Workspace mode">
+        <button class="active" type="button" data-mode-button="design">
+          <span class="icon">▦</span>
+          <span class="label" data-i18n="rail.design">Design</span>
         </button>
-        <button class="mode-button" type="button">
-          <span class="mode-icon">▧</span>
-          <span class="mode-label" data-i18n="rail.assets">Assets</span>
+        <button type="button" data-mode-button="assets">
+          <span class="icon">▧</span>
+          <span class="label" data-i18n="rail.assets">Assets</span>
         </button>
-        <button class="mode-button" type="button">
-          <span class="mode-icon">▣</span>
-          <span class="mode-label" data-i18n="rail.export">Export</span>
+        <button type="button" data-mode-button="export">
+          <span class="icon">▣</span>
+          <span class="label" data-i18n="rail.export">Export</span>
         </button>
-        <button class="mode-button" type="button">
-          <span class="mode-icon">▤</span>
-          <span class="mode-label" data-i18n="rail.devices">Devices</span>
+        <button type="button" data-mode-button="devices">
+          <span class="icon">▤</span>
+          <span class="label" data-i18n="rail.devices">Devices</span>
         </button>
       </nav>
 
-      <aside class="sidebar">
-        <section class="section">
-          <div class="section-head">
-            <h2 data-i18n="scene.title">Scenes</h2>
-            <button class="add-button" type="button" aria-label="Add scene">+</button>
-          </div>
-          <input class="search" type="search" data-i18n-placeholder="filter.placeholder" placeholder="Filter by ID">
-          <div class="list">
-            <div class="list-item">
-              <span class="name">Boot</span>
-              <span class="meta">1</span>
+      <aside class="pane-list">
+        <div class="mode" data-mode="design">
+          <section class="section">
+            <div class="section-head">
+              <h2 data-i18n="scene.title">Scenes</h2>
+              <button class="icon" type="button" aria-label="Add scene">+</button>
             </div>
-            <div class="list-item active">
-              <span class="name">Main</span>
-              <span class="meta">5</span>
+            <input class="search" type="search" data-i18n-placeholder="filter.placeholder" placeholder="Filter by ID">
+            <div class="list">
+              <div class="item"><span class="name">Boot</span><span class="meta">1</span></div>
+              <div class="item active"><span class="name">Main</span><span class="meta">5</span></div>
+              <div class="item"><span class="name">Settings</span><span class="meta">3</span></div>
             </div>
-            <div class="list-item">
-              <span class="name">Settings</span>
-              <span class="meta">3</span>
+          </section>
+          <section class="section">
+            <div class="section-head">
+              <h2 data-i18n="layer.title">Layers</h2>
             </div>
-          </div>
-        </section>
+            <div class="tree">
+              <div class="tree-row"><span>▾</span><span>header</span><span class="type">Group</span><span class="layer-actions"><button>↑</button><button>↓</button></span></div>
+              <div class="tree-row depth-1 active"><span></span><span>title</span><span class="type">Text</span><span class="layer-actions"><button>↑</button><button>↓</button></span></div>
+              <div class="tree-row depth-1"><span></span><span>battery</span><span class="type">Text</span><span class="layer-actions"><button>↑</button><button>↓</button></span></div>
+              <div class="tree-row"><span>▾</span><span>body</span><span class="type">Group</span><span class="layer-actions"><button>↑</button><button>↓</button></span></div>
+              <div class="tree-row depth-1"><span></span><span>temperature</span><span class="type">Text</span><span class="layer-actions"><button>↑</button><button>↓</button></span></div>
+              <div class="tree-row depth-1"><span></span><span>statusPanel</span><span class="type">Rect</span><span class="layer-actions"><button>↑</button><button>↓</button></span></div>
+            </div>
+          </section>
+          <section class="section">
+            <div class="section-head"><h2 data-i18n="part.title">Parts</h2></div>
+            <div class="list">
+              <div class="item"><span class="name" data-i18n="part.group">Group</span><span class="meta">+</span></div>
+              <div class="item"><span class="name" data-i18n="part.text">Text</span><span class="meta">+</span></div>
+              <div class="item"><span class="name" data-i18n="part.image">Image</span><span class="meta">+</span></div>
+              <div class="item"><span class="name" data-i18n="part.rect">Rect</span><span class="meta">+</span></div>
+            </div>
+          </section>
+        </div>
 
-        <section class="section">
-          <div class="section-head">
-            <h2 data-i18n="layer.title">Layers</h2>
-            <button class="add-button" type="button" aria-label="Add part">+</button>
-          </div>
-          <div class="tree">
-            <div class="tree-row">
-              <span>▾</span>
-              <span>header</span>
-              <span class="type">Group</span>
-              <span class="layer-actions"><button type="button" aria-label="Move layer forward">↑</button><button type="button" aria-label="Move layer backward">↓</button></span>
+        <div class="mode" data-mode="assets" hidden>
+          <section class="section">
+            <div class="section-head"><h2 data-i18n="asset.images">Images</h2><button class="icon">+</button></div>
+            <input class="search" type="search" data-i18n-placeholder="filter.placeholder" placeholder="Filter by ID">
+            <div class="list">
+              <div class="item active"><span class="name">logo</span><span class="meta">PNG</span></div>
+              <div class="item"><span class="name">icons</span><span class="meta">Sheet</span></div>
+              <div class="item"><span class="name">splash</span><span class="meta">PNG</span></div>
             </div>
-            <div class="tree-row depth-1 active">
-              <span></span>
-              <span>title</span>
-              <span class="type">Text</span>
-              <span class="layer-actions"><button type="button" aria-label="Move layer forward">↑</button><button type="button" aria-label="Move layer backward">↓</button></span>
+          </section>
+          <section class="section">
+            <div class="section-head"><h2 data-i18n="asset.fonts">Fonts</h2><button class="icon">+</button></div>
+            <div class="list">
+              <div class="item"><span class="name">Default 2</span><span class="meta">LGFX</span></div>
+              <div class="item"><span class="name">NotoSansJP</span><span class="meta">TTF</span></div>
             </div>
-            <div class="tree-row depth-1">
-              <span></span>
-              <span>battery</span>
-              <span class="type">Text</span>
-              <span class="layer-actions"><button type="button" aria-label="Move layer forward">↑</button><button type="button" aria-label="Move layer backward">↓</button></span>
+          </section>
+          <section class="section">
+            <div class="section-head"><h2 data-i18n="asset.output">Output</h2></div>
+            <div class="list">
+              <div class="item active"><span class="name">Header/PROGMEM</span><span class="meta">RAW</span></div>
+              <div class="item"><span class="name">LittleFS</span><span class="meta">Later</span></div>
             </div>
-            <div class="tree-row">
-              <span>▾</span>
-              <span>body</span>
-              <span class="type">Group</span>
-              <span class="layer-actions"><button type="button" aria-label="Move layer forward">↑</button><button type="button" aria-label="Move layer backward">↓</button></span>
-            </div>
-            <div class="tree-row depth-1">
-              <span></span>
-              <span>temperature</span>
-              <span class="type">Text</span>
-              <span class="layer-actions"><button type="button" aria-label="Move layer forward">↑</button><button type="button" aria-label="Move layer backward">↓</button></span>
-            </div>
-            <div class="tree-row depth-1">
-              <span></span>
-              <span>statusPanel</span>
-              <span class="type">Rect</span>
-              <span class="layer-actions"><button type="button" aria-label="Move layer forward">↑</button><button type="button" aria-label="Move layer backward">↓</button></span>
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
 
-        <section class="section">
-          <div class="section-head">
-            <h2 data-i18n="part.title">Parts</h2>
-          </div>
-          <div class="list">
-            <div class="list-item">
-              <span class="name" data-i18n="part.group">Group</span>
-              <span class="meta">+</span>
+        <div class="mode" data-mode="export" hidden>
+          <section class="section">
+            <div class="section-head"><h2 data-i18n="export.files">Files</h2></div>
+            <div class="list">
+              <div class="item active"><span class="name">ui_generated.h</span><span class="meta">C++</span></div>
+              <div class="item"><span class="name">ui_assets.h</span><span class="meta">RAW</span></div>
+              <div class="item"><span class="name">Basic.ino</span><span class="meta">Sample</span></div>
             </div>
-            <div class="list-item">
-              <span class="name" data-i18n="part.text">Text</span>
-              <span class="meta">+</span>
+          </section>
+          <section class="section">
+            <div class="section-head"><h2 data-i18n="export.options">Options</h2></div>
+            <div class="list">
+              <div class="item active"><span class="name">Single header</span><span class="meta">MVP</span></div>
+              <div class="item"><span class="name">Zip package</span><span class="meta">Later</span></div>
             </div>
-            <div class="list-item">
-              <span class="name" data-i18n="part.image">Image</span>
-              <span class="meta">+</span>
+          </section>
+        </div>
+
+        <div class="mode" data-mode="devices" hidden>
+          <section class="section">
+            <div class="section-head"><h2 data-i18n="devices.presets">Presets</h2><button class="icon">+</button></div>
+            <div class="list">
+              <div class="item active"><span class="name">Core2</span><span class="meta">320x240</span></div>
+              <div class="item"><span class="name">CoreS3</span><span class="meta">320x240</span></div>
+              <div class="item"><span class="name">Cardputer</span><span class="meta">240x135</span></div>
+              <div class="item"><span class="name">Custom</span><span class="meta">320x240</span></div>
             </div>
-            <div class="list-item">
-              <span class="name" data-i18n="part.rect">Rect</span>
-              <span class="meta">+</span>
+          </section>
+          <section class="section">
+            <div class="section-head"><h2 data-i18n="devices.overrides">Overrides</h2></div>
+            <div class="list">
+              <div class="item"><span class="name">Main.header</span><span class="meta">CoreS3</span></div>
+              <div class="item"><span class="name">Main.body.temperature</span><span class="meta">Cardputer</span></div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </aside>
 
-      <section class="canvas-area" aria-label="Canvas">
-        <div class="canvas-toolbar">
-          <div class="device-tabs" aria-label="Preview device">
-            <button type="button" class="active">Core2</button>
-            <button type="button">CoreS3</button>
-            <button type="button">Cardputer</button>
-            <button type="button" data-i18n="device.custom">Custom</button>
+      <section class="main">
+        <div class="mode" data-mode="design">
+          <div class="mainbar">
+            <div class="tabs" aria-label="Preview device">
+              <button class="active">Core2</button><button>CoreS3</button><button>Cardputer</button><button data-i18n="device.custom">Custom</button>
+            </div>
+            <div class="toolbar-right"><button>−</button><span>100%</span><button>+</button></div>
           </div>
-          <div class="toolbar-right">
-            <button type="button">−</button>
-            <span>100%</span>
-            <button type="button">+</button>
-          </div>
-        </div>
-        <div class="stage">
-          <div class="device-shell">
-            <div class="screen">
-              <div class="ui-part header-band"></div>
-              <div class="ui-part title-text selected">Main</div>
-              <div class="ui-part battery">82%</div>
-              <div class="ui-part temp">24.5°C</div>
-              <div class="ui-part status-card">READY · Wi-Fi connected</div>
+          <div class="stage">
+            <div class="device">
+              <div class="screen">
+                <div class="ui-part header-band"></div>
+                <div class="ui-part title-text selected">Main</div>
+                <div class="ui-part battery">82%</div>
+                <div class="ui-part temp">24.5°C</div>
+                <div class="ui-part status-card">READY · Wi-Fi connected</div>
+              </div>
             </div>
           </div>
+          <div class="statusbar"><span data-i18n="status.selection">Selected: Main.header.title</span><span>local 12,12 · absolute 12,12</span></div>
         </div>
-        <div class="statusbar">
-          <span data-i18n="status.selection">Selected: Main.header.title</span>
-          <span data-i18n="status.output">Header/PROGMEM + RAW RGB565</span>
+
+        <div class="mode" data-mode="assets" hidden>
+          <div class="mainbar"><strong data-i18n="asset.preview">Asset preview</strong><button data-i18n="asset.import">Import</button></div>
+          <div class="stage">
+            <div class="preview-box">
+              <div>
+                <strong>logo.png</strong>
+                <p class="hint">Original PNG is stored in .lgfxsb.json. Export converts it to RAW RGB565.</p>
+              </div>
+            </div>
+          </div>
+          <div class="statusbar"><span>logo · 96x32 · image/png</span><span>Header/PROGMEM + RAW RGB565</span></div>
+        </div>
+
+        <div class="mode" data-mode="export" hidden>
+          <div class="mainbar"><strong data-i18n="export.preview">Export preview</strong><button class="primary" data-i18n="export.download">Download</button></div>
+          <div class="stage">
+            <pre class="code"><code>#include &lt;LGFXScreenBuilder.h&gt;
+#include "ui_generated.h"
+
+LGFXScreenBuilder screen(display);
+
+Scene::Main main;
+main.header.title = "Main";
+main.header.battery = 82;
+main.body.temperature = "24.5C";
+screen.show(main);</code></pre>
+          </div>
+          <div class="statusbar"><span>ui_generated.h</span><span>1 scene · 4 parts · 2 assets</span></div>
+        </div>
+
+        <div class="mode" data-mode="devices" hidden>
+          <div class="mainbar"><strong data-i18n="devices.preview">Device preview</strong><button data-i18n="devices.add">Add preset</button></div>
+          <div class="stage">
+            <div class="preview-box">
+              <div>
+                <strong>Core2 320x240</strong>
+                <p class="hint">Device tabs in Design switch preview target. Overrides are edited here.</p>
+              </div>
+            </div>
+          </div>
+          <div class="statusbar"><span>Selected preset: Core2</span><span>Overrides: 2</span></div>
         </div>
       </section>
 
       <aside class="inspector">
-        <section class="section">
-          <div class="section-head">
-            <h2 data-i18n="property.title">Properties</h2>
-          </div>
-          <div class="grid-form">
-            <div class="field">
-              <label for="part-id" data-i18n="field.id">ID</label>
-              <input id="part-id" value="title">
+        <div class="mode" data-mode="design">
+          <section class="section">
+            <div class="section-head"><h2 data-i18n="property.title">Properties</h2></div>
+            <div class="form">
+              <div class="field"><label data-i18n="field.id">ID</label><input value="title"></div>
+              <div class="field"><label data-i18n="field.type">Type</label><select><option>Text</option><option>Image</option><option>Rect</option><option>Group</option></select></div>
+              <div class="two-col"><div class="field"><label>Local X</label><input type="number" value="12"></div><div class="field"><label>Local Y</label><input type="number" value="12"></div></div>
+              <div class="two-col"><div class="field"><label>Abs X</label><input type="number" value="12" readonly></div><div class="field"><label>Abs Y</label><input type="number" value="12" readonly></div></div>
+              <div class="field"><label data-i18n="field.previewText">Preview text</label><input value="Main"></div>
+              <div class="field"><label data-i18n="field.font">Font</label><select><option>Default 2</option><option>Noto Sans JP approximation</option></select><p class="hint warn" data-i18n="font.hint">Browser font preview is approximate.</p></div>
             </div>
-            <div class="field">
-              <label for="part-type" data-i18n="field.type">Type</label>
-              <select id="part-type">
-                <option>Text</option>
-                <option>Image</option>
-                <option>Group</option>
-              </select>
-            </div>
-            <div class="two-col">
-              <div class="field">
-                <label for="part-x">X</label>
-                <input id="part-x" type="number" value="12">
-              </div>
-              <div class="field">
-                <label for="part-y">Y</label>
-                <input id="part-y" type="number" value="12">
-              </div>
-            </div>
-            <div class="two-col">
-              <div class="field">
-                <label for="part-w">W</label>
-                <input id="part-w" type="number" value="96">
-              </div>
-              <div class="field">
-                <label for="part-h">H</label>
-                <input id="part-h" type="number" value="20">
-              </div>
-            </div>
-            <div class="field">
-              <label for="text-value" data-i18n="field.previewText">Preview text</label>
-              <input id="text-value" value="Main">
-            </div>
-            <div class="field">
-              <label for="font-select" data-i18n="field.font">Font</label>
-              <select id="font-select">
-                <option>Default 2</option>
-                <option>FreeSans12pt7b</option>
-                <option>Noto Sans JP approximation</option>
-              </select>
-              <p class="hint warning" data-i18n="font.hint">Browser font preview is approximate.</p>
-            </div>
-            <div class="field">
-              <label for="description" data-i18n="field.description">Description</label>
-              <textarea id="description">Header title shown on the main scene.</textarea>
-            </div>
-          </div>
-        </section>
+          </section>
+          <section class="section"><div class="section-head"><h2 data-i18n="export.api">Generated API</h2></div><pre class="code"><code>main.header.title = "Main";</code></pre></section>
+        </div>
 
-        <section class="section">
-          <div class="section-head">
-            <h2 data-i18n="export.title">Generated API</h2>
-          </div>
-          <pre class="code-preview"><code>Scene::Main main;
-main.header.title = "Main";
-main.header.battery = 82;
-main.body.temperature = "24.5C";
+        <div class="mode" data-mode="assets" hidden>
+          <section class="section">
+            <div class="section-head"><h2 data-i18n="asset.properties">Asset properties</h2></div>
+            <div class="form">
+              <div class="field"><label>ID</label><input value="logo"></div>
+              <div class="field"><label data-i18n="asset.source">Source</label><input value="logo.png"></div>
+              <div class="field"><label data-i18n="asset.storage">Project storage</label><select><option>Data URL in .lgfxsb.json</option></select></div>
+              <div class="field"><label data-i18n="asset.exportFormat">Export format</label><select><option>Header/PROGMEM + RAW RGB565</option><option>PNG reference</option></select></div>
+            </div>
+          </section>
+          <section class="section"><div class="section-head"><h2 data-i18n="asset.slice">Slices</h2><p class="hint">battery · wifi · logo</p></div></section>
+        </div>
 
-screen.show(main);</code></pre>
-          <p class="hint" data-i18n="export.hint">String IDs are kept for low-level debug APIs only.</p>
-        </section>
+        <div class="mode" data-mode="export" hidden>
+          <section class="section">
+            <div class="section-head"><h2 data-i18n="export.settings">Export settings</h2></div>
+            <div class="form">
+              <div class="field"><label data-i18n="export.package">Package</label><select><option>Single header</option><option>Zip</option></select></div>
+              <div class="field"><label data-i18n="export.assetMode">Assets</label><select><option>Header/PROGMEM + RAW RGB565</option><option>LittleFS files</option></select></div>
+              <div class="field"><label data-i18n="export.includeProject">Embed project JSON</label><select><option>No</option><option>Small project only</option></select></div>
+            </div>
+          </section>
+          <section class="section"><div class="section-head"><h2 data-i18n="export.checks">Checks</h2></div><p class="hint">No invalid IDs. 1 approximate font warning.</p></section>
+        </div>
+
+        <div class="mode" data-mode="devices" hidden>
+          <section class="section">
+            <div class="section-head"><h2 data-i18n="devices.properties">Device properties</h2></div>
+            <div class="form">
+              <div class="field"><label>ID</label><input value="Core2"></div>
+              <div class="two-col"><div class="field"><label>Width</label><input type="number" value="320"></div><div class="field"><label>Height</label><input type="number" value="240"></div></div>
+              <div class="field"><label data-i18n="devices.rotation">Rotation</label><select><option>0</option><option>90</option><option>180</option><option>270</option></select></div>
+            </div>
+          </section>
+          <section class="section"><div class="section-head"><h2 data-i18n="devices.override">Override target</h2></div><p class="hint">Select a layer and override local position or visibility for this device.</p></section>
+        </div>
       </aside>
     </main>
   </div>
@@ -801,10 +625,10 @@ screen.show(main);</code></pre>
         'app.status': 'Authoring mock',
         'action.new': 'New',
         'action.open': 'Open',
-        'action.save': 'Save',
-        'action.export': 'Export',
-        'action.screenshot': 'PNG',
-        'device.custom': 'Custom',
+        'action.save': 'Save Project',
+        'action.undo': 'Undo',
+        'action.redo': 'Redo',
+        'action.export': 'Export Arduino',
         'language.label': 'Language',
         'filter.placeholder': 'Filter by ID',
         'rail.design': 'Design',
@@ -818,26 +642,50 @@ screen.show(main);</code></pre>
         'part.text': 'Text',
         'part.image': 'Image',
         'part.rect': 'Rect',
+        'device.custom': 'Custom',
         'status.selection': 'Selected: Main.header.title',
-        'status.output': 'Header/PROGMEM + RAW RGB565',
         'property.title': 'Properties',
         'field.id': 'ID',
         'field.type': 'Type',
         'field.previewText': 'Preview text',
         'field.font': 'Font',
-        'field.description': 'Description',
         'font.hint': 'Browser font preview is approximate.',
-        'export.title': 'Generated API',
-        'export.hint': 'String IDs are kept for low-level debug APIs only.'
+        'export.api': 'Generated API',
+        'asset.images': 'Images',
+        'asset.fonts': 'Fonts',
+        'asset.output': 'Output',
+        'asset.preview': 'Asset preview',
+        'asset.import': 'Import asset',
+        'asset.properties': 'Asset properties',
+        'asset.source': 'Source',
+        'asset.storage': 'Project storage',
+        'asset.exportFormat': 'Export format',
+        'asset.slice': 'Slices',
+        'export.files': 'Files',
+        'export.options': 'Options',
+        'export.preview': 'Export preview',
+        'export.download': 'Download',
+        'export.settings': 'Export settings',
+        'export.package': 'Package',
+        'export.assetMode': 'Assets',
+        'export.includeProject': 'Embed project JSON',
+        'export.checks': 'Checks',
+        'devices.presets': 'Presets',
+        'devices.overrides': 'Overrides',
+        'devices.preview': 'Device preview',
+        'devices.add': 'Add preset',
+        'devices.properties': 'Device properties',
+        'devices.rotation': 'Rotation',
+        'devices.override': 'Override target'
       },
       ja: {
         'app.status': 'オーサリング画面モック',
         'action.new': '新規',
         'action.open': '開く',
-        'action.save': '保存',
-        'action.export': '出力',
-        'action.screenshot': 'PNG',
-        'device.custom': 'カスタム',
+        'action.save': 'プロジェクト保存',
+        'action.undo': '元に戻す',
+        'action.redo': 'やり直す',
+        'action.export': 'Arduino出力',
         'language.label': '言語',
         'filter.placeholder': 'IDで絞り込み',
         'rail.design': '設計',
@@ -851,17 +699,41 @@ screen.show(main);</code></pre>
         'part.text': 'テキスト',
         'part.image': '画像',
         'part.rect': '矩形',
+        'device.custom': 'カスタム',
         'status.selection': '選択中: Main.header.title',
-        'status.output': 'Header/PROGMEM + RAW RGB565',
         'property.title': 'プロパティ',
         'field.id': 'ID',
         'field.type': '種類',
         'field.previewText': 'プレビュー文字列',
         'field.font': 'フォント',
-        'field.description': '説明',
         'font.hint': 'ブラウザ上のフォント表示は近似です。',
-        'export.title': '生成 API',
-        'export.hint': '文字列 ID は低レベルのデバッグ API 用として残します。'
+        'export.api': '生成 API',
+        'asset.images': '画像',
+        'asset.fonts': 'フォント',
+        'asset.output': '出力形式',
+        'asset.preview': 'アセットプレビュー',
+        'asset.import': 'アセット追加',
+        'asset.properties': 'アセットプロパティ',
+        'asset.source': '元ファイル',
+        'asset.storage': 'プロジェクト保存',
+        'asset.exportFormat': '出力形式',
+        'asset.slice': 'スライス',
+        'export.files': 'ファイル',
+        'export.options': 'オプション',
+        'export.preview': '出力プレビュー',
+        'export.download': 'ダウンロード',
+        'export.settings': '出力設定',
+        'export.package': 'パッケージ',
+        'export.assetMode': 'アセット',
+        'export.includeProject': 'プロジェクトJSON埋め込み',
+        'export.checks': 'チェック',
+        'devices.presets': 'プリセット',
+        'devices.overrides': 'オーバーライド',
+        'devices.preview': '機種プレビュー',
+        'devices.add': 'プリセット追加',
+        'devices.properties': '機種プロパティ',
+        'devices.rotation': '回転',
+        'devices.override': 'オーバーライド対象'
       }
     };
 
@@ -871,9 +743,7 @@ screen.show(main);</code></pre>
     function detectLanguage() {
       const stored = localStorage.getItem('lgfxsb.lang');
       if (supported.includes(stored)) return stored;
-      const browser = navigator.language.toLowerCase();
-      if (browser.startsWith('ja')) return 'ja';
-      return 'en';
+      return navigator.language.toLowerCase().startsWith('ja') ? 'ja' : 'en';
     }
 
     function t(lang, key) {
@@ -885,7 +755,6 @@ screen.show(main);</code></pre>
       document.documentElement.lang = current;
       localStorage.setItem('lgfxsb.lang', current);
       languageSelect.value = current;
-
       document.querySelectorAll('[data-i18n]').forEach((node) => {
         node.textContent = t(current, node.dataset.i18n);
       });
@@ -894,11 +763,22 @@ screen.show(main);</code></pre>
       });
     }
 
-    languageSelect.addEventListener('change', (event) => {
-      setLanguage(event.target.value);
+    function setMode(mode) {
+      document.querySelectorAll('[data-mode]').forEach((node) => {
+        node.hidden = node.dataset.mode !== mode;
+      });
+      document.querySelectorAll('[data-mode-button]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.modeButton === mode);
+      });
+    }
+
+    document.querySelectorAll('[data-mode-button]').forEach((button) => {
+      button.addEventListener('click', () => setMode(button.dataset.modeButton));
     });
+    languageSelect.addEventListener('change', (event) => setLanguage(event.target.value));
 
     setLanguage(detectLanguage());
+    setMode('design');
   </script>
 </body>
 </html>
