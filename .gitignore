@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+.pytest_cache/
+.pytest-results/
+.venv/
+
+# Arduino / test build outputs
+build/
+output/
+tests/**/build/
+tests/**/output/
+tests/report.html
+
+# Tool caches
+tools/cache/
+
+# Local editor/user files
+.vscode/
+arduino_secrets.h
+temp
