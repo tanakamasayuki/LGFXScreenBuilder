@@ -6,47 +6,899 @@
   <title>LGFXScreenBuilder</title>
   <style>
     :root {
-      color-scheme: light dark;
+      color-scheme: light;
+      --bg: #f5f7f8;
+      --panel: #ffffff;
+      --panel-soft: #f0f4f5;
+      --line: #d8e0e3;
+      --line-strong: #a9b8be;
+      --text: #172126;
+      --muted: #5b6a70;
+      --accent: #097a76;
+      --accent-strong: #075f5c;
+      --warn: #a75d00;
+      --canvas: #dce6e8;
+      --screen: #10181c;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.6;
+      line-height: 1.4;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     body {
       margin: 0;
       min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      min-height: 34px;
+      border-radius: 6px;
+      padding: 0 10px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: var(--line-strong);
+      background: var(--panel-soft);
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    button.primary:hover {
+      background: var(--accent-strong);
+    }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 52px 1fr;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 16px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      min-width: 220px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+      line-height: 1;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .toolbar,
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .toolbar {
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .toolbar-right label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .toolbar-right select,
+    .toolbar-right input {
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--text);
+      padding: 0 8px;
+    }
+
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 48px 280px minmax(420px, 1fr) 340px;
+    }
+
+    .mode-rail {
+      min-height: 0;
+      border-right: 1px solid var(--line);
+      background: #edf2f3;
+      padding: 8px 6px;
+      display: grid;
+      align-content: start;
+      gap: 6px;
+    }
+
+    .mode-button {
+      min-height: 92px;
+      padding: 6px 3px;
       display: grid;
       place-items: center;
-      background: Canvas;
-      color: CanvasText;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      background: transparent;
+      border-color: transparent;
     }
 
-    main {
-      width: min(720px, calc(100% - 32px));
+    .mode-button.active {
+      color: var(--accent-strong);
+      background: #dcefed;
+      border-color: #9ed0cc;
     }
 
-    h1 {
-      margin: 0 0 12px;
-      font-size: clamp(2rem, 6vw, 4rem);
-      line-height: 1.05;
+    .mode-icon {
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .mode-label {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
       letter-spacing: 0;
+      line-height: 1;
     }
 
-    p {
-      margin: 0 0 20px;
-      max-width: 60ch;
+    .sidebar,
+    .inspector {
+      min-height: 0;
+      overflow: auto;
+      background: var(--panel);
     }
 
-    a {
-      color: LinkText;
+    .sidebar {
+      border-right: 1px solid var(--line);
+    }
+
+    .inspector {
+      border-left: 1px solid var(--line);
+    }
+
+    .section {
+      border-bottom: 1px solid var(--line);
+      padding: 12px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .section h2,
+    .section h3 {
+      margin: 0;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+      color: var(--muted);
+    }
+
+    .add-button {
+      width: 28px;
+      min-height: 28px;
+      padding: 0;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .search {
+      width: 100%;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 8px;
+      margin-bottom: 8px;
+    }
+
+    .list {
+      display: grid;
+      gap: 4px;
+    }
+
+    .list-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 7px 8px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: var(--text);
+    }
+
+    .list-item.active {
+      background: #e1f2f0;
+      border-color: #8fcac5;
+    }
+
+    .list-item .name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    .list-item .meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tree {
+      display: grid;
+      gap: 3px;
+    }
+
+    .tree-row {
+      display: grid;
+      grid-template-columns: 18px 1fr auto auto;
+      align-items: center;
+      gap: 6px;
+      min-height: 30px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .tree-row.active {
+      background: #e1f2f0;
+    }
+
+    .tree-row.depth-1 {
+      padding-left: 20px;
+    }
+
+    .tree-row.depth-2 {
+      padding-left: 36px;
+    }
+
+    .type {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .layer-actions {
+      display: inline-flex;
+      gap: 2px;
+    }
+
+    .layer-actions button {
+      width: 24px;
+      min-height: 24px;
+      padding: 0;
+      border-radius: 4px;
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .canvas-area {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 44px 1fr 36px;
+      background: var(--canvas);
+    }
+
+    .canvas-toolbar,
+    .statusbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.76);
+      backdrop-filter: blur(8px);
+    }
+
+    .statusbar {
+      border-top: 1px solid var(--line);
+      border-bottom: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .device-tabs {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--panel);
+    }
+
+    .device-tabs button {
+      border: 0;
+      border-radius: 0;
+      min-height: 30px;
+    }
+
+    .device-tabs button.active {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .stage {
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      overflow: auto;
+    }
+
+    .device-shell {
+      width: min(82vw, 520px);
+      max-width: 100%;
+      aspect-ratio: 4 / 3;
+      border: 1px solid #253137;
+      border-radius: 8px;
+      background: #263238;
+      padding: 18px;
+      box-shadow: 0 18px 48px rgba(15, 31, 36, 0.24);
+    }
+
+    .screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: var(--screen);
+      overflow: hidden;
+      border: 1px solid #000000;
+    }
+
+    .ui-part {
+      position: absolute;
+      border: 1px solid transparent;
+    }
+
+    .ui-part.selected {
+      border-color: #4bd2c8;
+      box-shadow: 0 0 0 1px #4bd2c8 inset;
+    }
+
+    .header-band {
+      left: 0;
+      top: 0;
+      right: 0;
+      height: 44px;
+      background: #1e2a30;
+    }
+
+    .title-text {
+      left: 12px;
+      top: 12px;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 650;
+    }
+
+    .battery {
+      right: 12px;
+      top: 12px;
+      color: #9ce5ac;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .temp {
+      left: 18px;
+      top: 78px;
+      color: #ffffff;
+      font-size: 38px;
+      font-weight: 700;
+    }
+
+    .status-card {
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      height: 54px;
+      border: 1px solid #405159;
+      background: #172126;
+      color: #b8c7cc;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      font-size: 13px;
+    }
+
+    .grid-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 5px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--text);
+      padding: 7px 8px;
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 64px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .hint {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .warning {
+      color: var(--warn);
+    }
+
+    .code-preview {
+      margin: 0;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #10181c;
+      color: #d9f3f1;
+      overflow: auto;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 1100px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        height: auto;
+        min-height: 100vh;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .mode-rail {
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(72px, 1fr);
+        overflow-x: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .mode-button {
+        min-height: 48px;
+      }
+
+      .mode-label {
+        writing-mode: horizontal-tb;
+      }
+
+      .sidebar,
+      .inspector {
+        border: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .canvas-area {
+        min-height: 620px;
+      }
     }
   </style>
 </head>
 <body>
-  <main>
-    <h1>LGFXScreenBuilder</h1>
-    <p>LovyanGFX / M5GFX 向け Arduino UI オーサリングツールの準備ページです。</p>
-    <p>ここに GitHub Pages で動作するオーサリングツールを配置します。</p>
-    <p><a href="https://github.com/tanakamasayuki/LGFXScreenBuilder">GitHub repository</a></p>
-  </main>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>LGFXScreenBuilder</h1>
+        <span data-i18n="app.status">Authoring mock</span>
+      </div>
+      <nav class="toolbar" aria-label="Project actions">
+        <button type="button" data-i18n="action.new">New</button>
+        <button type="button" data-i18n="action.open">Open</button>
+        <button type="button" data-i18n="action.save">Save</button>
+        <button type="button" class="primary" data-i18n="action.export">Export</button>
+        <button type="button" data-i18n="action.screenshot">PNG</button>
+      </nav>
+      <div class="toolbar-right">
+        <label>
+          <span data-i18n="language.label">Language</span>
+          <select id="language-select" aria-label="Language">
+            <option value="ja">日本語</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <nav class="mode-rail" aria-label="Workspace mode">
+        <button class="mode-button active" type="button">
+          <span class="mode-icon">▦</span>
+          <span class="mode-label" data-i18n="rail.design">Design</span>
+        </button>
+        <button class="mode-button" type="button">
+          <span class="mode-icon">▧</span>
+          <span class="mode-label" data-i18n="rail.assets">Assets</span>
+        </button>
+        <button class="mode-button" type="button">
+          <span class="mode-icon">▣</span>
+          <span class="mode-label" data-i18n="rail.export">Export</span>
+        </button>
+        <button class="mode-button" type="button">
+          <span class="mode-icon">▤</span>
+          <span class="mode-label" data-i18n="rail.devices">Devices</span>
+        </button>
+      </nav>
+
+      <aside class="sidebar">
+        <section class="section">
+          <div class="section-head">
+            <h2 data-i18n="scene.title">Scenes</h2>
+            <button class="add-button" type="button" aria-label="Add scene">+</button>
+          </div>
+          <input class="search" type="search" data-i18n-placeholder="filter.placeholder" placeholder="Filter by ID">
+          <div class="list">
+            <div class="list-item">
+              <span class="name">Boot</span>
+              <span class="meta">1</span>
+            </div>
+            <div class="list-item active">
+              <span class="name">Main</span>
+              <span class="meta">5</span>
+            </div>
+            <div class="list-item">
+              <span class="name">Settings</span>
+              <span class="meta">3</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2 data-i18n="layer.title">Layers</h2>
+            <button class="add-button" type="button" aria-label="Add part">+</button>
+          </div>
+          <div class="tree">
+            <div class="tree-row">
+              <span>▾</span>
+              <span>header</span>
+              <span class="type">Group</span>
+              <span class="layer-actions"><button type="button" aria-label="Move layer forward">↑</button><button type="button" aria-label="Move layer backward">↓</button></span>
+            </div>
+            <div class="tree-row depth-1 active">
+              <span></span>
+              <span>title</span>
+              <span class="type">Text</span>
+              <span class="layer-actions"><button type="button" aria-label="Move layer forward">↑</button><button type="button" aria-label="Move layer backward">↓</button></span>
+            </div>
+            <div class="tree-row depth-1">
+              <span></span>
+              <span>battery</span>
+              <span class="type">Text</span>
+              <span class="layer-actions"><button type="button" aria-label="Move layer forward">↑</button><button type="button" aria-label="Move layer backward">↓</button></span>
+            </div>
+            <div class="tree-row">
+              <span>▾</span>
+              <span>body</span>
+              <span class="type">Group</span>
+              <span class="layer-actions"><button type="button" aria-label="Move layer forward">↑</button><button type="button" aria-label="Move layer backward">↓</button></span>
+            </div>
+            <div class="tree-row depth-1">
+              <span></span>
+              <span>temperature</span>
+              <span class="type">Text</span>
+              <span class="layer-actions"><button type="button" aria-label="Move layer forward">↑</button><button type="button" aria-label="Move layer backward">↓</button></span>
+            </div>
+            <div class="tree-row depth-1">
+              <span></span>
+              <span>statusPanel</span>
+              <span class="type">Rect</span>
+              <span class="layer-actions"><button type="button" aria-label="Move layer forward">↑</button><button type="button" aria-label="Move layer backward">↓</button></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2 data-i18n="part.title">Parts</h2>
+          </div>
+          <div class="list">
+            <div class="list-item">
+              <span class="name" data-i18n="part.group">Group</span>
+              <span class="meta">+</span>
+            </div>
+            <div class="list-item">
+              <span class="name" data-i18n="part.text">Text</span>
+              <span class="meta">+</span>
+            </div>
+            <div class="list-item">
+              <span class="name" data-i18n="part.image">Image</span>
+              <span class="meta">+</span>
+            </div>
+            <div class="list-item">
+              <span class="name" data-i18n="part.rect">Rect</span>
+              <span class="meta">+</span>
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <section class="canvas-area" aria-label="Canvas">
+        <div class="canvas-toolbar">
+          <div class="device-tabs" aria-label="Preview device">
+            <button type="button" class="active">Core2</button>
+            <button type="button">CoreS3</button>
+            <button type="button">Cardputer</button>
+            <button type="button" data-i18n="device.custom">Custom</button>
+          </div>
+          <div class="toolbar-right">
+            <button type="button">−</button>
+            <span>100%</span>
+            <button type="button">+</button>
+          </div>
+        </div>
+        <div class="stage">
+          <div class="device-shell">
+            <div class="screen">
+              <div class="ui-part header-band"></div>
+              <div class="ui-part title-text selected">Main</div>
+              <div class="ui-part battery">82%</div>
+              <div class="ui-part temp">24.5°C</div>
+              <div class="ui-part status-card">READY · Wi-Fi connected</div>
+            </div>
+          </div>
+        </div>
+        <div class="statusbar">
+          <span data-i18n="status.selection">Selected: Main.header.title</span>
+          <span data-i18n="status.output">Header/PROGMEM + RAW RGB565</span>
+        </div>
+      </section>
+
+      <aside class="inspector">
+        <section class="section">
+          <div class="section-head">
+            <h2 data-i18n="property.title">Properties</h2>
+          </div>
+          <div class="grid-form">
+            <div class="field">
+              <label for="part-id" data-i18n="field.id">ID</label>
+              <input id="part-id" value="title">
+            </div>
+            <div class="field">
+              <label for="part-type" data-i18n="field.type">Type</label>
+              <select id="part-type">
+                <option>Text</option>
+                <option>Image</option>
+                <option>Group</option>
+              </select>
+            </div>
+            <div class="two-col">
+              <div class="field">
+                <label for="part-x">X</label>
+                <input id="part-x" type="number" value="12">
+              </div>
+              <div class="field">
+                <label for="part-y">Y</label>
+                <input id="part-y" type="number" value="12">
+              </div>
+            </div>
+            <div class="two-col">
+              <div class="field">
+                <label for="part-w">W</label>
+                <input id="part-w" type="number" value="96">
+              </div>
+              <div class="field">
+                <label for="part-h">H</label>
+                <input id="part-h" type="number" value="20">
+              </div>
+            </div>
+            <div class="field">
+              <label for="text-value" data-i18n="field.previewText">Preview text</label>
+              <input id="text-value" value="Main">
+            </div>
+            <div class="field">
+              <label for="font-select" data-i18n="field.font">Font</label>
+              <select id="font-select">
+                <option>Default 2</option>
+                <option>FreeSans12pt7b</option>
+                <option>Noto Sans JP approximation</option>
+              </select>
+              <p class="hint warning" data-i18n="font.hint">Browser font preview is approximate.</p>
+            </div>
+            <div class="field">
+              <label for="description" data-i18n="field.description">Description</label>
+              <textarea id="description">Header title shown on the main scene.</textarea>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2 data-i18n="export.title">Generated API</h2>
+          </div>
+          <pre class="code-preview"><code>Scene::Main main;
+main.header.title = "Main";
+main.header.battery = 82;
+main.body.temperature = "24.5C";
+
+screen.show(main);</code></pre>
+          <p class="hint" data-i18n="export.hint">String IDs are kept for low-level debug APIs only.</p>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const messages = {
+      en: {
+        'app.status': 'Authoring mock',
+        'action.new': 'New',
+        'action.open': 'Open',
+        'action.save': 'Save',
+        'action.export': 'Export',
+        'action.screenshot': 'PNG',
+        'device.custom': 'Custom',
+        'language.label': 'Language',
+        'filter.placeholder': 'Filter by ID',
+        'rail.design': 'Design',
+        'rail.assets': 'Assets',
+        'rail.export': 'Export',
+        'rail.devices': 'Devices',
+        'scene.title': 'Scenes',
+        'layer.title': 'Layers',
+        'part.title': 'Parts',
+        'part.group': 'Group',
+        'part.text': 'Text',
+        'part.image': 'Image',
+        'part.rect': 'Rect',
+        'status.selection': 'Selected: Main.header.title',
+        'status.output': 'Header/PROGMEM + RAW RGB565',
+        'property.title': 'Properties',
+        'field.id': 'ID',
+        'field.type': 'Type',
+        'field.previewText': 'Preview text',
+        'field.font': 'Font',
+        'field.description': 'Description',
+        'font.hint': 'Browser font preview is approximate.',
+        'export.title': 'Generated API',
+        'export.hint': 'String IDs are kept for low-level debug APIs only.'
+      },
+      ja: {
+        'app.status': 'オーサリング画面モック',
+        'action.new': '新規',
+        'action.open': '開く',
+        'action.save': '保存',
+        'action.export': '出力',
+        'action.screenshot': 'PNG',
+        'device.custom': 'カスタム',
+        'language.label': '言語',
+        'filter.placeholder': 'IDで絞り込み',
+        'rail.design': '設計',
+        'rail.assets': '素材',
+        'rail.export': '出力',
+        'rail.devices': '機種',
+        'scene.title': 'シーン',
+        'layer.title': 'レイヤー',
+        'part.title': 'パーツ',
+        'part.group': 'グループ',
+        'part.text': 'テキスト',
+        'part.image': '画像',
+        'part.rect': '矩形',
+        'status.selection': '選択中: Main.header.title',
+        'status.output': 'Header/PROGMEM + RAW RGB565',
+        'property.title': 'プロパティ',
+        'field.id': 'ID',
+        'field.type': '種類',
+        'field.previewText': 'プレビュー文字列',
+        'field.font': 'フォント',
+        'field.description': '説明',
+        'font.hint': 'ブラウザ上のフォント表示は近似です。',
+        'export.title': '生成 API',
+        'export.hint': '文字列 ID は低レベルのデバッグ API 用として残します。'
+      }
+    };
+
+    const languageSelect = document.querySelector('#language-select');
+    const supported = Object.keys(messages);
+
+    function detectLanguage() {
+      const stored = localStorage.getItem('lgfxsb.lang');
+      if (supported.includes(stored)) return stored;
+      const browser = navigator.language.toLowerCase();
+      if (browser.startsWith('ja')) return 'ja';
+      return 'en';
+    }
+
+    function t(lang, key) {
+      return messages[lang]?.[key] || messages.en[key] || key;
+    }
+
+    function setLanguage(lang) {
+      const current = supported.includes(lang) ? lang : 'en';
+      document.documentElement.lang = current;
+      localStorage.setItem('lgfxsb.lang', current);
+      languageSelect.value = current;
+
+      document.querySelectorAll('[data-i18n]').forEach((node) => {
+        node.textContent = t(current, node.dataset.i18n);
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach((node) => {
+        node.placeholder = t(current, node.dataset.i18nPlaceholder);
+      });
+    }
+
+    languageSelect.addEventListener('change', (event) => {
+      setLanguage(event.target.value);
+    });
+
+    setLanguage(detectLanguage());
+  </script>
 </body>
 </html>
