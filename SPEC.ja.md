@@ -641,6 +641,28 @@ GitHub Pages は `docs/` または GitHub Actions で生成した静的成果物
 
 オーサリングツールは GitHub Pages 上で動作する。
 
+公開 URL:
+
+```text
+https://tanakamasayuki.github.io/LGFXScreenBuilder/
+```
+
+GitHub Pages は `main` ブランチの `docs/` ディレクトリを公開対象とする。
+
+ローカル検証は以下で行う。
+
+```sh
+python -m http.server 8000 --directory docs
+```
+
+確認 URL:
+
+```text
+http://localhost:8000/
+```
+
+GitHub Pages のプロジェクトページ配下でも動作するように、CSS/JavaScript/画像などの参照は `./styles.css` や `./app.js` のような相対パスを使う。
+
 要件:
 
 - 静的ファイルのみで配布できる。
