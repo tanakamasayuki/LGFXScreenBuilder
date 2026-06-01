@@ -301,7 +301,11 @@ loading.png
 - 色
 - 配置
 
-初期段階では、LovyanGFX/M5GFX で扱いやすいフォント参照方式を優先する。
+初期段階では、ブラウザ上のフォントプレビューは近似表示とする。Web フォント、システムフォント、ユーザーが読み込んだ TTF/OTF など、ブラウザで扱えるフォントを利用して見た目を確認する。
+
+Arduino 出力では、LovyanGFX/M5GFX で扱いやすいフォント参照方式を優先する。ブラウザプレビューと実機表示は完全一致しない可能性があるため、仕様上は近似プレビューとして扱う。
+
+将来的に実機表示との一致度が必要になった場合は、使用文字を抽出して Glyph atlas またはビットマップフォントとして出力し、ブラウザプレビューと Arduino ランタイムで同じ glyph データを使う方式を検討する。
 
 ### 8.8 アニメーション
 
@@ -537,7 +541,33 @@ M5GFX は LovyanGFX 派生または互換 API として扱える範囲で同一 
 
 文字列 ID を使った `show("Main")` や `setText("Main.temperature", "...")` は、デバッグ用途または低レベル互換 API として扱い、通常利用の推奨 API にはしない。
 
-## 12. ディレクトリ構成案
+## 12. ホストプレビューとスクリーンショット
+
+実機確認に加えて、host 環境で描画結果を PNG として出力できる仕組みを用意する。
+
+LovyanGFX の host 実行環境では `createPng()` を使って描画結果を PNG 化できるため、生成コードにはテスト用のスクリーンショット補助関数を含められる設計にする。
+
+想定用途:
+
+- 生成された UI の回帰テスト
+- GitHub Actions 上での PNG スナップショット確認
+- LovyanGFX/M5GFX 直接描画と LGFXVirtualCanvas 経由描画の比較
+- フォント近似プレビューと実描画結果の差分確認
+
+生成されるテスト補助 API の例:
+
+```cpp
+#if defined(LGFXSB_ENABLE_HOST_SCREENSHOT)
+bool saveScreenshot(LovyanGFX& gfx, const char* path);
+
+template <typename TScene>
+bool renderScreenshot(LovyanGFX& gfx, const TScene& scene, const char* path);
+#endif
+```
+
+`renderScreenshot()` は対象シーンを描画した後、全画面を PNG として保存する。通常の Arduino 実機向けビルドでは無効化し、host テストまたは開発用ビルドでのみ有効にする。
+
+## 13. ディレクトリ構成案
 
 ```text
 LGFXScreenBuilder/
@@ -565,7 +595,7 @@ LGFXScreenBuilder/
 
 GitHub Pages は `docs/` または GitHub Actions で生成した静的成果物を公開する。
 
-## 13. GitHub Pages 配布要件
+## 14. GitHub Pages 配布要件
 
 オーサリングツールは GitHub Pages 上で動作する。
 
@@ -577,7 +607,7 @@ GitHub Pages は `docs/` または GitHub Actions で生成した静的成果物
 - エクスポート結果を ZIP または複数ファイルとしてダウンロードできる。
 - ネットワーク接続なしでも、ページ読み込み後の編集作業が継続できることが望ましい。
 
-## 14. MVP 範囲
+## 15. MVP 範囲
 
 最初の実装では以下を MVP とする。
 
@@ -602,7 +632,7 @@ MVP では以下を後回しにする。
 - コンポーネント共有
 - クラウド保存
 
-## 15. 将来拡張
+## 16. 将来拡張
 
 将来的に以下を検討する。
 
@@ -616,7 +646,7 @@ MVP では以下を後回しにする。
 - TypeScript 型定義を利用したエディタ補完
 - 複数言語ドキュメント
 
-## 16. 成功条件
+## 17. 成功条件
 
 初期リリースの成功条件は以下とする。
 
