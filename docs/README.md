@@ -20,16 +20,22 @@ python -m http.server 8000 --directory docs
   deselect.
 - **i18n** (SPEC §14): all UI strings go through `src/i18n.js` (`t()` + `data-i18n`),
   en/ja with an en fallback and a language switcher; default follows the browser.
-- Profiles / Assets / Export modes, project save/load (`.lgfxsb.json`), and code
-  generation (`<Project>.h`) are not wired up yet.
+- **Project persistence** (`src/persist.js`, SPEC §9): New / Open / Save toolbar
+  (`.lgfxsb.json`) plus localStorage autosave + restore-on-start.
+- **Code generation** (`src/codegen.js`): "Export .h" downloads `<Project>.h` (the
+  §11 facade + descriptor); verified end-to-end by `tests/codegen_roundtrip`.
+- Profiles / Assets / Export *screens* (a full Export view, asset import, etc.) are
+  not built yet — header export is currently a toolbar button.
 
 ## Layout
 
 - `index.html` — app shell (mode rail + 3-pane layout)
 - `styles.css`
 - `src/model.js` — project data model + sample project + helpers
-- `src/store.js` — reactive store (project + editor UI state)
+- `src/store.js` — reactive store (project + editor UI state) + loadProject
 - `src/i18n.js` — translations (en/ja) + `t()` + static-markup applier
+- `src/persist.js` — save/open `.lgfxsb.json` + localStorage autosave
+- `src/codegen.js` — project model → `<Project>.h`
 - `src/design.js` — Design mode (render + interactions)
 - `src/main.js` — bootstrap
 

@@ -5,6 +5,8 @@
 const MESSAGES = {
   en: {
     'app.note': 'MVP foundation — Design',
+    'btn.new': 'New', 'btn.open': 'Open', 'btn.save': 'Save', 'btn.exportH': 'Export .h',
+    'confirm.new': 'Discard the current project and start from the sample?',
     'mode.design': 'Design', 'mode.profiles': 'Profiles', 'mode.assets': 'Assets', 'mode.export': 'Export',
     'pane.scenes': 'Scenes', 'pane.parts': 'Parts', 'pane.profile': 'This profile',
     'parts.title': 'Parts ({scene})',
@@ -34,6 +36,8 @@ const MESSAGES = {
   },
   ja: {
     'app.note': 'MVP 基盤 — Design',
+    'btn.new': '新規', 'btn.open': '開く', 'btn.save': '保存', 'btn.exportH': '.h 出力',
+    'confirm.new': '現在のプロジェクトを破棄してサンプルから始めますか？',
     'mode.design': 'Design', 'mode.profiles': 'Profiles', 'mode.assets': 'Assets', 'mode.export': 'Export',
     'pane.scenes': 'シーン', 'pane.parts': 'パーツ', 'pane.profile': 'このプロファイル',
     'parts.title': 'パーツ（{scene}）',

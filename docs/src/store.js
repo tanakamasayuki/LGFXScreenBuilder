@@ -29,3 +29,15 @@ export function update(fn) {
   fn(store);
   emit();
 }
+
+// Replace the whole project (load/open/new) and reset UI to valid defaults.
+export function loadProject(project) {
+  store.project = project;
+  const firstScene = project.scenes[0];
+  const firstProfile = project.profiles[0];
+  store.ui.sceneId = firstScene ? firstScene.id : null;
+  store.ui.profileId = firstProfile ? firstProfile.id : null;
+  store.ui.selected = null;
+  store.ui.zoom = 1;
+  emit();
+}
