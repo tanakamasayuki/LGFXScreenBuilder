@@ -3,7 +3,7 @@
 > 日本語: [README.ja.md](README.ja.md)
 
 For validating interaction feel only. **One interaction = one HTML file**, no shared framework, minimal, and **meant to be discarded**.
-Code here is never moved into the production tool (`tools/authoring/`). Kept separate from the published `docs/`.
+Code here is never promoted to the production tool in `docs/`; these probes stay throwaway.
 
 Local preview:
 
@@ -13,7 +13,7 @@ python -m http.server 8001 --directory prototypes
 # http://localhost:8001/<name>.html
 ```
 
-**Lifecycle:** once the production tool (`tools/authoring/`) covers a screen, delete that screen's probe — prune per screen, not all at once.
+**Lifecycle:** once the production tool (`docs/`) covers a screen, delete that screen's probe — prune per screen, not all at once.
 
 | File | Validates |
 |---|---|

@@ -1010,29 +1010,29 @@ bool renderScreenshot(LovyanGFX& gfx, const TScene& scene, const char* path);
 
 ```text
 LGFXScreenBuilder/
-  src/
-    LGFXScreenBuilder.h
-    LGFXScreenBuilder.cpp
-    LGFXSB_Backend.h
-    LGFXSB_Scene.h
-    LGFXSB_Asset.h
+  src/                              # Arduino ランタイム（ヘッダオンリー）
+    LGFXScreenBuilder.h             #   傘ヘッダ
+    lgfxscreenbuilder_version.h
+    lgfxsb/
+      Types.h                       #   列挙・Value
+      Project.h                     #   生成データ記述子（データ契約）
+      Renderer.h                    #   共有描画エンジン
   examples/
     Basic/
-    M5GFX_Basic/
-    MultiDevice/
-  tools/
-    authoring/
-      index.html
-      src/
-      assets/
-  docs/
+      Basic.ino
+      MyScreen.h                    #   生成ヘッダの見本
+  docs/                             # GitHub Pages サイト＝オーサリングツール本体（静的 ES モジュール・ビルド不要）
     index.html
-  SPEC.ja.md
-  README.md
+    styles.css
+    src/                            #   model.js / store.js / design.js / main.js
+  tools/
+    bump_version.py
+  tests/                            # host ビルドの pytest 一式
+  SPEC.ja.md  SPEC.md  README.md  README.ja.md
   library.properties
 ```
 
-GitHub Pages は `docs/` または GitHub Actions で生成した静的成果物を公開する。
+GitHub Pages は `docs/` を配信する。**オーサリングツール本体を `docs/` 直下に置く**（ビルド不要の静的成果物なので、`docs/` がソース兼公開サイトそのものになる）。別ビルド/CI は不要。`src/`（Arduino ライブラリ）はヘッダオンリー（`.cpp` は持たない。§11.1）。`tools/` はリリース用スクリプト等の開発補助に用いる。
 
 #### コメント言語の方針
 

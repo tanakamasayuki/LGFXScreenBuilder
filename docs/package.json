@@ -1,0 +1,6 @@
+{
+  "name": "lgfxscreenbuilder-authoring",
+  "private": true,
+  "type": "module",
+  "description": "Browser authoring tool (static ES modules, no build step)."
+}
