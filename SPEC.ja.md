@@ -805,6 +805,8 @@ Arduino 向けエクスポートでは、以下を生成する。
 
 出力対象のプロファイルは、全部または特定の機種だけを選んで生成できる。`enum class Profile` と生成データは選択したプロファイルだけに絞る。**フォールバック用プロファイル（デフォルト）はこの出力画面で選ぶ**（§8.9.4）。単一機種ビルド（出力対象が 1 つ）はそのプロファイル自身が受け皿になるため指定不要。複数出力時のみ、出力対象の中からフォールバックを 1 つ選ぶ。選択は `defaultProfile`（§9）として記憶し、次回出力時の初期値にする。
 
+生成するコード（ヘッダ・サンプル `.ino` など）に含めるコメントは、**英語のみ、または英語＋日本語の 2 言語（`// en:` / `// ja:` 形式）**とし、**日本語のみにはしない**。公開 Arduino ライブラリの利用者が英語圏でも読めるようにするためである（コメント言語の方針は §13 と共通）。
+
 画像アセットの出力方式は以下を選択可能にする。
 
 - ヘッダファイル埋め込み
@@ -879,12 +881,12 @@ namespace lgfxsb {
 
   class Renderer {
   protected:
-    LovyanGFX* _gfx = nullptr;
+    lgfx::LGFX_Device* _gfx = nullptr;   // getBoard() を持つデバイス型（LGFX / M5GFX / M5.Display の基底）
     const Project& _project;
     uint8_t _profile = 0;          // 0 = Auto（実解決は描画時に遅延）
     void renderScene(/* sceneref */, uint8_t profile);
   public:
-    Renderer(LovyanGFX& gfx, const Project& project) : _gfx(&gfx), _project(project) {}
+    Renderer(lgfx::LGFX_Device& gfx, const Project& project) : _gfx(&gfx), _project(project) {}
     void begin();                  // display 初期化後の設定フック（プロファイル選択には触れない）
     void play(const char* animationId);
   };
@@ -911,7 +913,7 @@ extern const lgfxsb::Project project;          // 全データの入口（生成
 
 class Screen : public lgfxsb::Renderer {       // プロジェクト専用ファサード
 public:
-  explicit Screen(LovyanGFX& gfx) : Renderer(gfx, project) {}   // 記述子を束縛
+  explicit Screen(lgfx::LGFX_Device& gfx) : Renderer(gfx, project) {}   // 記述子を束縛
   void setProfile(Profile p);                  // この型だけ受ける（他プロジェクトは型エラー）
   template <class TScene> void show(const TScene& s);     // 自プロジェクトのシーンに限定
   template <class TScene> void update(const TScene& s);
@@ -920,7 +922,11 @@ public:
 } // namespace MyScreen
 ```
 
-`Screen` がコンストラクタで記述子を束縛するため、ユーザーは `project` を毎回渡す必要がない。`setProfile()` は同名前空間の `Profile` を名指しするので型安全（他プロジェクトの `Profile` を渡すとコンパイルエラー）。テンプレート構文はユーザーにもライブラリ公開 API にも露出しない。
+`Screen` がコンストラクタで記述子を束縛するため、ユーザーは `project` を毎回渡す必要がない。`setProfile()` は同名前空間の `Profile` を名指しするので型安全（他プロジェクトの `Profile` を渡すとコンパイルエラー）。
+
+`gfx` の受け型は `lgfx::LGFX_Device`（`LovyanGFX` 基底クラスの派生で、自動判定に使う `getBoard()` を持つ）とする。ユーザーが渡す LovyanGFX autodetect の `LGFX`、`M5GFX`、`M5.Display` はいずれも `lgfx::LGFX_Device` 派生なので、同一 API で受けられる。
+
+`show` / `update` は、生成コードがシーン型ごとに**関数オーバーロード**として出力する（テンプレートではない）。生成された自プロジェクトのシーン型だけにオーバーロードが存在するため「自プロジェクトのシーンに限定」する性質は保たれ、未知の型を渡すとコンパイルエラーになる。テンプレート構文はユーザーにもライブラリ公開 API にも露出しない。
 
 ### 11.2 利用例
 
@@ -1027,6 +1033,16 @@ LGFXScreenBuilder/
 ```
 
 GitHub Pages は `docs/` または GitHub Actions で生成した静的成果物を公開する。
+
+#### コメント言語の方針
+
+リポジトリ内のコード（`src/`・`examples/`・ツール・生成物）のコメントは、**日本語のみにしない**。英語のみ、または英語＋日本語の 2 言語（`// en:` / `// ja:` 形式）とする。目安:
+
+- `examples/`（サンプルプログラム）: 基本 2 言語。日本語ユーザーが学ぶ場所のため。
+- `src/`: 2 言語が好ましいが、英語のみでも可。
+- 生成コード（`<Project>.h`・サンプル `.ino`）: 英語のみ、または 2 言語（§10）。
+
+ドキュメントのファイル命名（日本語=`*.ja.md`、英語=`*.md`）とは別の、コード内コメントに関する方針である。
 
 ## 14. GitHub Pages 配布要件
 

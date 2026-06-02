@@ -1,66 +1,20 @@
 #pragma once
 
+// LGFXScreenBuilder — Arduino runtime for screens authored with the browser tool.
+//
+// This umbrella header includes the shared engine (lgfxsb::Renderer / Project).
+// On the user side, include <LovyanGFX.hpp> (or M5GFX / M5Unified) first, then
+// this header, then the "<Project>.h" emitted by the authoring tool (§11.2).
+//
+//   #include <LovyanGFX.hpp>
+//   #include <LGFX_AUTODETECT.hpp>
+//   #include <LGFXScreenBuilder.h>
+//   #include "MyScreen.h"        // generated output (<project name>.h)
+//   using namespace MyScreen;
+//   static LGFX display;
+//   static Screen screen(display);
+
 #include "lgfxscreenbuilder_version.h"
-
-namespace Scene
-{
-
-  struct Boot
-  {
-    static constexpr int id = 0;
-  };
-
-  struct Main
-  {
-    static constexpr int id = 1;
-
-    struct Header
-    {
-      const char *title = "";
-      int battery = 0;
-    } header;
-
-    struct Body
-    {
-      const char *temperature = "";
-      bool loadingVisible = false;
-    } body;
-  };
-
-} // namespace Scene
-
-class LGFXScreenBuilder
-{
-public:
-  LGFXScreenBuilder() = default;
-  explicit LGFXScreenBuilder(LovyanGFX &gfx) : _gfx(&gfx) {}
-
-  void begin(LovyanGFX *gfx) { _gfx = gfx; }
-  void begin(LovyanGFX &gfx) { _gfx = &gfx; }
-
-  template <typename TScene>
-  void show(const TScene &scene)
-  {
-    render(scene);
-  }
-
-  template <typename TScene>
-  void update(const TScene &scene)
-  {
-    render(scene);
-  }
-
-  void update() {}
-
-private:
-  template <typename TScene>
-  void render(const TScene &)
-  {
-    if (_gfx)
-    {
-      _gfx->fillScreen(0);
-    }
-  }
-
-  LovyanGFX *_gfx = nullptr;
-};
+#include "lgfxsb/Types.h"
+#include "lgfxsb/Project.h"
+#include "lgfxsb/Renderer.h"
