@@ -160,58 +160,62 @@
       {id:'Core',w:320,h:240,rotation:1,default:true,layout:{
         Boot:{
           logo:L(110,80,100,60,true,{color:'#1e2a30'}),
-          boot:L(100,150,120,20,true,{text:'Booting...',font:16,color:'#9ce5ac'}),
+          boot:L(100,150,120,20,true,{text:'Booting...',size:2,color:'#9ce5ac'}),
         },
         Main:{
           headerBand:L(0,0,320,40,true,{color:'#1e2a30'}),
-          title:     L(12,10,140,22,true,{text:'Main',font:16,color:'#ffffff'}),
-          battery:   L(250,12,60,18,true,{text:'82%',font:13,color:'#9ce5ac'}),
-          temp:      L(18,70,180,44,true,{text:'24.5C',font:34,color:'#ffffff'}),
+          title:     L(12,10,140,22,true,{text:'Main',size:2,color:'#ffffff'}),
+          battery:   L(250,12,60,18,true,{text:'82%',size:1.5,color:'#9ce5ac'}),
+          temp:      L(18,70,180,44,true,{text:'24.5C',size:4,color:'#ffffff'}),
           panel:     L(18,150,284,54,true,{color:'#172126'}),
         },
         Settings:{
           header:L(0,0,320,40,true,{color:'#1e2a30'}),
-          ttl:   L(12,10,160,22,true,{text:'Settings',font:16,color:'#ffffff'}),
-          row1:  L(18,60,284,20,true,{text:'Wi-Fi',font:16,color:'#ffffff'}),
+          ttl:   L(12,10,160,22,true,{text:'Settings',size:2,color:'#ffffff'}),
+          row1:  L(18,60,284,20,true,{text:'Wi-Fi',size:2,color:'#ffffff'}),
         },
       }},
       {id:'Cardputer',w:240,h:135,rotation:1,default:false,layout:{
         Boot:{
           logo:L(80,30,80,40,true,{color:'#1e2a30'}),
-          boot:L(60,80,120,16,true,{text:'Booting...',font:13,color:'#9ce5ac'}),
+          boot:L(60,80,120,16,true,{text:'Booting...',size:1.5,color:'#9ce5ac'}),
         },
         Main:{
           headerBand:L(0,0,240,26,true,{color:'#1e2a30'}),
-          title:     L(8,5,120,16,true,{text:'Main',font:13,color:'#ffffff'}),
-          battery:   L(186,6,50,14,true,{text:'82%',font:11,color:'#9ce5ac'}),
-          temp:      L(12,40,150,34,true,{text:'24.5C',font:26,color:'#ffffff'}),
+          title:     L(8,5,120,16,true,{text:'Main',size:1.5,color:'#ffffff'}),
+          battery:   L(186,6,50,14,true,{text:'82%',size:1.25,color:'#9ce5ac'}),
+          temp:      L(12,40,150,34,true,{text:'24.5C',size:3,color:'#ffffff'}),
           panel:     L(12,86,216,40,false,{color:'#172126'}),
         },
         Settings:{
           header:L(0,0,240,26,true,{color:'#1e2a30'}),
-          ttl:   L(8,5,140,16,true,{text:'Settings',font:13,color:'#ffffff'}),
-          row1:  L(12,36,200,16,true,{text:'Wi-Fi',font:12,color:'#ffffff'}),
+          ttl:   L(8,5,140,16,true,{text:'Settings',size:1.5,color:'#ffffff'}),
+          row1:  L(12,36,200,16,true,{text:'Wi-Fi',size:1.5,color:'#ffffff'}),
         },
       }},
       {id:'Stick',w:135,h:240,rotation:0,default:false,layout:{
         Boot:{
           logo:L(30,80,75,50,true,{color:'#1e2a30'}),
-          boot:L(12,140,115,16,true,{text:'Boot...',font:13,color:'#9ce5ac'}),
+          boot:L(12,140,115,16,true,{text:'Boot...',size:1.5,color:'#9ce5ac'}),
         },
         Main:{
           headerBand:L(0,0,135,30,true,{color:'#1e2a30'}),
-          title:     L(8,7,90,16,true,{text:'Main',font:13,color:'#ffffff'}),
-          battery:   L(8,180,90,16,true,{text:'82%',font:12,color:'#9ce5ac'}),
-          temp:      L(10,60,115,40,true,{text:'24.5',font:30,color:'#ffffff'}),
+          title:     L(8,7,90,16,true,{text:'Main',size:1.5,color:'#ffffff'}),
+          battery:   L(8,180,90,16,true,{text:'82%',size:1.5,color:'#9ce5ac'}),
+          temp:      L(10,60,115,40,true,{text:'24.5',size:3.5,color:'#ffffff'}),
           panel:     L(10,110,115,60,true,{color:'#172126'}),
         },
         Settings:{
           header:L(0,0,135,30,true,{color:'#1e2a30'}),
-          ttl:   L(8,7,110,16,true,{text:'Settings',font:13,color:'#ffffff'}),
-          row1:  L(10,40,115,16,true,{text:'Wi-Fi',font:12,color:'#ffffff'}),
+          ttl:   L(8,7,110,16,true,{text:'Settings',size:1.5,color:'#ffffff'}),
+          row1:  L(10,40,115,16,true,{text:'Wi-Fi',size:1.5,color:'#ffffff'}),
         },
       }},
     ];
+
+    // 文字サイズは「倍率（multiplier）」を保存値とする（LGFX setTextSize 相当）。px 高さは基準フォント高×倍率の補助表示。
+    const BASE_FONT_PX=8;                 // 既定フォントの基準高（プローブ用の仮値）
+    const pxOf=size=>Math.round(size*BASE_FONT_PX);
 
     let active='Core', activeScene='Main', selected='title';
     const prof=()=>profiles.find(p=>p.id===active);
@@ -261,7 +265,7 @@
         d.dataset.id=def.id;
         d.style.left=(e.x*scale)+'px'; d.style.top=(e.y*scale)+'px';
         d.style.width=(e.w*scale)+'px'; d.style.height=(e.h*scale)+'px';
-        if(def.type==='text'){d.style.color=e.color;d.style.fontSize=(e.font*scale)+'px';d.textContent=e.text;}
+        if(def.type==='text'){d.style.color=e.color;d.style.fontSize=(e.size*BASE_FONT_PX*scale)+'px';d.textContent=e.text;}
         else {d.style.background=e.color;}
         scr.appendChild(d);
       });
@@ -320,7 +324,13 @@
       let h='';
       h+=`<div class="two">${fieldRow('x','X','number')}${fieldRow('y','Y','number')}</div>`;
       h+=`<div class="two">${fieldRow('w','幅','number')}${fieldRow('h','高さ','number')}</div>`;
-      if(def.type==='text'){ h+=fieldRow('text','文字','text'); h+=fieldRow('font','文字サイズ(px)','number'); }
+      if(def.type==='text'){
+        h+=fieldRow('text','文字','text');
+        // 文字サイズは倍率を保存値に、px 高さは補助表示（自動計算）。
+        const sz=cur(selected).size;
+        h+=`<div class="field"><div class="lab" style="display:flex;justify-content:space-between;align-items:baseline"><label>文字サイズ（倍率）</label><span class="sub" id="px-hint">≈ ${pxOf(sz)}px</span></div>`+
+           `<input type="number" data-k="size" step="0.25" min="0.25" value="${sz}"></div>`;
+      }
       h+=fieldRow('visible','表示','checkbox');
       h+=`<div class="field"><label>備考（全プロファイル共通のメモ）</label><textarea id="p-desc" rows="2">${def.desc||''}</textarea></div>`;
       el.innerHTML=h;
@@ -330,6 +340,7 @@
         inp.addEventListener(ev,()=>{
           const v = t==='checkbox'?inp.checked : (t==='number'?(+inp.value||0):inp.value);
           cur(selected)[k]=v;
+          if(k==='size'){ const hint=document.getElementById('px-hint'); if(hint)hint.textContent='≈ '+pxOf(v)+'px'; }
           renderCanvas(); renderList(); renderStatus();
           // 入力中はフォーカス維持のため props は作り直さない
         });
