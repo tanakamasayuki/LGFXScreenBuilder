@@ -297,6 +297,29 @@ The `children` array of a scene and a group represents the drawing order. Drawin
 
 In the layer panel, in line with common design tools, front parts are displayed at the top and back parts at the bottom. Changing the layer order is done with the "Bring forward" / "Send backward" buttons (`↑` / `↓`) on the layer panel. These are button operations on the panel, distinct from the arrow keys that move the selected part on the canvas (§8.14).
 
+#### 8.3.1 Reordering and Moving Parts In and Out of Groups
+
+Layer reordering happens **among siblings that share the same parent (the same level)**. "Bring forward / Send backward" swaps the selected part with an adjacent sibling; it does not move the part across levels.
+
+**Drag and drop** in the layer tree performs both reordering and **changing the parent (moving parts in and out of groups)**. The behavior depends on the drop target:
+
+- Drop onto a group row: **nest inside** that group.
+- Drop onto another part row: make it a **sibling of that part (same parent)**.
+- Drop onto an empty area of the tree: move it to the **scene root**.
+
+When a part is **moved into or out of** a group, its **absolute on-screen position is preserved**. The local coordinates are recomputed relative to the new parent's origin, so the layout does not shift when moving parts in and out. Parts are expected to be freely movable in and out of groups at any time.
+
+Group operations:
+
+- **Group**: wrap the selection in a new Group. The Group is created at the same parent as the selection, and the children's absolute positions are preserved.
+- **Ungroup**: dissolve a Group and lift its children up to that Group's parent (preserving absolute positions).
+
+Constraints:
+
+- Only a Group can be a container that holds children (a drawing Part cannot be a container).
+- A part's own descendant cannot become its new parent (no cycles).
+- Deleting a group also deletes all of its descendant children.
+
 `displayOrder` is auxiliary information for the UI list display and is handled separately from the drawing order.
 
 Example:
