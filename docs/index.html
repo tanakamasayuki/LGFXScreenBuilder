@@ -18,6 +18,7 @@
       --accent-soft: #dcefed;
       --warn: #9a5b00;
       --screen: #11191d;
+      --sel: #4bd2c8;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       line-height: 1.4;
     }
@@ -197,6 +198,9 @@
       gap: 8px;
     }
 
+    .item { cursor: pointer; }
+    .item:hover { background: var(--soft); }
+
     .item.active, .tree-row.active, .asset-card.active {
       border-color: #8fcac5;
       background: #e1f2f0;
@@ -212,9 +216,12 @@
       align-items: center;
       gap: 6px;
       font-size: 13px;
+      cursor: pointer;
     }
 
+    .tree-row:hover { background: var(--soft); }
     .tree-row.depth-1 { padding-left: 20px; }
+    .tree-row.depth-2 { padding-left: 38px; }
     .type { color: var(--muted); font-size: 11px; }
 
     .layer-actions { display: inline-flex; gap: 2px; }
@@ -271,10 +278,7 @@
     }
 
     .device {
-      width: min(82vw, 520px);
-      max-width: 100%;
-      aspect-ratio: 4 / 3;
-      padding: 18px;
+      padding: 16px;
       border: 1px solid #253137;
       border-radius: 8px;
       background: #263238;
@@ -283,24 +287,88 @@
 
     .screen {
       position: relative;
-      width: 100%;
-      height: 100%;
       overflow: hidden;
       border: 1px solid #000;
       background: var(--screen);
+      touch-action: none;
+      user-select: none;
     }
 
-    .ui-part { position: absolute; border: 1px solid transparent; }
-    .ui-part.selected { border-color: #4bd2c8; box-shadow: 0 0 0 1px #4bd2c8 inset; }
-    .header-band { left: 0; top: 0; right: 0; height: 44px; background: #1e2a30; }
-    .title-text { left: 12px; top: 12px; color: #fff; font-size: 16px; font-weight: 650; }
-    .battery { right: 12px; top: 12px; color: #9ce5ac; font-size: 13px; font-weight: 650; }
-    .temp { left: 18px; top: 78px; color: #fff; font-size: 38px; font-weight: 700; }
-    .status-card { left: 18px; right: 18px; bottom: 18px; height: 54px; border: 1px solid #405159; background: #172126; color: #b8c7cc; display: flex; align-items: center; padding: 0 14px; font-size: 13px; }
+    .part {
+      position: absolute;
+      box-sizing: border-box;
+      border: 1px solid transparent;
+      overflow: hidden;
+      cursor: move;
+      white-space: nowrap;
+    }
+
+    .part.text { display: flex; align-items: center; color: #fff; }
+    .part.rect { border-color: #405159; }
+    .part.image {
+      display: grid; place-items: center;
+      border: 1px dashed #6f8a92; color: #9fb2b8; font-size: 11px;
+      background: rgba(120, 150, 160, 0.12);
+    }
+    .part.group {
+      border: 1px dashed #5f7681;
+      cursor: default;
+      pointer-events: none;
+    }
+    .part.group .group-tag {
+      position: absolute; top: -1px; left: -1px;
+      background: #5f7681; color: #fff; font-size: 10px;
+      padding: 1px 6px; border-radius: 0 0 4px 0;
+      pointer-events: auto; cursor: move; white-space: nowrap;
+    }
+    .part.selected { border-color: var(--sel); box-shadow: 0 0 0 1px var(--sel) inset; }
+    .part.group.selected { border-style: solid; border-color: var(--sel); }
+    .part.group.context { border-color: #4a5f68; }
+    .part.hidden-part { opacity: 0.28; }
+
+    .tree-row.drop-target { background: #cdeae6; outline: 1px dashed var(--sel); outline-offset: -1px; }
+    .tree-row.dragging { opacity: 0.45; }
+    button.mini { min-height: 26px; padding: 0 7px; font-size: 11px; border-radius: 4px; }
+
+    .handle {
+      position: absolute;
+      width: 9px; height: 9px;
+      background: #fff;
+      border: 1px solid var(--sel);
+      border-radius: 2px;
+      z-index: 50;
+    }
+    .handle.nw { cursor: nwse-resize; }
+    .handle.ne { cursor: nesw-resize; }
+    .handle.sw { cursor: nesw-resize; }
+    .handle.se { cursor: nwse-resize; }
+    .handle.n  { cursor: ns-resize; }
+    .handle.s  { cursor: ns-resize; }
+    .handle.w  { cursor: ew-resize; }
+    .handle.e  { cursor: ew-resize; }
 
     .field { display: grid; gap: 5px; }
     .field label { color: var(--muted); font-size: 12px; }
+    .field.row { grid-template-columns: auto 1fr; align-items: center; }
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .empty-hint { color: var(--muted); font-size: 13px; padding: 4px 2px; }
+
+    .overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(15, 28, 33, 0.55);
+      display: grid; place-items: center; padding: 16px;
+    }
+    .overlay[hidden] { display: none; }
+    .modal {
+      background: var(--panel); border-radius: 10px; padding: 22px;
+      width: min(92vw, 440px); display: grid; gap: 14px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+    }
+    .modal-title { margin: 0; font-size: 18px; }
+    .modal-sub { margin: 0; color: var(--muted); font-size: 13px; }
+    .modal-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+    .modal-actions.stack { flex-direction: column; }
+    button.big { min-height: 46px; padding: 0 16px; font-size: 14px; }
 
     .preview-box {
       min-height: 220px;
@@ -314,14 +382,6 @@
       text-align: center;
     }
 
-    .swatch {
-      width: 42px;
-      height: 28px;
-      border-radius: 4px;
-      border: 1px solid var(--line);
-      background: #1e2a30;
-    }
-
     .code {
       margin: 0;
       padding: 10px;
@@ -332,6 +392,7 @@
       overflow: auto;
       font-size: 12px;
       line-height: 1.45;
+      white-space: pre-wrap;
     }
 
     .mode[hidden] { display: none; }
@@ -357,8 +418,8 @@
         <span data-i18n="app.status">Authoring mock</span>
       </div>
       <nav class="toolbar" aria-label="Project actions">
-        <button type="button" data-i18n="action.new">New</button>
-        <button type="button" data-i18n="action.open">Open</button>
+        <button type="button" id="btn-new" data-i18n="action.new">New</button>
+        <button type="button" id="btn-open" data-i18n="action.open">Open</button>
         <button type="button" data-i18n="action.save">Save</button>
         <button type="button" data-i18n="action.undo">Undo</button>
         <button type="button" data-i18n="action.redo">Redo</button>
@@ -400,44 +461,37 @@
           <section class="section">
             <div class="section-head">
               <h2 data-i18n="scene.title">Scenes</h2>
-              <button class="icon" type="button" aria-label="Add scene">+</button>
+              <button class="icon" type="button" id="btn-add-scene" aria-label="Add scene">+</button>
             </div>
             <input class="search" type="search" data-i18n-placeholder="filter.placeholder" placeholder="Filter by ID">
-            <div class="list">
-              <div class="item"><span class="name">Boot</span><span class="meta">1</span></div>
-              <div class="item active"><span class="name">Main</span><span class="meta">5</span></div>
-              <div class="item"><span class="name">Settings</span><span class="meta">3</span></div>
-            </div>
+            <div class="list" id="scene-list"></div>
           </section>
           <section class="section">
             <div class="section-head">
               <h2 data-i18n="layer.title">Layers</h2>
+              <span class="layer-actions">
+                <button class="mini" id="btn-group" data-i18n="layer.group">Group</button>
+                <button class="mini" id="btn-ungroup" data-i18n="layer.ungroup">Ungroup</button>
+              </span>
             </div>
-            <div class="tree">
-              <div class="tree-row"><span>▾</span><span>header</span><span class="type">Group</span><span class="layer-actions"><button>↑</button><button>↓</button></span></div>
-              <div class="tree-row depth-1 active"><span></span><span>title</span><span class="type">Text</span><span class="layer-actions"><button>↑</button><button>↓</button></span></div>
-              <div class="tree-row depth-1"><span></span><span>battery</span><span class="type">Text</span><span class="layer-actions"><button>↑</button><button>↓</button></span></div>
-              <div class="tree-row"><span>▾</span><span>body</span><span class="type">Group</span><span class="layer-actions"><button>↑</button><button>↓</button></span></div>
-              <div class="tree-row depth-1"><span></span><span>temperature</span><span class="type">Text</span><span class="layer-actions"><button>↑</button><button>↓</button></span></div>
-              <div class="tree-row depth-1"><span></span><span>statusPanel</span><span class="type">Rect</span><span class="layer-actions"><button>↑</button><button>↓</button></span></div>
-            </div>
+            <div class="tree" id="layer-tree"></div>
           </section>
           <section class="section">
             <div class="section-head"><h2 data-i18n="part.title">Parts</h2></div>
             <div class="list">
-              <div class="item"><span class="name" data-i18n="part.group">Group</span><span class="meta">+</span></div>
-              <div class="item"><span class="name" data-i18n="part.text">Text</span><span class="meta">+</span></div>
-              <div class="item"><span class="name" data-i18n="part.image">Image</span><span class="meta">+</span></div>
-              <div class="item"><span class="name" data-i18n="part.rect">Rect</span><span class="meta">+</span></div>
+              <div class="item" data-add-part="Group"><span class="name" data-i18n="part.group">Group</span><span class="meta">+</span></div>
+              <div class="item" data-add-part="Text"><span class="name" data-i18n="part.text">Text</span><span class="meta">+</span></div>
+              <div class="item" data-add-part="Image"><span class="name" data-i18n="part.image">Image</span><span class="meta">+</span></div>
+              <div class="item" data-add-part="Rect"><span class="name" data-i18n="part.rect">Rect</span><span class="meta">+</span></div>
             </div>
           </section>
         </div>
 
         <div class="mode" data-mode="assets" hidden>
           <section class="section">
-            <div class="section-head"><h2 data-i18n="asset.images">Images</h2><button class="icon">+</button></div>
+            <div class="section-head"><h2 data-i18n="asset.images">Images</h2><button class="icon" id="btn-import-asset">+</button></div>
             <input class="search" type="search" data-i18n-placeholder="filter.placeholder" placeholder="Filter by ID">
-            <div class="list">
+            <div class="list" id="asset-image-list">
               <div class="item active"><span class="name">logo</span><span class="meta">PNG</span></div>
               <div class="item"><span class="name">icons</span><span class="meta">Sheet</span></div>
               <div class="item"><span class="name">splash</span><span class="meta">PNG</span></div>
@@ -500,27 +554,21 @@
       <section class="main">
         <div class="mode" data-mode="design">
           <div class="mainbar">
-            <div class="tabs" aria-label="Preview device">
-              <button class="active">Core2</button><button>CoreS3</button><button>Cardputer</button><button data-i18n="device.custom">Custom</button>
+            <div class="tabs" id="device-tabs" aria-label="Preview device">
+              <button class="active" data-device="Core2">Core2</button><button data-device="CoreS3">CoreS3</button><button data-device="Cardputer">Cardputer</button><button data-device="Custom" data-i18n="device.custom">Custom</button>
             </div>
-            <div class="toolbar-right"><button>−</button><span>100%</span><button>+</button></div>
+            <div class="toolbar-right"><button id="zoom-out">−</button><span id="zoom-label">100%</span><button id="zoom-in">+</button></div>
           </div>
           <div class="stage">
-            <div class="device">
-              <div class="screen">
-                <div class="ui-part header-band"></div>
-                <div class="ui-part title-text selected">Main</div>
-                <div class="ui-part battery">82%</div>
-                <div class="ui-part temp">24.5°C</div>
-                <div class="ui-part status-card">READY · Wi-Fi connected</div>
-              </div>
+            <div class="device" id="device-frame">
+              <div class="screen" id="screen"></div>
             </div>
           </div>
-          <div class="statusbar"><span data-i18n="status.selection">Selected: Main.header.title</span><span>local 12,12 · absolute 12,12</span></div>
+          <div class="statusbar"><span id="status-selection" data-i18n="status.none">No selection</span><span id="status-coords"></span></div>
         </div>
 
         <div class="mode" data-mode="assets" hidden>
-          <div class="mainbar"><strong data-i18n="asset.preview">Asset preview</strong><button data-i18n="asset.import">Import</button></div>
+          <div class="mainbar"><strong data-i18n="asset.preview">Asset preview</strong><button id="btn-import-asset2" data-i18n="asset.import">Import</button></div>
           <div class="stage">
             <div class="preview-box">
               <div>
@@ -535,18 +583,9 @@
         <div class="mode" data-mode="export" hidden>
           <div class="mainbar"><strong data-i18n="export.preview">Export preview</strong><button class="primary" data-i18n="export.download">Download</button></div>
           <div class="stage">
-            <pre class="code"><code>#include &lt;LGFXScreenBuilder.h&gt;
-#include "ui_generated.h"
-
-LGFXScreenBuilder screen(display);
-
-Scene::Main main;
-main.header.title = "Main";
-main.header.battery = 82;
-main.body.temperature = "24.5C";
-screen.show(main);</code></pre>
+            <pre class="code"><code id="export-code"></code></pre>
           </div>
-          <div class="statusbar"><span>ui_generated.h</span><span>1 scene · 4 parts · 2 assets</span></div>
+          <div class="statusbar"><span>ui_generated.h</span><span id="export-stats"></span></div>
         </div>
 
         <div class="mode" data-mode="devices" hidden>
@@ -567,16 +606,9 @@ screen.show(main);</code></pre>
         <div class="mode" data-mode="design">
           <section class="section">
             <div class="section-head"><h2 data-i18n="property.title">Properties</h2></div>
-            <div class="form">
-              <div class="field"><label data-i18n="field.id">ID</label><input value="title"></div>
-              <div class="field"><label data-i18n="field.type">Type</label><select><option>Text</option><option>Image</option><option>Rect</option><option>Group</option></select></div>
-              <div class="two-col"><div class="field"><label>Local X</label><input type="number" value="12"></div><div class="field"><label>Local Y</label><input type="number" value="12"></div></div>
-              <div class="two-col"><div class="field"><label>Abs X</label><input type="number" value="12" readonly></div><div class="field"><label>Abs Y</label><input type="number" value="12" readonly></div></div>
-              <div class="field"><label data-i18n="field.previewText">Preview text</label><input value="Main"></div>
-              <div class="field"><label data-i18n="field.font">Font</label><select><option>Default 2</option><option>Noto Sans JP approximation</option></select><p class="hint warn" data-i18n="font.hint">Browser font preview is approximate.</p></div>
-            </div>
+            <div class="form" id="inspector-form"></div>
           </section>
-          <section class="section"><div class="section-head"><h2 data-i18n="export.api">Generated API</h2></div><pre class="code"><code>main.header.title = "Main";</code></pre></section>
+          <section class="section"><div class="section-head"><h2 data-i18n="export.api">Generated API</h2></div><pre class="code"><code id="inspector-api"></code></pre></section>
         </div>
 
         <div class="mode" data-mode="assets" hidden>
@@ -619,166 +651,680 @@ screen.show(main);</code></pre>
     </main>
   </div>
 
+  <div class="overlay" id="startup">
+    <div class="modal">
+      <h2 class="modal-title">LGFXScreenBuilder</h2>
+      <p class="modal-sub" data-i18n="start.lead">Create a new project, open an existing one, or restore the last session.</p>
+      <div class="modal-actions stack">
+        <button class="big" id="start-restore" data-i18n="start.restore">Restore last session</button>
+        <button class="big primary" id="start-new" data-i18n="start.new">New project</button>
+        <button class="big" id="start-open" data-i18n="start.open">Open project</button>
+      </div>
+      <p class="hint" data-i18n="start.autosaveNote">Restore appears only when an autosave exists.</p>
+    </div>
+  </div>
+
+  <div class="overlay" id="new-dialog" hidden>
+    <div class="modal">
+      <h2 class="modal-title" data-i18n="new.title">New project</h2>
+      <div class="form">
+        <div class="field"><label data-i18n="new.name">Project name</label><input id="new-name" value="MyScreen"></div>
+        <div class="field"><label data-i18n="new.device">Target device</label>
+          <select id="new-device">
+            <option value="Core2">M5Stack Core2 (320x240)</option>
+            <option value="CoreS3">M5Stack CoreS3 (320x240)</option>
+            <option value="Cardputer">M5Cardputer (240x135)</option>
+            <option value="Custom">Custom</option>
+          </select>
+        </div>
+        <div class="two-col" id="new-custom" hidden>
+          <div class="field"><label data-i18n="new.width">Width</label><input type="number" id="new-w" value="320"></div>
+          <div class="field"><label data-i18n="new.height">Height</label><input type="number" id="new-h" value="240"></div>
+        </div>
+        <div class="field"><label data-i18n="new.scene">First scene</label><input id="new-scene" value="Main"></div>
+      </div>
+      <div class="modal-actions">
+        <button id="new-cancel" data-i18n="new.cancel">Back</button>
+        <button class="primary" id="new-create" data-i18n="new.create">Create</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const messages = {
       en: {
         'app.status': 'Authoring mock',
-        'action.new': 'New',
-        'action.open': 'Open',
-        'action.save': 'Save Project',
-        'action.undo': 'Undo',
-        'action.redo': 'Redo',
-        'action.export': 'Export Arduino',
-        'language.label': 'Language',
-        'filter.placeholder': 'Filter by ID',
-        'rail.design': 'Design',
-        'rail.assets': 'Assets',
-        'rail.export': 'Export',
-        'rail.devices': 'Devices',
-        'scene.title': 'Scenes',
-        'layer.title': 'Layers',
-        'part.title': 'Parts',
-        'part.group': 'Group',
-        'part.text': 'Text',
-        'part.image': 'Image',
-        'part.rect': 'Rect',
+        'action.new': 'New', 'action.open': 'Open', 'action.save': 'Save Project',
+        'action.undo': 'Undo', 'action.redo': 'Redo', 'action.export': 'Export Arduino',
+        'language.label': 'Language', 'filter.placeholder': 'Filter by ID',
+        'rail.design': 'Design', 'rail.assets': 'Assets', 'rail.export': 'Export', 'rail.devices': 'Devices',
+        'scene.title': 'Scenes', 'layer.title': 'Layers', 'layer.group': 'Group', 'layer.ungroup': 'Ungroup', 'part.title': 'Parts',
+        'part.group': 'Group', 'part.text': 'Text', 'part.image': 'Image', 'part.rect': 'Rect',
         'device.custom': 'Custom',
-        'status.selection': 'Selected: Main.header.title',
-        'property.title': 'Properties',
-        'field.id': 'ID',
-        'field.type': 'Type',
-        'field.previewText': 'Preview text',
-        'field.font': 'Font',
+        'status.none': 'No selection', 'property.title': 'Properties',
+        'field.id': 'ID', 'field.type': 'Type', 'field.localX': 'Local X', 'field.localY': 'Local Y',
+        'field.width': 'W', 'field.height': 'H', 'field.absX': 'Abs X', 'field.absY': 'Abs Y',
+        'field.text': 'Text', 'field.fontSize': 'Font size', 'field.color': 'Color',
+        'field.visible': 'Visible', 'field.delete': 'Delete part',
+        'field.previewText': 'Preview text', 'field.font': 'Font',
         'font.hint': 'Browser font preview is approximate.',
-        'export.api': 'Generated API',
-        'asset.images': 'Images',
-        'asset.fonts': 'Fonts',
-        'asset.output': 'Output',
-        'asset.preview': 'Asset preview',
-        'asset.import': 'Import asset',
-        'asset.properties': 'Asset properties',
-        'asset.source': 'Source',
-        'asset.storage': 'Project storage',
-        'asset.exportFormat': 'Export format',
-        'asset.slice': 'Slices',
-        'export.files': 'Files',
-        'export.options': 'Options',
-        'export.preview': 'Export preview',
-        'export.download': 'Download',
-        'export.settings': 'Export settings',
-        'export.package': 'Package',
-        'export.assetMode': 'Assets',
-        'export.includeProject': 'Embed project JSON',
-        'export.checks': 'Checks',
-        'devices.presets': 'Presets',
-        'devices.overrides': 'Overrides',
-        'devices.preview': 'Device preview',
-        'devices.add': 'Add preset',
-        'devices.properties': 'Device properties',
-        'devices.rotation': 'Rotation',
-        'devices.override': 'Override target'
+        'export.api': 'Generated API', 'inspect.empty': 'Select a part on the canvas or in Layers.',
+        'asset.images': 'Images', 'asset.fonts': 'Fonts', 'asset.output': 'Output',
+        'asset.preview': 'Asset preview', 'asset.import': 'Import asset', 'asset.properties': 'Asset properties',
+        'asset.source': 'Source', 'asset.storage': 'Project storage', 'asset.exportFormat': 'Export format', 'asset.slice': 'Slices',
+        'export.files': 'Files', 'export.options': 'Options', 'export.preview': 'Export preview',
+        'export.download': 'Download', 'export.settings': 'Export settings', 'export.package': 'Package',
+        'export.assetMode': 'Assets', 'export.includeProject': 'Embed project JSON', 'export.checks': 'Checks',
+        'devices.presets': 'Presets', 'devices.overrides': 'Overrides', 'devices.preview': 'Device preview',
+        'devices.add': 'Add preset', 'devices.properties': 'Device properties', 'devices.rotation': 'Rotation', 'devices.override': 'Override target',
+        'scene.prompt': 'New scene ID',
+        'start.lead': 'Create a new project, open an existing one, or restore the last session.',
+        'start.restore': 'Restore last session', 'start.new': 'New project', 'start.open': 'Open project',
+        'start.autosaveNote': 'Restore appears only when an autosave exists.',
+        'new.title': 'New project', 'new.name': 'Project name', 'new.device': 'Target device',
+        'new.scene': 'First scene', 'new.create': 'Create', 'new.cancel': 'Back',
+        'new.width': 'Width', 'new.height': 'Height'
       },
       ja: {
         'app.status': 'オーサリング画面モック',
-        'action.new': '新規',
-        'action.open': '開く',
-        'action.save': 'プロジェクト保存',
-        'action.undo': '元に戻す',
-        'action.redo': 'やり直す',
-        'action.export': 'Arduino出力',
-        'language.label': '言語',
-        'filter.placeholder': 'IDで絞り込み',
-        'rail.design': '設計',
-        'rail.assets': '素材',
-        'rail.export': '出力',
-        'rail.devices': '機種',
-        'scene.title': 'シーン',
-        'layer.title': 'レイヤー',
-        'part.title': 'パーツ',
-        'part.group': 'グループ',
-        'part.text': 'テキスト',
-        'part.image': '画像',
-        'part.rect': '矩形',
+        'action.new': '新規', 'action.open': '開く', 'action.save': 'プロジェクト保存',
+        'action.undo': '元に戻す', 'action.redo': 'やり直す', 'action.export': 'Arduino出力',
+        'language.label': '言語', 'filter.placeholder': 'IDで絞り込み',
+        'rail.design': '設計', 'rail.assets': '素材', 'rail.export': '出力', 'rail.devices': '機種',
+        'scene.title': 'シーン', 'layer.title': 'レイヤー', 'layer.group': 'グループ化', 'layer.ungroup': '解除', 'part.title': 'パーツ',
+        'part.group': 'グループ', 'part.text': 'テキスト', 'part.image': '画像', 'part.rect': '矩形',
         'device.custom': 'カスタム',
-        'status.selection': '選択中: Main.header.title',
-        'property.title': 'プロパティ',
-        'field.id': 'ID',
-        'field.type': '種類',
-        'field.previewText': 'プレビュー文字列',
-        'field.font': 'フォント',
+        'status.none': '未選択', 'property.title': 'プロパティ',
+        'field.id': 'ID', 'field.type': '種類', 'field.localX': 'ローカルX', 'field.localY': 'ローカルY',
+        'field.width': '幅', 'field.height': '高さ', 'field.absX': '絶対X', 'field.absY': '絶対Y',
+        'field.text': '文字列', 'field.fontSize': '文字サイズ', 'field.color': '色',
+        'field.visible': '表示', 'field.delete': 'パーツ削除',
+        'field.previewText': 'プレビュー文字列', 'field.font': 'フォント',
         'font.hint': 'ブラウザ上のフォント表示は近似です。',
-        'export.api': '生成 API',
-        'asset.images': '画像',
-        'asset.fonts': 'フォント',
-        'asset.output': '出力形式',
-        'asset.preview': 'アセットプレビュー',
-        'asset.import': 'アセット追加',
-        'asset.properties': 'アセットプロパティ',
-        'asset.source': '元ファイル',
-        'asset.storage': 'プロジェクト保存',
-        'asset.exportFormat': '出力形式',
-        'asset.slice': 'スライス',
-        'export.files': 'ファイル',
-        'export.options': 'オプション',
-        'export.preview': '出力プレビュー',
-        'export.download': 'ダウンロード',
-        'export.settings': '出力設定',
-        'export.package': 'パッケージ',
-        'export.assetMode': 'アセット',
-        'export.includeProject': 'プロジェクトJSON埋め込み',
-        'export.checks': 'チェック',
-        'devices.presets': 'プリセット',
-        'devices.overrides': 'オーバーライド',
-        'devices.preview': '機種プレビュー',
-        'devices.add': 'プリセット追加',
-        'devices.properties': '機種プロパティ',
-        'devices.rotation': '回転',
-        'devices.override': 'オーバーライド対象'
+        'export.api': '生成 API', 'inspect.empty': 'キャンバスまたはレイヤーでパーツを選択してください。',
+        'asset.images': '画像', 'asset.fonts': 'フォント', 'asset.output': '出力形式',
+        'asset.preview': 'アセットプレビュー', 'asset.import': 'アセット追加', 'asset.properties': 'アセットプロパティ',
+        'asset.source': '元ファイル', 'asset.storage': 'プロジェクト保存', 'asset.exportFormat': '出力形式', 'asset.slice': 'スライス',
+        'export.files': 'ファイル', 'export.options': 'オプション', 'export.preview': '出力プレビュー',
+        'export.download': 'ダウンロード', 'export.settings': '出力設定', 'export.package': 'パッケージ',
+        'export.assetMode': 'アセット', 'export.includeProject': 'プロジェクトJSON埋め込み', 'export.checks': 'チェック',
+        'devices.presets': 'プリセット', 'devices.overrides': 'オーバーライド', 'devices.preview': '機種プレビュー',
+        'devices.add': 'プリセット追加', 'devices.properties': '機種プロパティ', 'devices.rotation': '回転', 'devices.override': 'オーバーライド対象',
+        'scene.prompt': '新しいシーンID',
+        'start.lead': '新規プロジェクトを作成、既存を開く、または前回の続きから復元します。',
+        'start.restore': '前回の続きから', 'start.new': '新規プロジェクト', 'start.open': 'プロジェクトを開く',
+        'start.autosaveNote': '「前回の続き」は自動保存がある場合のみ表示されます。',
+        'new.title': '新規プロジェクト', 'new.name': 'プロジェクト名', 'new.device': '対象デバイス',
+        'new.scene': '最初のシーン', 'new.create': '作成', 'new.cancel': '戻る',
+        'new.width': '幅', 'new.height': '高さ'
       }
     };
 
     const languageSelect = document.querySelector('#language-select');
     const supported = Object.keys(messages);
+    let lang = 'ja';
 
     function detectLanguage() {
       const stored = localStorage.getItem('lgfxsb.lang');
       if (supported.includes(stored)) return stored;
       return navigator.language.toLowerCase().startsWith('ja') ? 'ja' : 'en';
     }
-
-    function t(lang, key) {
-      return messages[lang]?.[key] || messages.en[key] || key;
-    }
-
-    function setLanguage(lang) {
-      const current = supported.includes(lang) ? lang : 'en';
-      document.documentElement.lang = current;
-      localStorage.setItem('lgfxsb.lang', current);
-      languageSelect.value = current;
-      document.querySelectorAll('[data-i18n]').forEach((node) => {
-        node.textContent = t(current, node.dataset.i18n);
-      });
-      document.querySelectorAll('[data-i18n-placeholder]').forEach((node) => {
-        node.placeholder = t(current, node.dataset.i18nPlaceholder);
-      });
+    function t(key) { return messages[lang]?.[key] || messages.en[key] || key; }
+    function setLanguage(next) {
+      lang = supported.includes(next) ? next : 'en';
+      document.documentElement.lang = lang;
+      localStorage.setItem('lgfxsb.lang', lang);
+      languageSelect.value = lang;
+      document.querySelectorAll('[data-i18n]').forEach((n) => { n.textContent = t(n.dataset.i18n); });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach((n) => { n.placeholder = t(n.dataset.i18nPlaceholder); });
+      renderInspector();
+      renderStatus();
     }
 
     function setMode(mode) {
-      document.querySelectorAll('[data-mode]').forEach((node) => {
-        node.hidden = node.dataset.mode !== mode;
-      });
-      document.querySelectorAll('[data-mode-button]').forEach((button) => {
-        button.classList.toggle('active', button.dataset.modeButton === mode);
-      });
+      document.querySelectorAll('[data-mode]').forEach((n) => { n.hidden = n.dataset.mode !== mode; });
+      document.querySelectorAll('[data-mode-button]').forEach((b) => { b.classList.toggle('active', b.dataset.modeButton === mode); });
+      if (mode === 'export') renderExport();
     }
 
-    document.querySelectorAll('[data-mode-button]').forEach((button) => {
-      button.addEventListener('click', () => setMode(button.dataset.modeButton));
+    document.querySelectorAll('[data-mode-button]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.modeButton)));
+    languageSelect.addEventListener('change', (e) => setLanguage(e.target.value));
+
+    /* ---------- Design engine ---------- */
+
+    const DEVICES = {
+      Core2: { w: 320, h: 240 }, CoreS3: { w: 320, h: 240 },
+      Cardputer: { w: 240, h: 135 }, Custom: { w: 320, h: 240 }
+    };
+    const DEFAULTS = {
+      Text:  { w: 96, h: 24, text: 'Text', fontSize: 16, color: '#ffffff' },
+      Image: { w: 64, h: 64 },
+      Rect:  { w: 120, h: 56, color: '#172126' },
+      Group: { w: 0, h: 0 }
+    };
+
+    const SAMPLE_PARTS = [
+      { id: 'header', type: 'Group', parent: null, x: 0, y: 0, visible: true },
+      { id: 'headerBand', type: 'Rect', parent: 'header', x: 0, y: 0, w: 320, h: 44, color: '#1e2a30', visible: true },
+      { id: 'title', type: 'Text', parent: 'header', x: 12, y: 12, w: 120, h: 24, text: 'Main', fontSize: 16, color: '#ffffff', visible: true },
+      { id: 'battery', type: 'Text', parent: 'header', x: 250, y: 14, w: 58, h: 20, text: '82%', fontSize: 13, color: '#9ce5ac', visible: true },
+      { id: 'body', type: 'Group', parent: null, x: 0, y: 44, visible: true },
+      { id: 'temperature', type: 'Text', parent: 'body', x: 18, y: 34, w: 180, h: 46, text: '24.5°C', fontSize: 38, color: '#ffffff', visible: true },
+      { id: 'statusPanel', type: 'Rect', parent: 'body', x: 18, y: 110, w: 284, h: 54, color: '#172126', visible: true }
+    ];
+
+    // state.parts always points at the current scene's parts array.
+    const state = {
+      project: { name: 'Untitled', device: 'Core2' },
+      device: 'Core2',
+      zoom: 1.5,
+      selectedId: null,
+      seq: 100,
+      assetSeq: 1,
+      scenes: [],
+      currentScene: null,
+      parts: []
+    };
+
+    const screenEl = document.querySelector('#screen');
+    const deviceFrame = document.querySelector('#device-frame');
+    const layerTree = document.querySelector('#layer-tree');
+    const inspectorForm = document.querySelector('#inspector-form');
+    const sceneList = document.querySelector('#scene-list');
+
+    const byId = (id) => state.parts.find((p) => p.id === id);
+    const childrenOf = (id) => state.parts.filter((p) => p.parent === id);
+    const curScene = () => state.scenes.find((s) => s.id === state.currentScene);
+
+    function absOrigin(part) {
+      let x = part.x, y = part.y, cur = part;
+      while (cur.parent) { cur = byId(cur.parent); x += cur.x; y += cur.y; }
+      return { x, y };
+    }
+    function groupBBox(group) {
+      const leaves = state.parts.filter((p) => p.type !== 'Group' && isDescendant(p, group.id));
+      if (!leaves.length) { const o = absOrigin(group); return { x: o.x, y: o.y, w: 40, h: 24 }; }
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      leaves.forEach((p) => { const o = absOrigin(p); minX = Math.min(minX, o.x); minY = Math.min(minY, o.y); maxX = Math.max(maxX, o.x + p.w); maxY = Math.max(maxY, o.y + p.h); });
+      return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+    }
+    function isDescendant(part, ancestorId) {
+      let cur = part;
+      while (cur.parent) { if (cur.parent === ancestorId) return true; cur = byId(cur.parent); }
+      return false;
+    }
+    function pathOf(part) {
+      const names = [part.id]; let cur = part;
+      while (cur.parent) { cur = byId(cur.parent); names.unshift(cur.id); }
+      return 'Main.' + names.join('.');
+    }
+
+    const HANDLES = [['nw',0,0],['n',0.5,0],['ne',1,0],['e',1,0.5],['se',1,1],['s',0.5,1],['sw',0,1],['w',0,0.5]];
+
+    function renderCanvas() {
+      const dev = DEVICES[state.device], z = state.zoom;
+      screenEl.style.width = dev.w * z + 'px';
+      screenEl.style.height = dev.h * z + 'px';
+      screenEl.innerHTML = '';
+      const selPart = byId(state.selectedId);
+
+      state.parts.forEach((p) => {
+        // Group is a logical node: draw the dashed frame only when the group
+        // itself or one of its descendants is selected (context outline).
+        if (p.type === 'Group') {
+          const groupSel = p.id === state.selectedId;
+          const descSel = selPart && isDescendant(selPart, p.id);
+          if (!groupSel && !descSel) return;
+          const box = groupBBox(p);
+          const g = document.createElement('div');
+          g.className = 'part group ' + (groupSel ? 'selected' : 'context');
+          g.dataset.id = p.id;
+          g.style.left = box.x * z + 'px';
+          g.style.top = box.y * z + 'px';
+          g.style.width = box.w * z + 'px';
+          g.style.height = box.h * z + 'px';
+          if (groupSel) {
+            const tag = document.createElement('span');
+            tag.className = 'group-tag';
+            tag.textContent = p.id;
+            tag.dataset.drag = p.id;
+            g.appendChild(tag);
+          }
+          screenEl.appendChild(g);
+          return;
+        }
+
+        const el = document.createElement('div');
+        el.className = 'part ' + p.type.toLowerCase();
+        el.dataset.id = p.id;
+        el.dataset.drag = p.id;
+        if (p.id === state.selectedId) el.classList.add('selected');
+        if (!p.visible) el.classList.add('hidden-part');
+
+        const o = absOrigin(p);
+        el.style.left = o.x * z + 'px';
+        el.style.top = o.y * z + 'px';
+        el.style.width = p.w * z + 'px';
+        el.style.height = p.h * z + 'px';
+
+        if (p.type === 'Text') {
+          el.style.color = p.color;
+          el.style.fontSize = p.fontSize * z + 'px';
+          el.style.fontWeight = '650';
+          el.textContent = p.text;
+        } else if (p.type === 'Rect') {
+          el.style.background = p.color;
+        } else if (p.type === 'Image') {
+          el.textContent = p.id;
+        }
+        screenEl.appendChild(el);
+      });
+
+      // resize handles for selected non-group
+      const sel = byId(state.selectedId);
+      if (sel && sel.type !== 'Group') {
+        const o = absOrigin(sel);
+        HANDLES.forEach(([dir, fx, fy]) => {
+          const h = document.createElement('div');
+          h.className = 'handle ' + dir;
+          h.dataset.resize = dir;
+          h.style.left = (o.x + sel.w * fx) * z - 4.5 + 'px';
+          h.style.top = (o.y + sel.h * fy) * z - 4.5 + 'px';
+          screenEl.appendChild(h);
+        });
+      }
+    }
+
+    function renderLayers() {
+      layerTree.innerHTML = '';
+      // front (drawn last) at top -> iterate roots reversed, depth-first reversed
+      const build = (parentId, depth) => {
+        const kids = childrenOf(parentId).slice().reverse();
+        kids.forEach((p) => {
+          const row = document.createElement('div');
+          row.className = 'tree-row' + (p.id === state.selectedId ? ' active' : '');
+          row.style.paddingLeft = (8 + depth * 18) + 'px';
+          row.draggable = true;
+          row.dataset.select = p.id;
+          const caret = p.type === 'Group' ? '▾' : '';
+          row.innerHTML = '<span>' + caret + '</span><span>' + p.id + '</span><span class="type">' + p.type + '</span>';
+          const acts = document.createElement('span');
+          acts.className = 'layer-actions';
+          acts.innerHTML = '<button data-front="' + p.id + '">↑</button><button data-back="' + p.id + '">↓</button>';
+          row.appendChild(acts);
+          layerTree.appendChild(row);
+          if (p.type === 'Group') build(p.id, depth + 1);
+        });
+      };
+      build(null, 0);
+    }
+
+    function field(labelKey, inner) {
+      return '<div class="field"><label data-i18n="' + labelKey + '">' + t(labelKey) + '</label>' + inner + '</div>';
+    }
+
+    function renderInspector() {
+      const p = byId(state.selectedId);
+      if (!p) { inspectorForm.innerHTML = '<p class="empty-hint">' + t('inspect.empty') + '</p>'; renderApi(); return; }
+      const o = absOrigin(p);
+      let html = '';
+      html += field('field.id', '<input data-prop="id" value="' + p.id + '">');
+      html += field('field.type', '<select data-prop="type">' + ['Text','Image','Rect','Group'].map((tp) => '<option' + (tp === p.type ? ' selected' : '') + '>' + tp + '</option>').join('') + '</select>');
+      html += '<div class="two-col">' + field('field.localX', '<input type="number" data-prop="x" value="' + p.x + '">') + field('field.localY', '<input type="number" data-prop="y" value="' + p.y + '">') + '</div>';
+      if (p.type !== 'Group') {
+        html += '<div class="two-col">' + field('field.width', '<input type="number" data-prop="w" value="' + p.w + '">') + field('field.height', '<input type="number" data-prop="h" value="' + p.h + '">') + '</div>';
+        html += '<div class="two-col">' + field('field.absX', '<input type="number" value="' + o.x + '" readonly>') + field('field.absY', '<input type="number" value="' + o.y + '" readonly>') + '</div>';
+      }
+      if (p.type === 'Text') {
+        html += field('field.text', '<input data-prop="text" value="' + (p.text || '') + '">');
+        html += field('field.fontSize', '<input type="number" data-prop="fontSize" value="' + p.fontSize + '">');
+      }
+      if (p.type === 'Text' || p.type === 'Rect') {
+        html += field('field.color', '<input type="color" data-prop="color" value="' + p.color + '">');
+      }
+      if (p.type === 'Text') {
+        html += field('field.font', '<select><option>Default 2</option><option>Noto Sans JP approximation</option></select>') + '<p class="hint warn">' + t('font.hint') + '</p>';
+      }
+      if (p.type !== 'Group') {
+        html += '<div class="field row"><input type="checkbox" data-prop="visible"' + (p.visible ? ' checked' : '') + '><label data-i18n="field.visible">' + t('field.visible') + '</label></div>';
+      }
+      html += '<button data-delete="' + p.id + '" data-i18n="field.delete">' + t('field.delete') + '</button>';
+      inspectorForm.innerHTML = html;
+
+      inspectorForm.querySelectorAll('[data-prop]').forEach((input) => {
+        const evt = (input.type === 'checkbox' || input.type === 'color' || input.tagName === 'SELECT') ? 'change' : 'input';
+        input.addEventListener(evt, () => applyProp(p, input));
+      });
+      inspectorForm.querySelector('[data-delete]')?.addEventListener('click', () => deletePart(p.id));
+      renderApi();
+    }
+
+    function applyProp(p, input) {
+      const prop = input.dataset.prop;
+      if (prop === 'visible') { p.visible = input.checked; }
+      else if (prop === 'id') { p.id = input.value.trim() || p.id; state.selectedId = p.id; }
+      else if (['x','y','w','h','fontSize'].includes(prop)) { p[prop] = Number(input.value) || 0; }
+      else { p[prop] = input.value; }
+      renderCanvas(); renderLayers(); renderStatus(); renderApi();
+      if (prop === 'id' || prop === 'type') renderInspector();
+    }
+
+    function renderApi() {
+      const el = document.querySelector('#inspector-api');
+      const p = byId(state.selectedId);
+      if (!p) { el.textContent = '// ' + t('inspect.empty'); return; }
+      const path = pathOf(p);
+      if (p.type === 'Text') el.textContent = path + ' = "' + (p.text || '') + '";';
+      else if (p.type === 'Group') el.textContent = '// ' + path + ' (group)';
+      else el.textContent = '// ' + path + ' (' + p.type + ')';
+    }
+
+    function renderStatus() {
+      const p = byId(state.selectedId);
+      const selEl = document.querySelector('#status-selection');
+      const coordEl = document.querySelector('#status-coords');
+      if (!p) { selEl.textContent = t('status.none'); coordEl.textContent = ''; return; }
+      const o = absOrigin(p);
+      selEl.textContent = pathOf(p);
+      coordEl.textContent = 'local ' + p.x + ',' + p.y + ' · absolute ' + o.x + ',' + o.y;
+    }
+
+    function renderExport() {
+      const main = byId('title');
+      const lines = ['#include <LGFXScreenBuilder.h>', '#include "ui_generated.h"', '',
+        'LGFXScreenBuilder screen(display);', '', 'Scene::Main main;'];
+      childrenOf('header').filter((p) => p.type === 'Text').forEach((p) => { lines.push('main.header.' + p.id + ' = "' + (p.text || '') + '";'); });
+      childrenOf('body').filter((p) => p.type === 'Text').forEach((p) => { lines.push('main.body.' + p.id + ' = "' + (p.text || '') + '";'); });
+      lines.push('screen.show(main);');
+      document.querySelector('#export-code').textContent = lines.join('\n');
+      const parts = state.parts.length;
+      document.querySelector('#export-stats').textContent = '1 scene · ' + parts + ' parts';
+    }
+
+    function renderAll() { renderScenes(); renderCanvas(); renderLayers(); renderInspector(); renderStatus(); }
+
+    function renderScenes() {
+      sceneList.innerHTML = '';
+      state.scenes.forEach((s) => {
+        const it = document.createElement('div');
+        it.className = 'item' + (s.id === state.currentScene ? ' active' : '');
+        it.dataset.scene = s.id;
+        it.innerHTML = '<span class="name">' + s.id + '</span><span class="meta">' + s.parts.length + '</span>';
+        sceneList.appendChild(it);
+      });
+    }
+    function switchScene(id) {
+      state.currentScene = id;
+      state.parts = curScene().parts;
+      state.selectedId = null;
+      renderAll();
+    }
+    function applyDeviceTabs() {
+      document.querySelectorAll('#device-tabs button').forEach((b) => b.classList.toggle('active', b.dataset.device === state.device));
+    }
+
+    function select(id) { state.selectedId = id; renderCanvas(); renderLayers(); renderInspector(); renderStatus(); }
+
+    function addPart(type) {
+      const sel = byId(state.selectedId);
+      const parent = sel ? (sel.type === 'Group' ? sel.id : sel.parent) : null;
+      const d = DEFAULTS[type];
+      const n = state.seq++;
+      const id = type.toLowerCase() + n;
+      const cascade = (childrenOf(parent).length % 6) * 8;
+      const part = { id, type, parent, x: 20 + cascade, y: 20 + cascade, visible: true };
+      if (type !== 'Group') { part.w = d.w; part.h = d.h; }
+      if (type === 'Text') { part.text = d.text; part.fontSize = d.fontSize; part.color = d.color; }
+      if (type === 'Rect') { part.color = d.color; }
+      state.parts.push(part);
+      select(id);
+    }
+
+    function deletePart(id) {
+      const remove = new Set([id]);
+      state.parts.forEach((p) => { if (isDescendant(p, id)) remove.add(p.id); });
+      state.parts = state.parts.filter((p) => !remove.has(p.id));
+      if (curScene()) curScene().parts = state.parts;
+      state.selectedId = null;
+      renderAll();
+    }
+
+    function reorder(id, dir) {
+      const p = byId(id);
+      const sibs = childrenOf(p.parent);
+      const sibIdx = sibs.indexOf(p);
+      const target = dir === 'front' ? sibs[sibIdx + 1] : sibs[sibIdx - 1];
+      if (!target) return;
+      const gi = state.parts.indexOf(p), gj = state.parts.indexOf(target);
+      state.parts[gi] = target; state.parts[gj] = p;
+      renderCanvas(); renderLayers();
+    }
+
+    // Move a part under a new parent (or root), keeping its absolute position.
+    function reparent(part, newParentId) {
+      if (!part || newParentId === part.id) return false;
+      if (part.parent === newParentId) return false;
+      if (newParentId) {
+        const np = byId(newParentId);
+        if (np.type !== 'Group') return false;           // only groups can contain
+        if (isDescendant(np, part.id)) return false;      // no cycles
+      }
+      const before = absOrigin(part);
+      const base = newParentId ? absOrigin(byId(newParentId)) : { x: 0, y: 0 };
+      part.parent = newParentId;
+      part.x = before.x - base.x;
+      part.y = before.y - base.y;
+      return true;
+    }
+
+    // Wrap the current selection in a new Group (keeps absolute position).
+    function groupSelection() {
+      const p = byId(state.selectedId);
+      if (!p) return;
+      const gid = 'group' + state.seq++;
+      const g = { id: gid, type: 'Group', parent: p.parent, x: 0, y: 0, visible: true };
+      state.parts.splice(state.parts.indexOf(p), 0, g);
+      reparent(p, gid);
+      select(gid);
+    }
+
+    // Dissolve a group: move its children up to the group's parent.
+    function ungroup() {
+      const g = byId(state.selectedId);
+      if (!g || g.type !== 'Group') return;
+      const kids = childrenOf(g.id);
+      kids.forEach((k) => reparent(k, g.parent));
+      state.parts = state.parts.filter((x) => x.id !== g.id);
+      if (curScene()) curScene().parts = state.parts;
+      state.selectedId = kids[0] ? kids[0].id : null;
+      renderAll();
+    }
+
+    /* pointer drag + resize */
+    let drag = null;
+    screenEl.addEventListener('pointerdown', (e) => {
+      const resize = e.target.dataset.resize;
+      const dragId = e.target.dataset.drag;
+      if (resize) {
+        const p = byId(state.selectedId); if (!p) return;
+        drag = { mode: 'resize', dir: resize, p, sx: e.clientX, sy: e.clientY, ox: p.x, oy: p.y, ow: p.w, oh: p.h };
+      } else if (dragId) {
+        const p = byId(dragId);
+        select(dragId);
+        drag = { mode: 'move', p, sx: e.clientX, sy: e.clientY, ox: p.x, oy: p.y };
+      } else {
+        select(null); return;
+      }
+      screenEl.setPointerCapture(e.pointerId);
+      e.preventDefault();
     });
-    languageSelect.addEventListener('change', (event) => setLanguage(event.target.value));
+    screenEl.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const z = state.zoom;
+      const dx = Math.round((e.clientX - drag.sx) / z);
+      const dy = Math.round((e.clientY - drag.sy) / z);
+      const p = drag.p;
+      if (drag.mode === 'move') { p.x = drag.ox + dx; p.y = drag.oy + dy; }
+      else {
+        const d = drag.dir;
+        if (d.includes('e')) p.w = Math.max(8, drag.ow + dx);
+        if (d.includes('s')) p.h = Math.max(8, drag.oh + dy);
+        if (d.includes('w')) { p.w = Math.max(8, drag.ow - dx); p.x = drag.ox + (drag.ow - p.w); }
+        if (d.includes('n')) { p.h = Math.max(8, drag.oh - dy); p.y = drag.oy + (drag.oh - p.h); }
+      }
+      renderCanvas(); renderStatus();
+    });
+    screenEl.addEventListener('pointerup', () => { if (drag) { drag = null; renderInspector(); } });
+
+    layerTree.addEventListener('click', (e) => {
+      const front = e.target.dataset.front, back = e.target.dataset.back;
+      if (front) { reorder(front, 'front'); return; }
+      if (back) { reorder(back, 'back'); return; }
+      const row = e.target.closest('[data-select]');
+      if (row) select(row.dataset.select);
+    });
+
+    let draggedId = null;
+    const clearDrop = () => layerTree.querySelectorAll('.drop-target, .dragging').forEach((r) => r.classList.remove('drop-target', 'dragging'));
+    layerTree.addEventListener('dragstart', (e) => {
+      const row = e.target.closest('[data-select]');
+      if (!row) return;
+      draggedId = row.dataset.select;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    layerTree.addEventListener('dragover', (e) => {
+      if (!draggedId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      layerTree.querySelectorAll('.drop-target').forEach((r) => r.classList.remove('drop-target'));
+      const row = e.target.closest('[data-select]');
+      if (row && row.dataset.select !== draggedId) row.classList.add('drop-target');
+    });
+    layerTree.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const row = e.target.closest('[data-select]');
+      const dragged = byId(draggedId);
+      clearDrop();
+      if (!dragged) { draggedId = null; return; }
+      // Drop onto a Group row -> nest inside; onto another part -> become its sibling;
+      // onto empty tree area -> move to scene root.
+      let newParent = null;
+      if (row && row.dataset.select !== draggedId) {
+        const target = byId(row.dataset.select);
+        newParent = target.type === 'Group' ? target.id : target.parent;
+      }
+      if (reparent(dragged, newParent)) { renderAll(); select(dragged.id); }
+      draggedId = null;
+    });
+    layerTree.addEventListener('dragend', () => { clearDrop(); draggedId = null; });
+
+    document.querySelector('#btn-group').addEventListener('click', groupSelection);
+    document.querySelector('#btn-ungroup').addEventListener('click', ungroup);
+
+    document.querySelectorAll('[data-add-part]').forEach((el) => el.addEventListener('click', () => addPart(el.dataset.addPart)));
+
+    document.querySelector('#device-tabs').addEventListener('click', (e) => {
+      const dev = e.target.dataset.device; if (!dev) return;
+      state.device = dev;
+      document.querySelectorAll('#device-tabs button').forEach((b) => b.classList.toggle('active', b.dataset.device === dev));
+      renderCanvas();
+    });
+
+    function setZoom(z) { state.zoom = Math.max(0.6, Math.min(3, Math.round(z * 10) / 10)); document.querySelector('#zoom-label').textContent = Math.round(state.zoom * 100) + '%'; renderCanvas(); }
+    document.querySelector('#zoom-in').addEventListener('click', () => setZoom(state.zoom + 0.2));
+    document.querySelector('#zoom-out').addEventListener('click', () => setZoom(state.zoom - 0.2));
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedId && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT' && document.activeElement.tagName !== 'TEXTAREA') {
+        deletePart(state.selectedId);
+      }
+    });
+
+    /* ---------- Project lifecycle / startup flow ---------- */
+
+    function deepParts(arr) { return arr.map((p) => Object.assign({}, p)); }
+
+    function loadSampleProject() {
+      state.project = { name: 'Sample', device: 'Core2' };
+      state.device = 'Core2';
+      state.scenes = [
+        { id: 'Boot', parts: [] },
+        { id: 'Main', parts: deepParts(SAMPLE_PARTS) },
+        { id: 'Settings', parts: [] }
+      ];
+      state.currentScene = 'Main';
+      state.parts = curScene().parts;
+      state.selectedId = null;
+      applyDeviceTabs();
+    }
+    function newProject(device, name, firstScene) {
+      state.project = { name, device };
+      state.device = device;
+      state.scenes = [{ id: firstScene, parts: [] }];
+      state.currentScene = firstScene;
+      state.parts = curScene().parts;
+      state.selectedId = null;
+      applyDeviceTabs();
+    }
+
+    const startup = document.querySelector('#startup');
+    const newDialog = document.querySelector('#new-dialog');
+
+    function openProject() { loadSampleProject(); startup.hidden = true; newDialog.hidden = true; setMode('design'); renderAll(); }
+    function openNewDialog() { startup.hidden = true; newDialog.hidden = false; }
+
+    document.querySelector('#start-new').addEventListener('click', openNewDialog);
+    document.querySelector('#start-open').addEventListener('click', openProject);
+    document.querySelector('#start-restore').addEventListener('click', openProject);
+    document.querySelector('#new-cancel').addEventListener('click', () => { newDialog.hidden = true; startup.hidden = false; });
+    document.querySelector('#new-device').addEventListener('change', (e) => { document.querySelector('#new-custom').hidden = e.target.value !== 'Custom'; });
+    document.querySelector('#new-create').addEventListener('click', () => {
+      const name = (document.querySelector('#new-name').value || 'Untitled').trim();
+      const device = document.querySelector('#new-device').value;
+      const scene = (document.querySelector('#new-scene').value || 'Main').trim();
+      if (device === 'Custom') {
+        DEVICES.Custom = { w: Number(document.querySelector('#new-w').value) || 320, h: Number(document.querySelector('#new-h').value) || 240 };
+      }
+      newProject(device, name, scene);
+      newDialog.hidden = true;
+      setMode('design');
+      renderAll();
+    });
+
+    document.querySelector('#btn-new').addEventListener('click', openNewDialog);
+    document.querySelector('#btn-open').addEventListener('click', openProject);
+
+    /* Scenes */
+    sceneList.addEventListener('click', (e) => {
+      const it = e.target.closest('[data-scene]');
+      if (it) switchScene(it.dataset.scene);
+    });
+    document.querySelector('#btn-add-scene').addEventListener('click', () => {
+      if (!state.currentScene) return;
+      const name = (prompt(t('scene.prompt'), 'Scene' + (state.scenes.length + 1)) || '').trim();
+      if (!name || state.scenes.some((s) => s.id === name)) return;
+      state.scenes.push({ id: name, parts: [] });
+      switchScene(name);
+    });
+
+    /* Assets (lightweight import) */
+    function importAsset() {
+      const list = document.querySelector('#asset-image-list');
+      const id = 'image' + (state.assetSeq++);
+      list.querySelectorAll('.item').forEach((x) => x.classList.remove('active'));
+      const it = document.createElement('div');
+      it.className = 'item active';
+      it.innerHTML = '<span class="name">' + id + '</span><span class="meta">PNG</span>';
+      list.prepend(it);
+    }
+    document.querySelector('#btn-import-asset').addEventListener('click', importAsset);
+    document.querySelector('#btn-import-asset2').addEventListener('click', importAsset);
 
     setLanguage(detectLanguage());
     setMode('design');
+    setZoom(state.zoom);
+    renderAll();
   </script>
 </body>
 </html>
