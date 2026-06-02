@@ -3,19 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Design / per-profile layout probe — LGFXScreenBuilder</title>
+  <title>Design / scenes × per-profile layout probe — LGFXScreenBuilder</title>
   <!--
-    使い捨てプローブ: Design でのプロファイル別レイアウト編集の手触り検証専用。
-    確定モデル（オーバーライド概念なし）:
-      - 各プロファイルは独立したフルレイアウトを持つ
-      - プロファイルタブ切替＝そのプロファイルの配置を「直接」編集する
-      - 新規プロファイルはクローンで開始（既存の好きなプロファイルから複製）
-      - 継承/上書きの概念・バッジ・「ベースに戻す」は無い
-      - default はランタイム fallback 用の純粋なフラグ（レイアウト保存とは独立）
+    使い捨てプローブ: Design の二軸操作（シーン × プロファイル別レイアウト）の手触り検証専用。
+    確定モデル:
+      - 二軸が直交する:
+          横タブ      = プロファイル（どの機種の配置を見るか）
+          左ペイン上段 = シーン（どの画面か。各シーンが構造体を生成）
+      - 各プロファイルは「シーンごとに」独立したフルレイアウトを持つ（profile.layout[sceneId][partId]）
+      - シーン切替＝そのシーンのパーツ集合とキャンバスが入れ替わる
+      - プロファイル切替＝同じシーンを別機種の配置で見る/編集する
+      - オーバーライド/継承の概念・バッジ・「ベースに戻す」は無い
+      - プロファイルの追加（クローンで新規）は Profiles 画面の責務（ここには置かない）
+      - default はランタイム fallback 用の純粋なフラグ（表示のみ。編集は Profiles 画面）
       - default プロファイルとの差分ハイライトは将来検討（後回し §8.13）。本プローブには出さない
     ※本番には移さない。docs/ とは分離。
-
-    旧版との違い: ベース＋差分(ov)モデルを撤去し、profile.layout[partId] にフルセットを保持する形へ。
   -->
   <style>
     :root{
@@ -37,7 +39,7 @@
     .right{border-left:1px solid var(--line);background:var(--panel)}
     .center{background:#dce6e8;display:grid;grid-template-rows:auto auto 1fr auto;min-height:0}
     .section{padding:12px;border-bottom:1px solid var(--line)}
-    h2{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    h2{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
     .tabs{display:flex;gap:6px;flex-wrap:wrap;align-items:stretch;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line)}
     .tab{display:grid;gap:1px;justify-items:start;border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;background:var(--panel);min-width:96px;position:relative}
     .tab.active{border-color:var(--accent);background:var(--accent-soft)}
@@ -53,6 +55,10 @@
     .part.hidden{opacity:.25}
     .statusbar{display:flex;justify-content:space-between;gap:8px;padding:8px 12px;border-top:1px solid var(--line);background:rgba(255,255,255,.8);color:var(--muted);font-size:12px}
     .list{display:grid;gap:4px}
+    .sitem{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px;border:1px solid transparent;border-radius:6px;padding:6px 8px;cursor:pointer;font-size:13px}
+    .sitem:hover{background:var(--soft)}
+    .sitem.active{border-color:var(--accent);background:var(--accent-soft);font-weight:650}
+    .sitem .cnt{color:var(--muted);font-size:11px}
     .pitem{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px;border:1px solid transparent;border-radius:6px;padding:6px 8px;cursor:pointer;font-size:13px}
     .pitem:hover{background:var(--soft)}
     .pitem.active{border-color:#8fcac5;background:#e1f2f0}
@@ -62,7 +68,7 @@
     .field input,.field select{width:100%;min-height:30px;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--panel);color:var(--text)}
     .field textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--panel);color:var(--text);resize:vertical;min-height:42px;font:inherit}
     .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .mini{min-height:26px;padding:0 8px;font-size:12px;border-radius:5px}
+    .mini{min-height:24px;padding:0 8px;font-size:12px;border-radius:5px}
     .sub{color:var(--muted);font-size:12px}
     .zbar{display:flex;gap:6px;align-items:center;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--line)}
     .tips{position:fixed;right:14px;bottom:14px;z-index:20;background:rgba(23,33,38,.92);color:#cfe0e3;border:1px solid #33454d;border-radius:8px;padding:8px 10px;font-size:11px;line-height:1.6;box-shadow:0 10px 28px rgba(0,0,0,.28);max-width:250px}
@@ -73,24 +79,29 @@
 </head>
 <body>
   <header class="topbar">
-    <h1>Design — プロファイル別レイアウト</h1>
-    <span class="note">使い捨てプローブ — タブでプロファイル切替＝そのプロファイルの配置を直接編集。各プロファイルは独立（上書き概念なし）</span>
+    <h1>Design — シーン × プロファイル別レイアウト</h1>
+    <span class="note">使い捨てプローブ — 左ペイン=シーン、上タブ=プロファイル（直交）。各プロファイルがシーンごとに独立レイアウトを持つ</span>
   </header>
 
   <div class="tips" id="tips">
     <span class="x" onclick="this.parentNode.style.display='none'">×</span>
     <b>操作のヒント</b>
-    タブ：プロファイル切替（各々が独立レイアウト）<br>
+    左ペイン上段：シーン切替（画面の切替）<br>
+    上タブ：プロファイル切替（機種の配置）<br>
     パーツドラッグ：移動<br>
     <kbd>矢印</kbd> 移動（<kbd>Shift</kbd>=10px）<br>
-    <kbd>Ctrl</kbd>+<kbd>矢印</kbd> リサイズ／<kbd>Del</kbd> 不可（パーツ追加削除はSceneで）<br>
+    <kbd>Ctrl</kbd>+<kbd>矢印</kbd> リサイズ<br>
     ホイール：拡大縮小／中ボタン＋ドラッグ：パン
   </div>
 
   <div class="cols">
     <aside class="left">
       <div class="section">
-        <h2>Parts（このプロファイルの配置）</h2>
+        <h2>Scenes（画面）</h2>
+        <div class="list" id="scene-list"></div>
+      </div>
+      <div class="section">
+        <h2 id="parts-title">Parts</h2>
         <div class="list" id="part-list"></div>
       </div>
       <div class="section">
@@ -123,49 +134,107 @@
   </div>
 
   <script>
-    // パーツ定義（生成構造体に対応する不変部分: ID + 型 のみ）。座標/サイズ/スタイルは各プロファイルが保持。
-    const partDefs=[
-      {id:'headerBand',type:'rect',desc:''},
-      {id:'title',     type:'text',desc:''},
-      {id:'battery',   type:'text',desc:''},
-      {id:'temp',      type:'text',desc:'メイン計測値。機種ごとに最大化したい'},
-      {id:'panel',     type:'rect',desc:''},
+    // シーン定義（各シーンが構造体を生成する単位）。parts は ID + 型 + 備考のみ（不変部分）。
+    const scenes=[
+      {id:'Boot', desc:'起動直後に一瞬だけ出すスプラッシュ', parts:[
+        {id:'logo',type:'rect',desc:''},
+        {id:'boot',type:'text',desc:'起動メッセージ'},
+      ]},
+      {id:'Main', desc:'', parts:[
+        {id:'headerBand',type:'rect',desc:''},
+        {id:'title',     type:'text',desc:''},
+        {id:'battery',   type:'text',desc:''},
+        {id:'temp',      type:'text',desc:'メイン計測値。機種ごとに最大化したい'},
+        {id:'panel',     type:'rect',desc:''},
+      ]},
+      {id:'Settings', desc:'', parts:[
+        {id:'header',type:'rect',desc:''},
+        {id:'ttl',   type:'text',desc:''},
+        {id:'row1',  type:'text',desc:''},
+      ]},
     ];
-    const partDef=id=>partDefs.find(p=>p.id===id);
 
-    // 各プロファイルは layout[partId] に「全項目」を独立保持（base/override の差分概念なし）。
+    // 各プロファイルは layout[sceneId][partId] に「全項目」を独立保持（base/override の差分概念なし）。
     function L(x,y,w,h,visible,extra){return Object.assign({x,y,w,h,visible},extra||{});}
     const profiles=[
       {id:'Core',w:320,h:240,rotation:1,default:true,layout:{
-        headerBand:L(0,0,320,40,true,{color:'#1e2a30'}),
-        title:     L(12,10,140,22,true,{text:'Main',font:16,color:'#ffffff'}),
-        battery:   L(250,12,60,18,true,{text:'82%',font:13,color:'#9ce5ac'}),
-        temp:      L(18,70,180,44,true,{text:'24.5C',font:34,color:'#ffffff'}),
-        panel:     L(18,150,284,54,true,{color:'#172126'}),
+        Boot:{
+          logo:L(110,80,100,60,true,{color:'#1e2a30'}),
+          boot:L(100,150,120,20,true,{text:'Booting...',font:16,color:'#9ce5ac'}),
+        },
+        Main:{
+          headerBand:L(0,0,320,40,true,{color:'#1e2a30'}),
+          title:     L(12,10,140,22,true,{text:'Main',font:16,color:'#ffffff'}),
+          battery:   L(250,12,60,18,true,{text:'82%',font:13,color:'#9ce5ac'}),
+          temp:      L(18,70,180,44,true,{text:'24.5C',font:34,color:'#ffffff'}),
+          panel:     L(18,150,284,54,true,{color:'#172126'}),
+        },
+        Settings:{
+          header:L(0,0,320,40,true,{color:'#1e2a30'}),
+          ttl:   L(12,10,160,22,true,{text:'Settings',font:16,color:'#ffffff'}),
+          row1:  L(18,60,284,20,true,{text:'Wi-Fi',font:16,color:'#ffffff'}),
+        },
       }},
       {id:'Cardputer',w:240,h:135,rotation:1,default:false,layout:{
-        headerBand:L(0,0,240,26,true,{color:'#1e2a30'}),
-        title:     L(8,5,120,16,true,{text:'Main',font:13,color:'#ffffff'}),
-        battery:   L(186,6,50,14,true,{text:'82%',font:11,color:'#9ce5ac'}),
-        temp:      L(12,40,150,34,true,{text:'24.5C',font:26,color:'#ffffff'}),
-        panel:     L(12,86,216,40,false,{color:'#172126'}),
+        Boot:{
+          logo:L(80,30,80,40,true,{color:'#1e2a30'}),
+          boot:L(60,80,120,16,true,{text:'Booting...',font:13,color:'#9ce5ac'}),
+        },
+        Main:{
+          headerBand:L(0,0,240,26,true,{color:'#1e2a30'}),
+          title:     L(8,5,120,16,true,{text:'Main',font:13,color:'#ffffff'}),
+          battery:   L(186,6,50,14,true,{text:'82%',font:11,color:'#9ce5ac'}),
+          temp:      L(12,40,150,34,true,{text:'24.5C',font:26,color:'#ffffff'}),
+          panel:     L(12,86,216,40,false,{color:'#172126'}),
+        },
+        Settings:{
+          header:L(0,0,240,26,true,{color:'#1e2a30'}),
+          ttl:   L(8,5,140,16,true,{text:'Settings',font:13,color:'#ffffff'}),
+          row1:  L(12,36,200,16,true,{text:'Wi-Fi',font:12,color:'#ffffff'}),
+        },
       }},
       {id:'Stick',w:135,h:240,rotation:0,default:false,layout:{
-        headerBand:L(0,0,135,30,true,{color:'#1e2a30'}),
-        title:     L(8,7,90,16,true,{text:'Main',font:13,color:'#ffffff'}),
-        battery:   L(8,180,90,16,true,{text:'82%',font:12,color:'#9ce5ac'}),
-        temp:      L(10,60,115,40,true,{text:'24.5',font:30,color:'#ffffff'}),
-        panel:     L(10,110,115,60,true,{color:'#172126'}),
+        Boot:{
+          logo:L(30,80,75,50,true,{color:'#1e2a30'}),
+          boot:L(12,140,115,16,true,{text:'Boot...',font:13,color:'#9ce5ac'}),
+        },
+        Main:{
+          headerBand:L(0,0,135,30,true,{color:'#1e2a30'}),
+          title:     L(8,7,90,16,true,{text:'Main',font:13,color:'#ffffff'}),
+          battery:   L(8,180,90,16,true,{text:'82%',font:12,color:'#9ce5ac'}),
+          temp:      L(10,60,115,40,true,{text:'24.5',font:30,color:'#ffffff'}),
+          panel:     L(10,110,115,60,true,{color:'#172126'}),
+        },
+        Settings:{
+          header:L(0,0,135,30,true,{color:'#1e2a30'}),
+          ttl:   L(8,7,110,16,true,{text:'Settings',font:13,color:'#ffffff'}),
+          row1:  L(10,40,115,16,true,{text:'Wi-Fi',font:12,color:'#ffffff'}),
+        },
       }},
     ];
 
-    let active='Core', selected='title';
+    let active='Core', activeScene='Main', selected='title';
     const prof=()=>profiles.find(p=>p.id===active);
-    const lay=(p,id)=>p.layout[id];           // このプロファイルでの配置（必ず存在）
-    const cur=id=>lay(prof(),id);             // 選択中プロファイルの配置
+    const scene=()=>scenes.find(s=>s.id===activeScene);
+    const sceneParts=()=>scene().parts;
+    const partDef=id=>sceneParts().find(p=>p.id===id);
+    const lay=(p,sid,id)=>p.layout[sid][id];     // 指定プロファイル・シーンでの配置（必ず存在）
+    const cur=id=>lay(prof(),activeScene,id);     // 選択中プロファイル・シーンの配置
     const orient=(w,h)=>w>h?'横':h>w?'縦':'正方';
 
-    /* ---- tabs ---- */
+    /* ---- scene list (左ペイン上段) ---- */
+    function renderScenes(){
+      const el=document.getElementById('scene-list'); el.innerHTML='';
+      scenes.forEach(s=>{
+        const it=document.createElement('div'); it.className='sitem'+(s.id===activeScene?' active':'');
+        it.innerHTML=`<span>${s.id}</span><span class="cnt">${s.parts.length} parts</span>`;
+        // シーンを選んだ直後はパーツ未選択＝その画面のプロパティ（備考）を右に表示。
+        it.onclick=()=>{ activeScene=s.id; selected=null; renderAll(); };
+        el.appendChild(it);
+      });
+    }
+
+    /* ---- profile tabs (上段・直交軸) ---- */
     function renderTabs(){
       const el=document.getElementById('tabs'); el.innerHTML='';
       profiles.forEach(p=>{
@@ -185,8 +254,8 @@
       scale=Math.min(440/pr.w, 300/pr.h, 2.2)*zoom;
       scr.style.width=(pr.w*scale)+'px'; scr.style.height=(pr.h*scale)+'px';
       scr.innerHTML='';
-      partDefs.forEach(def=>{
-        const e=lay(pr,def.id);
+      sceneParts().forEach(def=>{
+        const e=lay(pr,activeScene,def.id);
         const d=document.createElement('div');
         d.className='part '+def.type+(def.id===selected?' selected':'')+(e.visible?'':' hidden');
         d.dataset.id=def.id;
@@ -198,12 +267,13 @@
       });
     }
 
-    /* ---- part list ---- */
+    /* ---- part list (左ペイン中段) ---- */
     function renderList(){
       const el=document.getElementById('part-list'); el.innerHTML='';
+      document.getElementById('parts-title').textContent=`Parts（${activeScene}）`;
       const pr=prof();
-      partDefs.forEach(def=>{
-        const e=lay(pr,def.id);
+      sceneParts().forEach(def=>{
+        const e=lay(pr,activeScene,def.id);
         const it=document.createElement('div');
         it.className='pitem'+(def.id===selected?' active':'');
         it.innerHTML=`<span>${def.id}${e.visible?'':' （非表示）'}</span><span class="ty">${def.type}</span>`;
@@ -212,14 +282,14 @@
       });
     }
 
-    /* ---- profile meta (left) ---- */
+    /* ---- profile meta (左ペイン下段) ---- */
     function renderProfMeta(){
       const pr=prof(), el=document.getElementById('prof-meta');
       el.innerHTML=
         `<div class="field"><label>サイズ</label><input value="${pr.w} × ${pr.h}" disabled></div>`+
         `<div class="field"><label>回転 (rotation)</label><input value="${pr.rotation}（${orient(pr.w,pr.h)}）" disabled></div>`+
         `<div class="field"><label>既定 (default)</label><input value="${pr.default?'はい（自動判定外のフォールバック）':'いいえ'}" disabled></div>`+
-        `<p class="sub">サイズ・回転・既定は Profiles 画面で編集。ここは配置編集。</p>`;
+        `<p class="sub">サイズ・回転・既定・プロファイル追加は Profiles 画面。ここは配置編集。</p>`;
     }
 
     /* ---- inspector ---- */
@@ -230,9 +300,22 @@
       }
       return `<div class="field"><label>${label}</label><input type="${type}" data-k="${key}" value="${e[key]}"></div>`;
     }
+    // パーツ未選択（画面の空き領域クリック等）= 画面（シーン）自体のプロパティを編集する。
+    function renderSceneProps(){
+      const s=scene(), el=document.getElementById('props');
+      document.getElementById('insp-title').textContent = `画面プロパティ（${s.id}）`;
+      el.innerHTML=
+        `<div class="field"><label>シーン ID</label><input value="${s.id}" disabled></div>`+
+        `<div class="field"><label>パーツ数</label><input value="${s.parts.length}" disabled></div>`+
+        `<div class="field"><label>備考（この画面のメモ）</label><textarea id="s-desc" rows="3">${s.desc||''}</textarea></div>`+
+        `<p class="sub">回転はプロファイル単位（Profiles 画面）。パーツを選ぶとそのパーツの配置を編集します。</p>`;
+      const dsc=el.querySelector('#s-desc'); if(dsc)dsc.oninput=e=>{s.desc=e.target.value;};
+    }
     function renderProps(){
-      const def=partDef(selected), el=document.getElementById('props'), pr=prof();
-      document.getElementById('insp-title').textContent = `プロパティ（${pr.id} のレイアウト）`;
+      const el=document.getElementById('props'), pr=prof();
+      if(!selected){ renderSceneProps(); return; }
+      const def=partDef(selected);
+      document.getElementById('insp-title').textContent = `プロパティ（${activeScene} / ${pr.id}）`;
       if(!def){el.innerHTML='<p class="sub">パーツを選択してください。</p>';return;}
       let h='';
       h+=`<div class="two">${fieldRow('x','X','number')}${fieldRow('y','Y','number')}</div>`;
@@ -256,12 +339,12 @@
 
     function renderStatus(){
       const pr=prof(), e=selected?cur(selected):null;
-      document.getElementById('st-sel').textContent = e?`選択: ${selected}  (x:${e.x}, y:${e.y}, w:${e.w}, h:${e.h})`:'未選択';
+      document.getElementById('st-sel').textContent = e?`${activeScene} / 選択: ${selected}  (x:${e.x}, y:${e.y}, w:${e.w}, h:${e.h})`:`${activeScene} / 未選択`;
       document.getElementById('st-prof').textContent = `${pr.id} ${pr.w}×${pr.h}（${orient(pr.w,pr.h)} / rotation ${pr.rotation}）${pr.default?' · default':''}`;
       const zv=document.getElementById('z-val'); if(zv)zv.textContent=Math.round(zoom*100)+'%';
     }
 
-    function renderAll(){renderTabs();renderCanvas();renderList();renderProfMeta();renderProps();renderStatus();}
+    function renderAll(){renderScenes();renderTabs();renderCanvas();renderList();renderProfMeta();renderProps();renderStatus();}
 
     /* ---- drag move ---- */
     let drag=null;
@@ -288,13 +371,20 @@
     document.getElementById('z-in').onclick=()=>setZoom(zoom*1.2);
     document.getElementById('z-out').onclick=()=>setZoom(zoom/1.2);
     document.getElementById('z-reset').onclick=()=>setZoom(1);
-    // 中ボタンドラッグでパン（CAD風）
+    // 画面の外（デバイス枠・ステージ余白）を左クリック＝パーツ未選択にして画面プロパティへ。
+    // 画面内の空き領域は screen 側の pointerdown が担当（id==='screen' なのでここでは何もしない）。
     const stage=document.getElementById('stage'); let pan=null;
+    stage.addEventListener('pointerdown',e=>{
+      if(e.button!==0)return;
+      if(e.target.closest('.part')||e.target.id==='screen')return;
+      if(selected!==null){ selected=null; renderAll(); }
+    });
+    // 中ボタンドラッグでパン（CAD風）
     stage.addEventListener('pointerdown',e=>{ if(e.button!==1)return; e.preventDefault(); pan={x:e.clientX,y:e.clientY,sl:stage.scrollLeft,st:stage.scrollTop}; stage.setPointerCapture(e.pointerId); stage.style.cursor='grabbing'; });
     stage.addEventListener('pointermove',e=>{ if(!pan)return; stage.scrollLeft=pan.sl-(e.clientX-pan.x); stage.scrollTop=pan.st-(e.clientY-pan.y); });
     stage.addEventListener('pointerup',()=>{ if(pan){pan=null;stage.style.cursor='';} });
 
-    // キー操作: 矢印=移動(±1) / Shift+矢印=移動(±10) / Ctrl(⌘)+矢印=リサイズ。選択中プロファイルの配置を直接変更。
+    // キー操作: 矢印=移動(±1) / Shift+矢印=移動(±10) / Ctrl(⌘)+矢印=リサイズ。選択中プロファイル・シーンの配置を直接変更。
     document.addEventListener('keydown',e=>{
       if(!selected)return;
       const t=document.activeElement&&document.activeElement.tagName;
