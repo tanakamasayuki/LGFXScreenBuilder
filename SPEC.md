@@ -681,6 +681,28 @@ Auxiliary display:
 
 Text size uses the multiplier as the stored value, and the px height is auxiliary information (§8.7).
 
+### 8.15 Layout JSON Import/Export (for AI Collaboration; post-MVP)
+
+The Design screen provides a feature to import/export the layout of a single screen as a simple **JSON**. The main purpose is to hand a screen back and forth when **asking an AI to modify or create a screen** (a self-contained, minimal format that a generative AI can easily read and write). This is distinct from the project file (§9) and also from the Arduino generated output (§10).
+
+Export policy:
+
+- **Strip project-specific information.** Do not include asset binaries (Data URLs), board assignments, the namespace / project name, output settings, `defaultProfile`, and so on.
+- So that the screen can be understood at a glance, embed the **screen size (width/height), rotation, screen name (Scene ID), and description** at the top.
+- Then export the **part placement information**: type, ID, parent/child (group hierarchy), and the per-type placement values (Text: anchor `x`/`y`, datum, text-size multiplier, color, preview string, visibility; Rect/Image: `x`/`y`/`w`/`h`, color or referenced asset name, visibility). Use a granularity that conveys the meaning of the layout to the AI.
+
+Import policy:
+
+- **Import** the JSON above and reconstruct the screen from the size, screen name, description, and placement information.
+
+Open questions (to be decided later):
+
+- Whether an import is **applied to an existing screen**, or is **import-only and reflected via "add as a screen" after a preview**.
+- Which profile (which screen size) the layout is treated as (matching against the size embedded at export time, and behavior on mismatch).
+- Handling of ID collisions on import and of referenced assets that are not registered.
+
+This is not implemented in the MVP; the format and import method will be worked out separately (§15).
+
 ## 9. Project File
 
 The official save format of a project is `.lgfxsb.json`. The user explicitly saves/loads this file, and in-browser storage is treated as an auxiliary feature for automatic restoration.
@@ -1073,6 +1095,7 @@ The MVP defers the following.
 - Per-scene rotation setting (the MVP has rotation only per profile)
 - Reverse-lookup input of text size px height (entering a px height to automatically select the font + multiplier; the MVP uses multiplier specification + px auxiliary display. §8.7)
 - Text box (giving Text a width and height to perform clipping/wrapping/in-box alignment; the MVP has only single-line anchor + datum. §8.7)
+- Layout JSON import/export (for AI collaboration; import/export the size, name, description, and placement of a single screen as a self-contained JSON with project-specific information stripped. The import method is undecided. §8.15)
 - Auto-detection extension rules (assisted detection by resolution and MCU chip ESP32/S3. §8.9.5)
 - Animation in general (frame/fade/move/scale, playback and editing)
 - Additional Parts such as Icon/Gauge/Graph/Container/Button
