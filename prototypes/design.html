@@ -89,8 +89,8 @@
     左ペイン上段：シーン切替（画面の切替）<br>
     上タブ：プロファイル切替（機種の配置）<br>
     パーツドラッグ：移動<br>
-    <kbd>矢印</kbd> 移動（<kbd>Shift</kbd>=10px）<br>
-    <kbd>Ctrl</kbd>+<kbd>矢印</kbd> リサイズ<br>
+    <kbd>矢印</kbd> 移動（<kbd>Ctrl</kbd>=10px）<br>
+    <kbd>Shift</kbd>+<kbd>矢印</kbd> リサイズ<br>
     ホイール：拡大縮小／中ボタン＋ドラッグ：パン
   </div>
 
@@ -384,15 +384,15 @@
     stage.addEventListener('pointermove',e=>{ if(!pan)return; stage.scrollLeft=pan.sl-(e.clientX-pan.x); stage.scrollTop=pan.st-(e.clientY-pan.y); });
     stage.addEventListener('pointerup',()=>{ if(pan){pan=null;stage.style.cursor='';} });
 
-    // キー操作: 矢印=移動(±1) / Shift+矢印=移動(±10) / Ctrl(⌘)+矢印=リサイズ。選択中プロファイル・シーンの配置を直接変更。
+    // キー操作: 矢印=移動(±1) / Ctrl(⌘)+矢印=移動(±10) / Shift+矢印=リサイズ(±1) / Ctrl+Shift+矢印=リサイズ(±10)。選択中プロファイル・シーンの配置を直接変更。
     document.addEventListener('keydown',e=>{
       if(!selected)return;
       const t=document.activeElement&&document.activeElement.tagName;
       if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA')return;
       const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
       if(!dir)return; e.preventDefault();
-      const step=e.shiftKey?10:1, e0=cur(selected);
-      if(e.ctrlKey||e.metaKey){ e0.w=Math.max(2,e0.w+dir[0]*step); e0.h=Math.max(2,e0.h+dir[1]*step); }
+      const step=(e.ctrlKey||e.metaKey)?10:1, e0=cur(selected);
+      if(e.shiftKey){ e0.w=Math.max(2,e0.w+dir[0]*step); e0.h=Math.max(2,e0.h+dir[1]*step); }
       else { e0.x+=dir[0]*step; e0.y+=dir[1]*step; }
       renderCanvas();renderList();renderProps();renderStatus();
     });

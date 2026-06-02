@@ -71,7 +71,7 @@
     Import で画像登録 → 一覧で選択<br>
     画像の空き領域ドラッグ：新規スライス<br>
     スライスドラッグ：移動／角：リサイズ<br>
-    <kbd>矢印</kbd>移動（<kbd>Shift</kbd>=10）／<kbd>Ctrl</kbd>+<kbd>矢印</kbd>リサイズ<br>
+    <kbd>矢印</kbd>移動（<kbd>Ctrl</kbd>=10）／<kbd>Shift</kbd>+<kbd>矢印</kbd>リサイズ<br>
     <kbd>Del</kbd>削除／ホイール:ズーム／中ボタン:パン
   </div>
 
@@ -285,8 +285,8 @@
       const s=sliceById(selSlice);if(!s)return;
       if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault(); if(!confirm(`スライス「${s.id}」を削除しますか？`))return; curAsset().slices=curAsset().slices.filter(x=>x!==s);selSlice=null;renderAll();return;}
       const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(!dir)return;e.preventDefault();
-      const step=e.shiftKey?10:1;
-      if(e.ctrlKey||e.metaKey){s.w+=dir[0]*step;s.h+=dir[1]*step;}else{s.x+=dir[0]*step;s.y+=dir[1]*step;}
+      const step=(e.ctrlKey||e.metaKey)?10:1;
+      if(e.shiftKey){s.w+=dir[0]*step;s.h+=dir[1]*step;}else{s.x+=dir[0]*step;s.y+=dir[1]*step;}
       clampSlice(s);renderCanvas();renderSliceList();renderProps();renderStatus();
     });
 
