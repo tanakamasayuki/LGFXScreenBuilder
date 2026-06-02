@@ -60,5 +60,8 @@ h2 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing
 .field label { color: var(--muted); font-size: 12px; }
 .field input, .field select { width: 100%; min-height: 30px; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; background: var(--panel); color: var(--text); }
 .field input[type=color] { padding: 2px; height: 32px; }
+/* Read-only value display: plain text, not an input box. */
+.field .readout { font-size: 13px; color: var(--text); padding: 5px 2px; }
+.field .readout .unit { color: var(--muted); }
 .field textarea { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; background: var(--panel); color: var(--text); resize: vertical; min-height: 42px; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

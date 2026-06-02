@@ -102,12 +102,15 @@ function renderParts() {
   }
 }
 
+// Read-only value row (plain text, not an editable input).
+const readout = (label, value) => `<div class="field"><label>${label}</label><div class="readout">${value}</div></div>`;
+
 // --- left: profile meta --------------------------------------------------
 function renderProfMeta() {
   const pr = curProfile();
   $('prof-meta').innerHTML =
-    `<div class="field"><label>サイズ</label><input value="${pr.w} × ${pr.h}" disabled></div>` +
-    `<div class="field"><label>回転</label><input value="${pr.rotation}（${orient(pr.w, pr.h)}）" disabled></div>` +
+    readout('サイズ', `${pr.w} × ${pr.h}`) +
+    readout('回転', `${pr.rotation} <span class="unit">（${orient(pr.w, pr.h)}）</span>`) +
     `<p class="sub">サイズ・回転・ボード割当は Profiles 画面。ここは配置編集。</p>`;
 }
 
@@ -166,8 +169,8 @@ function renderSceneProps() {
   const s = curScene();
   $('insp-title').textContent = `画面プロパティ（${s.id}）`;
   $('props').innerHTML =
-    `<div class="field"><label>シーン ID</label><input value="${s.id}" disabled></div>` +
-    `<div class="field"><label>パーツ数</label><input value="${s.parts.length}" disabled></div>` +
+    readout('シーン ID', s.id) +
+    readout('パーツ数', s.parts.length) +
     `<div class="field"><label>備考（この画面のメモ）</label><textarea id="s-desc" rows="3">${s.desc || ''}</textarea></div>` +
     `<p class="sub">回転はプロファイル単位（Profiles 画面）。パーツを選ぶと配置を編集します。</p>`;
   const dsc = $('s-desc');
