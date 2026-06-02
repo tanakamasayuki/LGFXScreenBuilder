@@ -126,7 +126,10 @@
         </div>
       </div>
       <div class="section" style="background:var(--panel)">
-        <h2 style="margin-bottom:6px">ボードを割り当て（クリックでトグル）</h2>
+        <div class="section-head">
+          <h2>ボードを割り当て（クリックでトグル）</h2>
+          <label class="sub" style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="hide-mismatch" checked style="width:auto;min-height:auto"> 寸法が合わないボードを隠す</label>
+        </div>
         <div class="catalog" id="board-catalog"></div>
       </div>
     </main>
@@ -221,9 +224,13 @@
         note.textContent='LovyanGFX は新しめのM5ボード(Cardputer/Dial 等)を自動判定不可。未収録機種はボード未割り当て＋手動 setProfile で対応。';
         cat.appendChild(note);
       }
+      // 寸法が合わないボードは既定で隠す（割り当て済みは隠さない＝外せるように）。トグルで全表示。
+      const hideMismatch=document.getElementById('hide-mismatch').checked;
+      let hidden=0;
       boardCatalog().forEach(b=>{
         const assigned=p.boards.includes(b.id);
         const mism = dimKey(b.w,b.h)!==dimKey(p.w,p.h);
+        if(hideMismatch && mism && !assigned){ hidden++; return; }
         const owner = boardOwner(b.id,p.id);
         const btn=document.createElement('button');
         btn.className='board'+(assigned?' assigned':'')+(assigned&&mism?' mismatch':'');
@@ -233,6 +240,11 @@
         btn.onclick=()=>toggleBoard(b.id);
         cat.appendChild(btn);
       });
+      if(hidden){
+        const n=document.createElement('div'); n.className='sub'; n.style.gridColumn='1/-1';
+        n.textContent=`寸法の合わないボード ${hidden} 件を非表示（上のトグルで表示）。`;
+        cat.appendChild(n);
+      }
     }
 
     function renderProps(){
@@ -244,7 +256,7 @@
           `<div class="field"><label>幅 (px)</label><input id="f-w" type="number" value="${p.w}"></div>`+
           `<div class="field"><label>高さ (px)</label><input id="f-h" type="number" value="${p.h}"></div>`+
         `</div>`+
-        `<div class="row" style="margin-bottom:10px"><button class="mini" id="f-swap">縦横入れ替え</button><span class="sub">${orient(p.w,p.h)}</span></div>`+
+        `<div class="row" style="margin-bottom:10px"><span class="sub">${orient(p.w,p.h)}（向きは回転で表現。縦横入れ替えは持たない）</span></div>`+
         `<div class="field"><label>デフォルト回転 (setRotation 0–3)</label>`+
           `<select id="f-rot">${[0,1,2,3].map(r=>`<option value="${r}"${r===p.rotation?' selected':''}>${r}</option>`).join('')}</select></div>`+
         `<div class="field"><label>備考</label><textarea id="f-desc" rows="2">${p.desc||''}</textarea></div>`+
@@ -253,7 +265,6 @@
       el.querySelector('#f-id').oninput=e=>{const v=e.target.value.trim()||p.id;const old=p.id;p.id=v;if(state.selected===old)state.selected=v;renderList();document.getElementById('profile-title').textContent=p.id;renderBanner();};
       el.querySelector('#f-w').oninput=e=>{p.w=+e.target.value||p.w;reW();};
       el.querySelector('#f-h').oninput=e=>{p.h=+e.target.value||p.h;reW();};
-      el.querySelector('#f-swap').onclick=()=>{[p.w,p.h]=[p.h,p.w];renderAll();};
       el.querySelector('#f-rot').onchange=e=>{p.rotation=+e.target.value;renderCenter();};
       el.querySelector('#f-desc').oninput=e=>{p.desc=e.target.value;};
       el.querySelector('#f-del').onclick=()=>{ if(!confirm(`プロファイル「${p.id}」を削除しますか？`))return; delProfile(p.id); };
@@ -324,6 +335,7 @@
     }
 
     document.getElementById('lib').onchange=(e)=>{lib=e.target.value;renderAll();};
+    document.getElementById('hide-mismatch').onchange=()=>renderCenter();
     document.getElementById('add-profile').onclick=(e)=>{e.stopPropagation(); addMenu().style.display==='grid'?hideMenu():showMenu();};
     addMenu().onclick=(e)=>e.stopPropagation();
     document.addEventListener('click',hideMenu);
