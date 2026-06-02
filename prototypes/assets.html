@@ -6,8 +6,8 @@
   <title>Assets flow probe — LGFXScreenBuilder</title>
   <!--
     使い捨てプローブ（戦略C）: Assets の流れ全体を検証。
-      画像 Import（実ファイル可）→ 一覧 → 選択 → そのままインラインでスライス。
-    スライス操作の細部は asset-slice.html と同等。※本番には移さない。
+      画像 Import（実ファイル可）→ 一覧 → 選択 → そのままインラインでスライス（スライスは post-MVP）。
+    旧 asset-slice.html（単体スライス検証）はこのプローブに内包したため廃止。グリッド一括生成は REQUESTS に退避。※本番には移さない。
   -->
   <style>
     :root{

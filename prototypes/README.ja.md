@@ -17,6 +17,5 @@ python -m http.server 8001 --directory prototypes
 |---|---|
 | profiles.html | Profiles 画面：プロファイル一覧/追加・向き/サイズ表示・ボード割当・default |
 | design.html | Design：左ペイン=シーン／上タブ=プロファイルの二軸。各プロファイルがシーンごとに独立レイアウトを持つ（上書き概念なし。プロファイル追加は Profiles 画面） |
-| asset-slice.html | Assets：シート画像のスライス（矩形ドラッグ作成・移動/リサイズ・命名・グリッド一括生成）※post-MVP |
-| assets.html | Assets 全体フロー：画像 Import（実ファイル可）→ 一覧 → 選択 → インラインでスライス |
+| assets.html | Assets 全体フロー：画像 Import（実ファイル可）→ 一覧 → 選択 → インラインでスライス（スライスは post-MVP） |
 | export.html | Export：生成物（ui_generated.h / ui_assets.h / Basic.ino）プレビュー・出力設定・チェック |
