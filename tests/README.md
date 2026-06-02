@@ -10,6 +10,13 @@ The initial tests are intentionally small:
 
 As the runtime and generator mature, add snapshot and pixel-diff tests here, following the same pattern used by `LGFXVirtualCanvas`.
 
+## Requirements
+
+- `uv` + Arduino CLI (the `lang-ship:host` platform is fetched automatically).
+- **Node.js** — the `codegen_roundtrip` test regenerates `MyScreen.h` from the
+  authoring tool's codegen (`docs/src/`) via `node` before building, so `node`
+  must be on `PATH`.
+
 ## Run
 
 ```sh

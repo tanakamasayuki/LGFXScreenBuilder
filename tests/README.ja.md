@@ -10,6 +10,13 @@
 
 ランタイムとジェネレータが育ったら、`LGFXVirtualCanvas` と同じ形でスナップショット比較やピクセル差分テストを追加します。
 
+## 必要なもの
+
+- `uv` ＋ Arduino CLI（`lang-ship:host` プラットフォームは自動取得）。
+- **Node.js** — `codegen_roundtrip` テストはビルド前に、オーサリングツールの
+  コード生成（`docs/src/`）を `node` で実行して `MyScreen.h` を再生成するため、
+  `node` が `PATH` 上に必要。
+
 ## 実行
 
 ```sh
