@@ -17,6 +17,8 @@
       - プロファイルの追加（クローンで新規）は Profiles 画面の責務（ここには置かない）
       - default はランタイム fallback 用の純粋なフラグ（表示のみ。編集は Profiles 画面）
       - default プロファイルとの差分ハイライトは将来検討（後回し §8.13）。本プローブには出さない
+      - Text は矩形(w/h)を持たず アンカー(x,y)＋基準点(datum 9点)＋倍率 で配置（LGFX drawString+setTextDatum 相当）。
+        箱（クリップ/折り返し/箱内揃え）は post-MVP のテキストボックス機能（§8.7/§15）。Rect/Image は矩形を保持
     ※本番には移さない。docs/ とは分離。
   -->
   <style>
@@ -53,6 +55,7 @@
     .part.text{display:flex;align-items:center;color:#fff;font-weight:650}
     .part.selected{border-color:var(--sel);box-shadow:0 0 0 1px var(--sel) inset}
     .part.hidden{opacity:.25}
+    .anchor{position:absolute;width:7px;height:7px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--sel);border:1px solid #06343055;pointer-events:none;z-index:5}
     .statusbar{display:flex;justify-content:space-between;gap:8px;padding:8px 12px;border-top:1px solid var(--line);background:rgba(255,255,255,.8);color:var(--muted);font-size:12px}
     .list{display:grid;gap:4px}
     .sitem{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px;border:1px solid transparent;border-radius:6px;padding:6px 8px;cursor:pointer;font-size:13px}
@@ -90,7 +93,8 @@
     上タブ：プロファイル切替（機種の配置）<br>
     パーツドラッグ：移動<br>
     <kbd>矢印</kbd> 移動（<kbd>Ctrl</kbd>=10px）<br>
-    <kbd>Shift</kbd>+<kbd>矢印</kbd> リサイズ<br>
+    <kbd>Shift</kbd>+<kbd>矢印</kbd> リサイズ（Rect等。Textは箱なし）<br>
+    Text は アンカー＋基準点(datum) で配置<br>
     ホイール：拡大縮小／中ボタン＋ドラッグ：パン
   </div>
 
@@ -155,63 +159,68 @@
     ];
 
     // 各プロファイルは layout[sceneId][partId] に「全項目」を独立保持（base/override の差分概念なし）。
+    // Rect/Image は矩形（w/h）を持つ＝L()。Text は矩形を持たず、アンカー(x,y)＋基準点(datum)で配置＝T()。
     function L(x,y,w,h,visible,extra){return Object.assign({x,y,w,h,visible},extra||{});}
+    function T(x,y,datum,visible,extra){return Object.assign({x,y,datum,visible},extra||{});}
     const profiles=[
       {id:'Core',w:320,h:240,rotation:1,default:true,layout:{
         Boot:{
           logo:L(110,80,100,60,true,{color:'#1e2a30'}),
-          boot:L(100,150,120,20,true,{text:'Booting...',size:2,color:'#9ce5ac'}),
+          boot:T(160,160,'MC',true,{text:'Booting...',size:2,color:'#9ce5ac'}),
         },
         Main:{
           headerBand:L(0,0,320,40,true,{color:'#1e2a30'}),
-          title:     L(12,10,140,22,true,{text:'Main',size:2,color:'#ffffff'}),
-          battery:   L(250,12,60,18,true,{text:'82%',size:1.5,color:'#9ce5ac'}),
-          temp:      L(18,70,180,44,true,{text:'24.5C',size:4,color:'#ffffff'}),
+          title:     T(12,10,'TL',true,{text:'Main',size:2,color:'#ffffff'}),
+          battery:   T(310,12,'TR',true,{text:'82%',size:1.5,color:'#9ce5ac'}),
+          temp:      T(18,70,'TL',true,{text:'24.5C',size:4,color:'#ffffff'}),
           panel:     L(18,150,284,54,true,{color:'#172126'}),
         },
         Settings:{
           header:L(0,0,320,40,true,{color:'#1e2a30'}),
-          ttl:   L(12,10,160,22,true,{text:'Settings',size:2,color:'#ffffff'}),
-          row1:  L(18,60,284,20,true,{text:'Wi-Fi',size:2,color:'#ffffff'}),
+          ttl:   T(12,10,'TL',true,{text:'Settings',size:2,color:'#ffffff'}),
+          row1:  T(18,60,'TL',true,{text:'Wi-Fi',size:2,color:'#ffffff'}),
         },
       }},
       {id:'Cardputer',w:240,h:135,rotation:1,default:false,layout:{
         Boot:{
           logo:L(80,30,80,40,true,{color:'#1e2a30'}),
-          boot:L(60,80,120,16,true,{text:'Booting...',size:1.5,color:'#9ce5ac'}),
+          boot:T(120,88,'MC',true,{text:'Booting...',size:1.5,color:'#9ce5ac'}),
         },
         Main:{
           headerBand:L(0,0,240,26,true,{color:'#1e2a30'}),
-          title:     L(8,5,120,16,true,{text:'Main',size:1.5,color:'#ffffff'}),
-          battery:   L(186,6,50,14,true,{text:'82%',size:1.25,color:'#9ce5ac'}),
-          temp:      L(12,40,150,34,true,{text:'24.5C',size:3,color:'#ffffff'}),
+          title:     T(8,5,'TL',true,{text:'Main',size:1.5,color:'#ffffff'}),
+          battery:   T(232,6,'TR',true,{text:'82%',size:1.25,color:'#9ce5ac'}),
+          temp:      T(12,40,'TL',true,{text:'24.5C',size:3,color:'#ffffff'}),
           panel:     L(12,86,216,40,false,{color:'#172126'}),
         },
         Settings:{
           header:L(0,0,240,26,true,{color:'#1e2a30'}),
-          ttl:   L(8,5,140,16,true,{text:'Settings',size:1.5,color:'#ffffff'}),
-          row1:  L(12,36,200,16,true,{text:'Wi-Fi',size:1.5,color:'#ffffff'}),
+          ttl:   T(8,5,'TL',true,{text:'Settings',size:1.5,color:'#ffffff'}),
+          row1:  T(12,36,'TL',true,{text:'Wi-Fi',size:1.5,color:'#ffffff'}),
         },
       }},
       {id:'Stick',w:135,h:240,rotation:0,default:false,layout:{
         Boot:{
           logo:L(30,80,75,50,true,{color:'#1e2a30'}),
-          boot:L(12,140,115,16,true,{text:'Boot...',size:1.5,color:'#9ce5ac'}),
+          boot:T(69,148,'MC',true,{text:'Boot...',size:1.5,color:'#9ce5ac'}),
         },
         Main:{
           headerBand:L(0,0,135,30,true,{color:'#1e2a30'}),
-          title:     L(8,7,90,16,true,{text:'Main',size:1.5,color:'#ffffff'}),
-          battery:   L(8,180,90,16,true,{text:'82%',size:1.5,color:'#9ce5ac'}),
-          temp:      L(10,60,115,40,true,{text:'24.5',size:3.5,color:'#ffffff'}),
+          title:     T(8,7,'TL',true,{text:'Main',size:1.5,color:'#ffffff'}),
+          battery:   T(8,180,'TL',true,{text:'82%',size:1.5,color:'#9ce5ac'}),
+          temp:      T(10,60,'TL',true,{text:'24.5',size:3.5,color:'#ffffff'}),
           panel:     L(10,110,115,60,true,{color:'#172126'}),
         },
         Settings:{
           header:L(0,0,135,30,true,{color:'#1e2a30'}),
-          ttl:   L(8,7,110,16,true,{text:'Settings',size:1.5,color:'#ffffff'}),
-          row1:  L(10,40,115,16,true,{text:'Wi-Fi',size:1.5,color:'#ffffff'}),
+          ttl:   T(8,7,'TL',true,{text:'Settings',size:1.5,color:'#ffffff'}),
+          row1:  T(10,40,'TL',true,{text:'Wi-Fi',size:1.5,color:'#ffffff'}),
         },
       }},
     ];
+    // datum 9点 → アンカーが文字 boxのどこに当たるかの比率（fx=横, fy=縦）。
+    const DATUM_FX={L:0,C:0.5,R:1}, DATUM_FY={T:0,M:0.5,B:1};
+    const DATUMS=[['TL','左上'],['TC','上中'],['TR','右上'],['ML','左中'],['MC','中央'],['MR','右中'],['BL','左下'],['BC','下中'],['BR','右下']];
 
     // 文字サイズは「倍率（multiplier）」を保存値とする（LGFX setTextSize 相当）。px 高さは基準フォント高×倍率の補助表示。
     const BASE_FONT_PX=8;                 // 既定フォントの基準高（プローブ用の仮値）
@@ -263,11 +272,26 @@
         const d=document.createElement('div');
         d.className='part '+def.type+(def.id===selected?' selected':'')+(e.visible?'':' hidden');
         d.dataset.id=def.id;
-        d.style.left=(e.x*scale)+'px'; d.style.top=(e.y*scale)+'px';
-        d.style.width=(e.w*scale)+'px'; d.style.height=(e.h*scale)+'px';
-        if(def.type==='text'){d.style.color=e.color;d.style.fontSize=(e.size*BASE_FONT_PX*scale)+'px';d.textContent=e.text;}
-        else {d.style.background=e.color;}
-        scr.appendChild(d);
+        if(def.type==='text'){
+          // 矩形を持たない。アンカー(x,y)に対し datum で文字 box をオフセット配置。box は実測。
+          d.style.color=e.color; d.style.fontSize=(e.size*BASE_FONT_PX*scale)+'px'; d.textContent=e.text;
+          d.style.left='0px'; d.style.top='0px';
+          scr.appendChild(d);            // 先に append して実測
+          const bw=d.offsetWidth, bh=d.offsetHeight;
+          const fx=DATUM_FX[e.datum[1]]||0, fy=DATUM_FY[e.datum[0]]||0;
+          d.style.left=(e.x*scale - fx*bw)+'px';
+          d.style.top =(e.y*scale - fy*bh)+'px';
+          if(def.id===selected){       // 選択中はアンカー点を可視化（datum の理解用）
+            const a=document.createElement('div'); a.className='anchor';
+            a.style.left=(e.x*scale)+'px'; a.style.top=(e.y*scale)+'px';
+            scr.appendChild(a);
+          }
+        } else {
+          d.style.left=(e.x*scale)+'px'; d.style.top=(e.y*scale)+'px';
+          d.style.width=(e.w*scale)+'px'; d.style.height=(e.h*scale)+'px';
+          d.style.background=e.color;
+          scr.appendChild(d);
+        }
       });
     }
 
@@ -322,14 +346,20 @@
       document.getElementById('insp-title').textContent = `プロパティ（${activeScene} / ${pr.id}）`;
       if(!def){el.innerHTML='<p class="sub">パーツを選択してください。</p>';return;}
       let h='';
-      h+=`<div class="two">${fieldRow('x','X','number')}${fieldRow('y','Y','number')}</div>`;
-      h+=`<div class="two">${fieldRow('w','幅','number')}${fieldRow('h','高さ','number')}</div>`;
       if(def.type==='text'){
+        // Text は矩形を持たない＝アンカー(x,y)＋基準点(datum)＋文字＋倍率。
+        h+=`<div class="two">${fieldRow('x','アンカー X','number')}${fieldRow('y','アンカー Y','number')}</div>`;
+        const dv=cur(selected).datum;
+        h+=`<div class="field"><label>基準点（datum）</label><select data-k="datum">`+
+           DATUMS.map(([v,l])=>`<option value="${v}" ${dv===v?'selected':''}>${v}（${l}）</option>`).join('')+`</select></div>`;
         h+=fieldRow('text','文字','text');
         // 文字サイズは倍率を保存値に、px 高さは補助表示（自動計算）。
         const sz=cur(selected).size;
         h+=`<div class="field"><div class="lab" style="display:flex;justify-content:space-between;align-items:baseline"><label>文字サイズ（倍率）</label><span class="sub" id="px-hint">≈ ${pxOf(sz)}px</span></div>`+
            `<input type="number" data-k="size" step="0.25" min="0.25" value="${sz}"></div>`;
+      } else {
+        h+=`<div class="two">${fieldRow('x','X','number')}${fieldRow('y','Y','number')}</div>`;
+        h+=`<div class="two">${fieldRow('w','幅','number')}${fieldRow('h','高さ','number')}</div>`;
       }
       h+=fieldRow('visible','表示','checkbox');
       h+=`<div class="field"><label>備考（全プロファイル共通のメモ）</label><textarea id="p-desc" rows="2">${def.desc||''}</textarea></div>`;
@@ -350,7 +380,8 @@
 
     function renderStatus(){
       const pr=prof(), e=selected?cur(selected):null;
-      document.getElementById('st-sel').textContent = e?`${activeScene} / 選択: ${selected}  (x:${e.x}, y:${e.y}, w:${e.w}, h:${e.h})`:`${activeScene} / 未選択`;
+      const detail = e ? ('w' in e ? `x:${e.x}, y:${e.y}, w:${e.w}, h:${e.h}` : `x:${e.x}, y:${e.y}, datum:${e.datum}, ×${e.size}`) : '';
+      document.getElementById('st-sel').textContent = e?`${activeScene} / 選択: ${selected}  (${detail})`:`${activeScene} / 未選択`;
       document.getElementById('st-prof').textContent = `${pr.id} ${pr.w}×${pr.h}（${orient(pr.w,pr.h)} / rotation ${pr.rotation}）${pr.default?' · default':''}`;
       const zv=document.getElementById('z-val'); if(zv)zv.textContent=Math.round(zoom*100)+'%';
     }
@@ -403,7 +434,7 @@
       const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
       if(!dir)return; e.preventDefault();
       const step=(e.ctrlKey||e.metaKey)?10:1, e0=cur(selected);
-      if(e.shiftKey){ e0.w=Math.max(2,e0.w+dir[0]*step); e0.h=Math.max(2,e0.h+dir[1]*step); }
+      if(e.shiftKey){ if(!('w' in e0))return; e0.w=Math.max(2,e0.w+dir[0]*step); e0.h=Math.max(2,e0.h+dir[1]*step); }  // Text は矩形を持たないのでリサイズ対象外
       else { e0.x+=dir[0]*step; e0.y+=dir[1]*step; }
       renderCanvas();renderList();renderProps();renderStatus();
     });
