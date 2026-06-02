@@ -45,7 +45,7 @@ main.body.temperature = "24.5C";
 screen.show(main);
 ```
 
-See [SPEC.ja.md](SPEC.ja.md) for the current Japanese specification. An English `SPEC.md` will be added after the Japanese specification is stabilized.
+See [SPEC.md](SPEC.md) for the specification (Japanese: [SPEC.ja.md](SPEC.ja.md)).
 
 ## Tests
 

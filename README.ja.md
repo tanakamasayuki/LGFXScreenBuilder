@@ -45,7 +45,7 @@ main.body.temperature = "24.5C";
 screen.show(main);
 ```
 
-現在の仕様は [SPEC.ja.md](SPEC.ja.md) を参照してください。日本語版が固まった後に英語版 `SPEC.md` を追加します。
+仕様は [SPEC.ja.md](SPEC.ja.md) を参照してください（English: [SPEC.md](SPEC.md)）。
 
 ## テスト
 
