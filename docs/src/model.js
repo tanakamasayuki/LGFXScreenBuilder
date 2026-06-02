@@ -162,11 +162,63 @@ function uniqueId(base, taken) {
 // Default placement for a freshly added part, roughly centered on the profile.
 function defaultPlacement(type, profile) {
   const cx = Math.round(profile.w / 2), cy = Math.round(profile.h / 2);
+  if (type === 'Group') return { x: cx, y: cy, visible: true }; // logical origin only
   if (type === 'Text') return text(cx, cy, 'MC', 1.5, '#ffffff', 'Text');
   const w = Math.min(80, profile.w - 8), h = Math.min(48, profile.h - 8);
   const x = cx - (w >> 1), y = cy - (h >> 1);
   if (type === 'Image') return { x, y, w, h, visible: true };
   return rect(x, y, w, h, '#1e2a30'); // Rect
+}
+
+// --- hierarchy helpers (flat `parts` array + `parent` id; §8.3) ----------
+// The array is kept in pre-order (a group is immediately followed by its
+// descendants) so draw order = array order and a subtree is a contiguous block.
+
+// Build a forest of { part, children } preserving array order for siblings.
+function buildForest(scene) {
+  const byId = new Map(scene.parts.map((p) => [p.id, { part: p, children: [] }]));
+  const roots = [];
+  for (const p of scene.parts) {
+    const node = byId.get(p.id);
+    const parent = p.parent && byId.get(p.parent);
+    if (parent) parent.children.push(node); else roots.push(node);
+  }
+  return { roots, byId };
+}
+// Flatten a forest back to a pre-order parts array.
+function flattenForest(roots) {
+  const out = [];
+  const walk = (nodes) => { for (const n of nodes) { out.push(n.part); walk(n.children); } };
+  walk(roots);
+  return out;
+}
+// Re-normalize a scene's parts array to pre-order (siblings keep array order).
+const normalize = (scene) => flattenForest(buildForest(scene).roots);
+
+// id of a part plus all of its descendants (for cascade delete / cycle checks).
+function subtreeIds(scene, rootId) {
+  const out = [rootId], stack = [rootId];
+  while (stack.length) {
+    const cur = stack.pop();
+    for (const p of scene.parts) if (p.parent === cur) { out.push(p.id); stack.push(p.id); }
+  }
+  return out;
+}
+
+// Absolute origin of a part = sum of all ancestor groups' local x/y (mirrors
+// lgfxsb::Renderer::absOrigin). Cycle-guarded.
+export function absOrigin(profile, sceneId, scene, part) {
+  let x = 0, y = 0, cur = part;
+  const seen = new Set();
+  while (cur && cur.parent && !seen.has(cur.id)) {
+    seen.add(cur.id);
+    const parent = scene.parts.find((p) => p.id === cur.parent);
+    if (!parent) break;
+    const pl = placement(profile, sceneId, parent.id);
+    if (pl) { x += pl.x || 0; y += pl.y || 0; }
+    cur = parent;
+  }
+  return { x, y };
 }
 
 // Add a part to a scene and create its placement in every profile. Returns id.
@@ -181,16 +233,74 @@ export function addPart(project, sceneId, type) {
   return id;
 }
 
-// Remove a part from a scene and from every profile's layout. Orphaned children
-// (of a deleted group) are re-parented to root.
+// Remove a part and (if a group) its whole subtree, from the scene and from
+// every profile's layout (§8.3.1: deleting a group cascades to its children).
 export function removePart(project, sceneId, partId) {
   const scene = sceneById(project, sceneId);
-  scene.parts = scene.parts.filter((p) => p.id !== partId);
-  for (const p of scene.parts) if (p.parent === partId) p.parent = null;
+  const ids = new Set(subtreeIds(scene, partId));
+  scene.parts = scene.parts.filter((p) => !ids.has(p.id));
   for (const pr of project.profiles) {
     const s = pr.layout[sceneId];
-    if (s) delete s[partId];
+    if (s) for (const id of ids) delete s[id];
   }
+}
+
+// Reorder the selected part among its siblings. dir +1 = toward front (drawn
+// later / shown higher in the layer panel), -1 = toward back. Subtree moves too.
+export function reorderPart(project, sceneId, id, dir) {
+  const scene = sceneById(project, sceneId);
+  const { roots, byId } = buildForest(scene);
+  const node = byId.get(id);
+  if (!node) return;
+  const sibs = node.part.parent ? byId.get(node.part.parent).children : roots;
+  const i = sibs.indexOf(node), j = i + dir;
+  if (j < 0 || j >= sibs.length) return;
+  [sibs[i], sibs[j]] = [sibs[j], sibs[i]];
+  scene.parts = flattenForest(roots);
+}
+
+// Wrap the given parts (which must be siblings) in a new Group, preserving each
+// part's absolute position in every profile (§8.3.1). Returns the new group id.
+export function groupParts(project, sceneId, ids) {
+  const scene = sceneById(project, sceneId);
+  const idset = new Set(ids);
+  const sel = scene.parts.filter((p) => idset.has(p.id));
+  if (!sel.length) return null;
+  const parent = sel[0].parent || null;
+  if (sel.some((p) => (p.parent || null) !== parent)) return null; // must be siblings
+  const gid = uniqueId('group', new Set(scene.parts.map((p) => p.id)));
+  for (const pr of project.profiles) {
+    const s = pr.layout[sceneId] || (pr.layout[sceneId] = {});
+    let ox = Infinity, oy = Infinity;
+    for (const m of sel) { const pl = s[m.id]; if (pl) { ox = Math.min(ox, pl.x || 0); oy = Math.min(oy, pl.y || 0); } }
+    if (!isFinite(ox)) { ox = 0; oy = 0; }
+    s[gid] = { x: ox, y: oy, visible: true };
+    for (const m of sel) { const pl = s[m.id]; if (pl) { pl.x = (pl.x || 0) - ox; pl.y = (pl.y || 0) - oy; } }
+  }
+  const firstIdx = scene.parts.findIndex((p) => idset.has(p.id));
+  scene.parts.splice(firstIdx, 0, { id: gid, type: 'Group', parent, desc: '' });
+  for (const m of sel) m.parent = gid;
+  scene.parts = normalize(scene);
+  return gid;
+}
+
+// Dissolve a Group: promote children to the group's parent, preserving absolute
+// position in every profile, then delete the group (§8.3.1).
+export function ungroupPart(project, sceneId, groupId) {
+  const scene = sceneById(project, sceneId);
+  const g = scene.parts.find((p) => p.id === groupId);
+  if (!g || g.type !== 'Group') return;
+  const newParent = g.parent || null;
+  const kids = scene.parts.filter((p) => p.parent === groupId);
+  for (const pr of project.profiles) {
+    const s = pr.layout[sceneId];
+    if (!s) continue;
+    const go = s[groupId] || { x: 0, y: 0 };
+    for (const k of kids) { const pl = s[k.id]; if (pl) { pl.x = (pl.x || 0) + (go.x || 0); pl.y = (pl.y || 0) + (go.y || 0); } }
+    delete s[groupId];
+  }
+  for (const k of kids) k.parent = newParent;
+  scene.parts = normalize({ parts: scene.parts.filter((p) => p.id !== groupId) });
 }
 
 // Rename a part within a scene (updates parent refs and every profile's layout

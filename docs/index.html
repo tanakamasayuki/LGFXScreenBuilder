@@ -45,17 +45,20 @@
         <div class="list" id="scene-list"></div>
       </div>
       <div class="section">
-        <div class="sechead">
-          <h2 id="parts-title" data-i18n="pane.parts">Parts</h2>
-          <div class="secacts">
-            <select class="icon" id="part-type">
-              <option value="Rect">Rect</option>
-              <option value="Text">Text</option>
-              <option value="Image">Image</option>
-            </select>
-            <button class="icon" id="part-add" data-i18n-title="act.addPart">＋</button>
-            <button class="icon" id="part-del" data-i18n-title="act.delPart">🗑</button>
-          </div>
+        <h2 id="parts-title" data-i18n="pane.parts">Parts</h2>
+        <div class="layerbar">
+          <select class="icon" id="part-type">
+            <option value="Rect">Rect</option>
+            <option value="Text">Text</option>
+            <option value="Image">Image</option>
+          </select>
+          <button class="icon" id="part-add" data-i18n-title="act.addPart">＋</button>
+          <button class="icon" id="part-del" data-i18n-title="act.delPart">🗑</button>
+          <span class="toolsep"></span>
+          <button class="icon" id="part-front" data-i18n-title="act.front">↑</button>
+          <button class="icon" id="part-back" data-i18n-title="act.back">↓</button>
+          <button class="icon" id="part-group" data-i18n-title="act.group">⊞</button>
+          <button class="icon" id="part-ungroup" data-i18n-title="act.ungroup">⊟</button>
         </div>
         <div class="list" id="part-list"></div>
       </div>

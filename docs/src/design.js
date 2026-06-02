@@ -5,6 +5,7 @@ import { store, update } from './store.js';
 import {
   DATUMS, DATUM_FX, DATUM_FY, orient, pxOf, sceneById, profileById, partDef, placement,
   addPart, removePart, renamePart, addScene, removeScene, renameScene,
+  absOrigin, reorderPart, groupParts, ungroupPart,
 } from './model.js';
 import { t } from './i18n.js';
 
@@ -56,9 +57,13 @@ function renderCanvas() {
   scr.style.background = store.project.background;
   scr.innerHTML = '';
 
-  for (const def of curScene().parts) {
+  const scene = curScene();
+  for (const def of scene.parts) {
+    if (def.type === 'Group') continue; // logical node: no visual, select via layer panel
     const e = curPlacement(def.id);
     if (!e) continue;
+    const o = absOrigin(pr, store.ui.sceneId, scene, def); // parent-group origin
+    const ax = (o.x + e.x) * scale, ay = (o.y + e.y) * scale;
     const d = document.createElement('div');
     d.className = 'part ' + def.type.toLowerCase() +
       (def.id === store.ui.selected ? ' selected' : '') + (e.visible ? '' : ' hidden');
@@ -71,18 +76,18 @@ function renderCanvas() {
       scr.appendChild(d); // append first to measure
       const bw = d.offsetWidth, bh = d.offsetHeight;
       const fx = DATUM_FX[e.datum[1]] || 0, fy = DATUM_FY[e.datum[0]] || 0;
-      d.style.left = e.x * scale - fx * bw + 'px';
-      d.style.top = e.y * scale - fy * bh + 'px';
+      d.style.left = ax - fx * bw + 'px';
+      d.style.top = ay - fy * bh + 'px';
       if (def.id === store.ui.selected) {
         const a = document.createElement('div');
         a.className = 'anchor';
-        a.style.left = e.x * scale + 'px';
-        a.style.top = e.y * scale + 'px';
+        a.style.left = ax + 'px';
+        a.style.top = ay + 'px';
         scr.appendChild(a);
       }
     } else {
-      d.style.left = e.x * scale + 'px';
-      d.style.top = e.y * scale + 'px';
+      d.style.left = ax + 'px';
+      d.style.top = ay + 'px';
       d.style.width = e.w * scale + 'px';
       d.style.height = e.h * scale + 'px';
       if (def.type === 'Rect') d.style.background = e.color;
@@ -96,15 +101,34 @@ function renderParts() {
   const el = $('part-list');
   el.innerHTML = '';
   $('parts-title').textContent = t('parts.title', { scene: store.ui.sceneId });
-  $('part-del').disabled = !store.ui.selected;
-  for (const def of curScene().parts) {
-    const e = curPlacement(def.id);
-    const it = document.createElement('div');
-    it.className = 'pitem' + (def.id === store.ui.selected ? ' active' : '');
-    it.innerHTML = `<span>${def.id}${e && e.visible ? '' : t('list.hidden')}</span><span class="ty">${def.type}</span>`;
-    it.onclick = () => update((st) => { st.ui.selected = def.id; });
-    el.appendChild(it);
-  }
+  const scene = curScene();
+  const sel = store.ui.selected;
+  const selDef = sel ? partDef(scene, sel) : null;
+  $('part-del').disabled = !sel;
+  $('part-front').disabled = !sel;
+  $('part-back').disabled = !sel;
+  $('part-group').disabled = !sel;
+  $('part-ungroup').disabled = !(selDef && selDef.type === 'Group');
+
+  // Tree, front-on-top: within each sibling list the last-drawn part shows first.
+  const childrenOf = (pid) => scene.parts.filter((p) => (p.parent || null) === pid);
+  const emit = (pid, depth) => {
+    const sibs = childrenOf(pid);
+    for (let i = sibs.length - 1; i >= 0; i--) {
+      const def = sibs[i];
+      const e = curPlacement(def.id);
+      const hidden = def.type !== 'Group' && !(e && e.visible);
+      const it = document.createElement('div');
+      it.className = 'pitem' + (def.id === sel ? ' active' : '');
+      it.style.paddingLeft = (8 + depth * 14) + 'px';
+      const tag = def.type === 'Group' ? '▾ ' : '';
+      it.innerHTML = `<span>${tag}${def.id}${hidden ? t('list.hidden') : ''}</span><span class="ty">${def.type}</span>`;
+      it.onclick = () => update((st) => { st.ui.selected = def.id; });
+      el.appendChild(it);
+      if (def.type === 'Group') emit(def.id, depth + 1);
+    }
+  };
+  emit(null, 0);
 }
 
 // Read-only value row (plain text, not an editable input).
@@ -146,12 +170,15 @@ function renderInspector() {
     h += row('text', t('field.text'), 'text', e.text);
     h += `<div class="field"><div class="lab"><label>${t('field.textSize')}</label><span class="sub" id="px-hint">${t('units.pxApprox', { px: pxOf(e.size) })}</span></div>` +
       `<input type="number" data-k="size" step="0.25" min="0.25" value="${e.size}"></div>`;
+  } else if (def.type === 'Group') {
+    h += `<div class="two">${row('x', t('field.x'), 'number', e.x)}${row('y', t('field.y'), 'number', e.y)}</div>`;
+    h += `<p class="sub">${t('hint.group')}</p>`;
   } else {
     h += `<div class="two">${row('x', t('field.x'), 'number', e.x)}${row('y', t('field.y'), 'number', e.y)}</div>`;
     h += `<div class="two">${row('w', t('field.width'), 'number', e.w)}${row('h', t('field.height'), 'number', e.h)}</div>`;
     if (def.type === 'Rect') h += `<div class="field"><label>${t('field.color')}</label><input type="color" data-k="color" value="${e.color}"></div>`;
   }
-  h += row('visible', t('field.visible'), 'checkbox', e.visible);
+  if (def.type !== 'Group') h += row('visible', t('field.visible'), 'checkbox', e.visible);
   h += `<div class="field"><label>${t('field.descPart')}</label><textarea id="p-desc" rows="2">${def.desc || ''}</textarea></div>`;
   el.innerHTML = h;
 
@@ -301,5 +328,20 @@ export function initDesign() {
       removePart(st.project, st.ui.sceneId, sel);
       st.ui.selected = null;
     });
+  };
+
+  // Reorder among siblings (↑ = toward front, ↓ = toward back; §8.3).
+  $('part-front').onclick = () => { if (store.ui.selected) update((st) => reorderPart(st.project, st.ui.sceneId, st.ui.selected, +1)); };
+  $('part-back').onclick = () => { if (store.ui.selected) update((st) => reorderPart(st.project, st.ui.sceneId, st.ui.selected, -1)); };
+
+  // Group the selection / ungroup the selected group (§8.3.1, absolute position kept).
+  $('part-group').onclick = () => {
+    if (!store.ui.selected) return;
+    update((st) => { const g = groupParts(st.project, st.ui.sceneId, [st.ui.selected]); if (g) st.ui.selected = g; });
+  };
+  $('part-ungroup').onclick = () => {
+    const sel = store.ui.selected;
+    if (!sel) return;
+    update((st) => { ungroupPart(st.project, st.ui.sceneId, sel); st.ui.selected = null; });
   };
 }

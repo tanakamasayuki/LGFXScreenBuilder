@@ -32,6 +32,7 @@ h2 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing
 .sechead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .sechead h2 { margin: 0; }
 .secacts { display: flex; gap: 4px; }
+.layerbar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 8px; }
 .icon { min-height: 24px; padding: 0 7px; font-size: 12px; border-radius: 5px; }
 select.icon { padding: 0 4px; }
 
