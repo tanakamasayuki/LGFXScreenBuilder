@@ -44,11 +44,11 @@ LGFXScreenBuilder は、LovyanGFX および M5GFX を利用する Arduino 向け
 ## 5. 利用シナリオ
 
 1. ユーザーが GitHub Pages 上のオーサリングツールを開く。
-2. 対象デバイスまたは画面サイズを選択する。
+2. プロファイル（対象デバイス／画面サイズ・回転）を作成する。
 3. 画像、フォント、色などのアセットを登録する。
 4. シーンを作成する。
 5. シーン上に Text、Image、Rect などのパーツを配置する。
-6. 必要に応じて機種別の座標や表示設定を上書きする。
+6. 必要に応じてプロファイル別の座標や表示設定を上書きする。
 7. アニメーションや状態変更時の表示を設定する。
 8. Arduino 用データをエクスポートする。
 9. Arduino プロジェクトで LGFXScreenBuilder ライブラリを利用し、生成データを読み込む。
@@ -89,7 +89,7 @@ Web オーサリングツールは HTML/CSS/JavaScript で実装し、GitHub Pag
 - サーバー側処理を必須にしない。
 - プロジェクトファイルをローカルに保存・読み込みできる。
 - Arduino 向け生成物をダウンロードできる。
-- プレビュー画面で複数デバイス表示を切り替えられる。
+- プレビュー画面で複数プロファイルの表示を切り替えられる。
 - 初期同梱言語は日本語/英語とし、UI 文字列を多言語化できる。
 - ブラウザ言語に応じて初期言語を自動選択し、ユーザーが手動で切り替えられる。
 - 中国語など主要言語の追加を前提に、翻訳辞書を追加するだけで対応言語を増やせる構造にする。
@@ -104,17 +104,22 @@ LovyanGFX を直接利用する環境に対応する。
 想定される利用形態は以下とする。
 
 ```cpp
+using namespace MyScreen;          // 生成物（§11）
+
 LGFX gfx;
-LGFXScreenBuilder screen;
+MyScreen::Screen screen(gfx);      // 生成ファサードに gfx を渡す
 
-screen.begin(&gfx);
+void setup() {
+  gfx.init();
+  screen.begin();
 
-screen.show(Scene::Boot{});
+  screen.show(Scene::Boot{});
 
-Scene::Main main;
-main.header.battery = 82;
-main.body.temperature = "24.5C";
-screen.show(main);
+  Scene::Main main;
+  main.header.battery = 82;
+  main.body.temperature = "24.5C";
+  screen.show(main);
+}
 ```
 
 ### 7.2 M5GFX
@@ -124,18 +129,22 @@ M5GFX を利用する M5Stack 系デバイスに対応する。
 想定される利用形態は以下とする。
 
 ```cpp
+using namespace MyScreen;          // 生成物（§11）
+
 M5GFX display;
-LGFXScreenBuilder screen;
+MyScreen::Screen screen(display);  // 生成ファサードに display を渡す
 
-display.begin();
-screen.begin(&display);
+void setup() {
+  display.begin();
+  screen.begin();
 
-screen.show(Scene::Boot{});
+  screen.show(Scene::Boot{});
 
-Scene::Main main;
-main.header.battery = 82;
-main.body.temperature = "24.5C";
-screen.show(main);
+  Scene::Main main;
+  main.header.battery = 82;
+  main.body.temperature = "24.5C";
+  screen.show(main);
+}
 ```
 
 ### 7.3 バックエンド抽象化
@@ -150,6 +159,17 @@ Arduino ランタイム内部では、LovyanGFX と M5GFX の共通描画 API �
 - 画面サイズ取得
 - クリッピング
 
+### 7.4 描画解決
+
+描画は選択中のプロファイル（§8.9）に基づいて解決する。
+
+- 全画面のフィルおよび背景クリアは、実機の物理サイズ（`gfx.width()` / `gfx.height()`）を基準とする。
+- 各パーツは、選択中プロファイルの論理座標を絶対ピクセルとして、左上を原点に描画する。座標のスケーリングは行わない。
+- 物理画面の外にはみ出した描画は、描画バックエンドのクリッピングに任せる。
+- 回転は実効回転（シーンのプロファイル別差分があればそれ、なければプロファイルのデフォルト回転。§8.9.3）を `setRotation()` で適用する。
+
+論理座標空間（プロファイルのサイズ）と物理画面サイズが異なっても、スケーリングせず左上原点で描画する。例えば物理 320×240 のボードで 135×240 のプロファイルを使うと、背景は 320×240 全面、パーツは左上 135×240 の領域に描かれる。物理より大きいプロファイルを使うと、はみ出した分はクリップされる。座標の意味を保つため、自動スケールや自動再配置は行わない（レイアウトエンジンは非目標）。
+
 ## 8. 機能要件
 
 ### 8.0 Web オーサリングツールの上位モード
@@ -161,9 +181,9 @@ Arduino ランタイム内部では、LovyanGFX と M5GFX の共通描画 API �
 - Design: シーン、レイヤー、パーツ配置、プロパティ編集
 - Assets: 画像、フォント、スプライトシート、スライス、出力形式の管理
 - Export: Arduino 向け生成物、生成 API、アセット出力設定、ダウンロード
-- Devices: 画面サイズプリセット、機種別オーバーライドの管理
+- Devices: プロファイル（画面サイズ・回転・割り当てボード・オーバーライド）の管理
 
-MVP では Design を中心に実装し、Assets と Export は同じレイアウト内で段階的に拡張する。プレビュー対象デバイスの切り替えは Design のキャンバス上部にタブとして配置する。Devices は機種プリセットや機種別オーバーライドの編集が増えた時点で独立モードとして扱う。
+MVP では Design を中心に実装し、Assets と Export は同じレイアウト内で段階的に拡張する。プレビュー対象プロファイルの切り替えは Design のキャンバス上部にタブとして配置する。Devices はプロファイルやプロファイル別オーバーライドの編集が増えた時点で独立モードとして扱う。
 
 ### 8.1 シーン管理
 
@@ -233,7 +253,11 @@ MVP の対応 Part は以下に限定する。
 - 描画順
 - スタイル
 - 参照アセット
-- 機種別オーバーライド
+- プロファイル別レイアウト差分（§8.9）
+
+生成される構造体（データ契約）は、パーツの ID・種別・親子関係のみから決まる。座標、サイズ、表示状態、スタイル、プレビュー文字列、プロファイル別差分は構造体に含めない。これにより、Arduino 側の利用コード（例: `main.header.title = "..."`）は機種やプロファイルに依存せず一定になり、後からプロファイルを追加しても構造体定義は変わらない。これは複数機種対応で作り直しを避けるための不変条件とする。
+
+パーツのレイアウト（座標・サイズ・表示・スタイル）は、ベース（最初のプロファイル）をパーツに直接持ち、追加プロファイルは差分として持つ。差分は必要な項目だけ指定し、全項目を指定すればそのプロファイル専用レイアウト（実質コピー）になる。単一プロファイルのプロジェクトでは差分を持たないため、データ構造に余分な入れ子は生じない。
 
 座標系はローカル座標を標準とする。Scene はルート座標系を持ち、Group 配下の Part/Group は親 Group の原点を基準とする `x` / `y` を保存する。描画時は親の座標を加算して絶対座標へ解決する。
 
@@ -397,29 +421,90 @@ Arduino 出力では、LovyanGFX/M5GFX で扱いやすいフォント参照方�
 - 状態変更時
 - Arduino 側 API からの明示実行時
 
-### 8.9 複数機種対応
+### 8.9 プロファイル（複数機種対応）
 
-共通レイアウトを基本とし、必要な場合のみ機種別オーバーライドを定義できる。
+複数機種対応は、ボードを直接レイアウトへ結びつけるのではなく、プロファイル（Profile）という単位を介して行う。設計方針は「単一機種できれいに動き、複数機種でも後付けで破綻しない」こととし、データ構造のみ将来の複数対応に耐える形を先に確定する。
 
-オーバーライド対象は以下とする。
+#### 8.9.1 プロファイルとは
 
-- 座標
-- サイズ
-- 表示/非表示
-- アセット差し替え
-- フォントサイズ
+プロファイルはレイアウトを定義する単位であり、以下を持つ。
 
-初期対応候補デバイスは以下とする。
+- ID（C/C++ 識別子。生成コードでは `Profile::<Id>` 定数になる）
+- 画面サイズ（デフォルト回転時の幅・高さ）
+- デフォルト回転（0–3）。シーンごとにこのプロファイル上で上書きできる（§8.9.3）
+- 割り当てボード（自動判定対象。0 個以上、複数可）
+- デフォルトフラグ（フォールバック用。プロジェクト内に必ず 1 つ）
 
-- M5Stack Core2
-- M5Stack CoreS3
-- M5StickC Plus
-- M5Cardputer
-- 任意の LovyanGFX 画面サイズ
+ユーザーが指定するのはボードではなくプロファイルである。
+
+プロファイル作成の流れ:
+
+1. 画面サイズを指定してプロファイルを作る（このサイズがレイアウトの論理座標空間になる）。
+2. 自動判定で割り当てたいボードを 0 個以上追加する。
+3. ボードを追加しないプロファイルは自動では選ばれず、プログラム内で明示指定して使う。
+
+#### 8.9.2 ボード割り当て
+
+1 つのプロファイルに 1 つ以上のボードを割り当てられる。
+
+- 個別に分けたい機種（例: M5Stack Core2 と CoreS3 は同じ 320×240 でもボタン領域などが異なる）は、ボード 1 個ずつのプロファイルにする。
+- まとめたい機種（例: M5StickC Plus と Plus2 は内部が異なるだけで画面・ボタンは同じ使い方）は、1 つのプロファイルに複数ボードを割り当てて共有する。コピーではなく共有なので、片方を直すともう片方にも反映される。
+- 「解像度でまとめる」は、同解像度のボードを 1 プロファイルに入れるという、この仕組みの一使い方として表現する。
+
+同一プロファイル内のボードは同じ画面サイズ・回転であることを前提とする。サイズや回転挙動が異なるボードを混在させようとした場合、オーサリングツールは警告する。
+
+#### 8.9.3 回転と向き
+
+向き（縦・横）は別プロファイルにはせず、回転で表現する。
+
+- プロファイルはデフォルト回転（0–3）を持つ。
+- シーンは回転を**プロファイル別に上書き**できる。実効回転は「そのシーンのプロファイル別差分があればそれ、なければプロファイルのデフォルト回転」とする。
+- これにより、1 つのプロファイル（= 1 つの物理ボード）の中で「シーン A は横、シーン B は縦」が成立する。回転を上書きしないシーンは、各プロファイルのデフォルト向きに自動追従する。
+
+キャンバスの幅・高さは、プロファイルの画面サイズを実効回転で縦横入れ替えたものになる。ランタイムはシーン描画前に実効回転を `setRotation()` で適用するだけとし、ボード別の回転ロジックは持たせない。ボードごとに既定回転が異なる問題は、オーサリングツールがボード別デフォルト回転テーブルを持ち、プロファイル作成・ボード割り当て時の初期値として吸収する。
+
+#### 8.9.4 ランタイムでのプロファイル選択
+
+プロファイルの選択順序は以下とする。
+
+1. `Profile::Auto`（既定）: `getBoard()` の結果を割り当て表で解決する。
+2. `screen.setProfile(Profile::<Id>)`: ユーザーが明示指定して上書きする。自作パネル（`board_unknown`）や、意図的に別レイアウトを使いたい場合に用いる。
+3. フォールバック: 検出できたがどのプロファイルにも割り当たっていないボード、または未知ボードは、デフォルトプロファイルを使う。
+
+デフォルトプロファイルはプロファイルに立てる `default` フラグで表し、プロジェクト内に必ず 1 つ存在する。新規作成時は最初に作ったプロファイルを default とし、ユーザーが付け替えられる。位置依存にしないため、リストの並び順ではなくフラグで管理する。
+
+将来的に、未知ボードを物理解像度に最も近いプロファイルへ自動フォールバックする方式を拡張候補とする。MVP では固定のデフォルトプロファイルで十分とする。
+
+#### 8.9.5 ボード判定の前提
+
+ボード判定は M5GFX / M5Unified / LovyanGFX の `getBoard()`（`lgfx::board_t`）を用いる。
+
+- M5GFX / M5Unified は現行の M5 ボードを網羅的に判定できる（Core 系、StickC 系、Cardputer、Dial、DinMeter、Tab5、外部 I2C ディスプレイの M5UnitLCD/OLED/GLASS など）。
+- 素の LovyanGFX（autodetect）は同ライブラリが既知のボードのみ判定でき、新しめの M5 ボード（Cardputer、Dial など）は判定できない。
+- いずれも autodetect または M5 初期化が前提であり、手書きの自作 LGFX 設定では `board_unknown` になる。
+
+したがって割り当てボードの語彙は M5GFX の `board_t` 名に統一する。素の LovyanGFX のみの環境では、判定できないボードは解像度フォールバックとし、同解像度で区別できないボード（例: Core2 と CoreS3）はコンパイル時ヒントで指定する。
+
+#### 8.9.6 オーバーライド対象
+
+プロファイルごとに差分指定（オーバーライド）できる対象は以下とする。
+
+- 座標（パーツ単位）
+- サイズ（パーツ単位）
+- 表示/非表示（パーツ単位）
+- アセット差し替え（パーツ単位）
+- フォントサイズ（パーツ単位）
+- 回転（シーン単位、§8.9.3）
+
+回転以外はパーツ単位の差分、回転はシーン単位の差分として持つ。差分は必要な項目だけ指定する。全項目を指定すれば、そのプロファイル専用レイアウト（実質コピー）になる。オーバーライドとコピーは同じ仕組みの両端であり、別概念にしない。
+
+#### 8.9.7 外部ディスプレイ
+
+I2C 接続の小型ディスプレイ（M5UnitLCD / OLED / GLASS など）も個別ボードとして判定されるため、同じモデルで扱う。1 つの `LGFXScreenBuilder` インスタンスは 1 つの描画先（gfx）を扱い、メイン画面と外部ディスプレイを同時に駆動する場合は別インスタンスとする。複数画面の同時駆動は将来拡張とする。
 
 ### 8.10 プレビュー切り替え
 
-Web オーサリングツール上で対象デバイスを切り替え、レイアウトを確認できる。
+Web オーサリングツール上で対象プロファイルを切り替え、レイアウトを確認できる。
 
 プレビューでは以下を確認できる。
 
@@ -451,9 +536,15 @@ Settings.brightness
 - Arduino 側 API の可読性向上
 - 大規模プロジェクトへの対応
 
-Arduino 側の利用例:
+生成コード（`Scene`・`Profile` など）は、グローバルを汚さないように**プロジェクト名の名前空間**で包む。プロジェクト名は名前空間になるため、C/C++ 識別子に限定する（§8.12）。`LGFXScreenBuilder` クラス本体はエントリポイントとしてグローバルに置く。
+
+利用側は `using namespace <Project>;` を書けば `Scene::` / `Profile::` の先頭を省略でき、書かなければ完全修飾（`<Project>::Scene::Main` 等）で衝突を避けられる。
+
+Arduino 側の利用例（プロジェクト名が `MyScreen` の場合）:
 
 ```cpp
+using namespace MyScreen;          // 任意。先頭を省略するため
+
 Scene::Main main;
 main.header.title = "Main";
 main.header.battery = 82;
@@ -474,7 +565,7 @@ screen.show(main);
 - 使用可能文字は ASCII 英数字と `_` とする。
 - 先頭文字は英字または `_` とする。
 - 先頭を数字にしない。
-- `class`、`struct`、`template`、`namespace`、`int`、`float`、`bool` など C/C++ の予約語を使わない。
+- `class`、`struct`、`template`、`namespace`、`int`、`float`、`bool`、`auto` など C/C++ の予約語を使わない。
 - 同じ階層内で ID を重複させない。
 - 大文字小文字を区別するが、紛らわしいため同一階層内で大文字小文字だけが異なる ID は警告する。
 
@@ -482,6 +573,8 @@ screen.show(main);
 
 - シーン ID は `PascalCase` とする。例: `Boot`, `Main`, `Settings`
 - グループ、パーツ、アセット ID は `camelCase` または `snake_case` とする。例: `header`, `batteryLevel`, `loading_icon`
+- プロファイル ID は `PascalCase` とする。生成コードでは `Profile::<Id>` 定数になる。例: `Core`, `Stick`。自動判定を表す組み込みプロファイルは `Auto` とする（`auto` は予約語のため使用できない）。
+- プロジェクト名は生成コードの名前空間になるため、同じ ID 命名ルール（C/C++ 識別子・予約語不可）に従う。慣例として `PascalCase`。例: `MyScreen`
 
 オーサリングツールは ID 入力時に検証し、不正な ID は保存またはエクスポート前に修正を求める。自動変換で別名を生成する方式は採用しない。これは、画面上の ID と Arduino 側の補完名を一致させるためである。
 
@@ -494,7 +587,7 @@ Web オーサリングツールでは以下の補助機能を提供する。
 - シーン ID の選択補完
 - 未使用アセットの検出
 - ID 重複の検出
-- デバイス別差分の表示
+- プロファイル別差分の表示
 - ID 文字列によるリスト絞り込み
 - 表示順によるリスト並び替え
 - 説明メモの編集
@@ -509,8 +602,8 @@ UI 専用の共通項目として、シーン、パーツ、グループ、ア�
 
 - 前回の自動保存がある場合は、復元、新規作成、プロジェクトを開く、を選択できる。
 - 前回の自動保存がない場合は、新規作成またはプロジェクトを開く、を選択できる。
-- 新規作成時に対象デバイス、プロジェクト名、最初のシーンを指定する。
-- 既存プロジェクトを開いた場合は、プロジェクトファイル内のデバイス設定を利用する。
+- 新規作成時に最初のプロファイル（対象デバイス／画面サイズ・回転）、プロジェクト名、最初のシーンを指定する。
+- 既存プロジェクトを開いた場合は、プロジェクトファイル内のプロファイル設定を利用する。
 
 プロジェクトは単一ファイルとして保存できることを基本とする。
 
@@ -520,8 +613,8 @@ UI 専用の共通項目として、シーン、パーツ、グループ、ア�
 
 プロジェクトファイルには以下を含める。
 
-- メタ情報
-- 対象デバイス
+- メタ情報（プロジェクト名を含む。プロジェクト名は生成コードの名前空間になるため C/C++ 識別子に限定する。§8.12）
+- プロファイル定義（ID・サイズ・デフォルト回転・割り当てボード・デフォルトフラグ）
 - シーン定義
 - パーツ定義
 - グループ定義
@@ -529,6 +622,8 @@ UI 専用の共通項目として、シーン、パーツ、グループ、ア�
 - アセット定義
 - フォント定義
 - 出力設定
+
+パーツのレイアウトは、ベース（最初のプロファイル）をパーツに直接持ち、追加プロファイルの差分はプロファイル ID をキーにした差分として持つ（§8.2）。回転はシーン単位でプロファイル別差分として持つ（§8.9.3）。単一プロファイルのプロジェクトでは差分を出力しない。生成構造体はパーツの ID・種別・親子関係のみから決まり、プロファイルや座標・回転には依存しない。
 
 MVP では、画像やフォントなどのアセット元データを Data URL として `.lgfxsb.json` に埋め込む。これにより、編集用プロジェクトを 1 ファイルで持ち運べるようにする。
 
@@ -626,7 +721,9 @@ MVP では `Header/PROGMEM + RAW RGB565` を標準出力とする。これによ
 
 ## 11. Arduino API 仕様案
 
-推奨 API は、生成されたシーン構造体を `screen.show()` に渡す形とする。
+推奨 API は、生成されたシーン構造体を `screen.show()` に渡す形とする。`screen` は、生成コードがプロジェクト名前空間内に出力する `Screen` クラスのインスタンスとする（共有エンジンにプロジェクト記述子を束縛した薄いファサード。詳細は後述）。
+
+以下の例は、生成コードが `using namespace <Project>;`（例: `MyScreen`）で取り込まれ、`Scene::` / `Profile::` / `Screen` の先頭を省略できる前提とする（§8.11）。
 
 データを持たないシーンは、一時オブジェクトを渡して描画する。
 
@@ -654,50 +751,108 @@ main.body.temperature = "25.1C";
 screen.update(main);
 ```
 
-生成されるシーン構造体の例:
+### 11.1 共有エンジンと生成ファサード
+
+ライブラリは描画ロジックを持つ**共有エンジン**を提供し、プロジェクトごとに生成される**薄いファサードクラス `Screen`** がそれにプロジェクト記述子を束縛する。
+
+共有エンジン（ライブラリ側。ユーザーは直接使わない）:
 
 ```cpp
-namespace Scene {
+namespace lgfxsb {
+  struct Project { /* profiles, boardMap, defaultProfile, scenes[], assets[] */ };
 
-struct Boot {
-  static constexpr SceneId id = SceneId::Boot;
-};
-
-struct Main {
-  static constexpr SceneId id = SceneId::Main;
-
-  struct Header {
-    const char* title = "";
-    int battery = 0;
-  } header;
-
-  struct Body {
-    const char* temperature = "";
-    bool wifiVisible = true;
-  } body;
-};
-
+  class Renderer {
+  protected:
+    LovyanGFX* _gfx = nullptr;
+    const Project& _project;
+    uint8_t _profile = 0;          // 0 = Auto（実解決は描画時に遅延）
+    void renderScene(/* sceneref */, uint8_t profile);
+  public:
+    Renderer(LovyanGFX& gfx, const Project& project) : _gfx(&gfx), _project(project) {}
+    void begin();                  // display 初期化後の設定フック（プロファイル選択には触れない）
+    void play(const char* animationId);
+  };
 }
 ```
 
-ライブラリの最小 API は以下を候補とする。
+生成コード（プロジェクト名前空間に出力。データ型＋ファサードクラス）:
 
 ```cpp
-class LGFXScreenBuilder {
+namespace MyScreen {
+
+enum class Profile : uint8_t { Auto = 0, Core, Stick, Cardputer };
+
+namespace Scene {
+  struct Boot { static constexpr SceneId id = SceneId::Boot; };
+  struct Main {
+    static constexpr SceneId id = SceneId::Main;
+    struct Header { const char* title = ""; int battery = 0; } header;
+    struct Body   { const char* temperature = ""; bool wifiVisible = true; } body;
+  };
+}
+
+extern const lgfxsb::Project project;          // 全データの入口（生成）
+
+class Screen : public lgfxsb::Renderer {       // プロジェクト専用ファサード
 public:
-  void begin(LovyanGFX* gfx);
-
-  template <typename TScene>
-  void show(const TScene& scene);
-
-  template <typename TScene>
-  void update(const TScene& scene);
-
-  void update();
-
-  void play(const char* animationId);
+  explicit Screen(LovyanGFX& gfx) : Renderer(gfx, project) {}   // 記述子を束縛
+  void setProfile(Profile p);                  // この型だけ受ける（他プロジェクトは型エラー）
+  template <class TScene> void show(const TScene& s);     // 自プロジェクトのシーンに限定
+  template <class TScene> void update(const TScene& s);
 };
+
+} // namespace MyScreen
 ```
+
+`Screen` がコンストラクタで記述子を束縛するため、ユーザーは `project` を毎回渡す必要がない。`setProfile()` は同名前空間の `Profile` を名指しするので型安全（他プロジェクトの `Profile` を渡すとコンパイルエラー）。テンプレート構文はユーザーにもライブラリ公開 API にも露出しない。
+
+### 11.2 利用例
+
+```cpp
+#include <LovyanGFX.hpp>
+#include <LGFX_AUTODETECT.hpp>
+#include <LGFXScreenBuilder.h>
+#include "myscreen_ui.h"          // 上記の生成物
+
+using namespace MyScreen;          // Scene:: / Profile:: / Screen を省略（任意）
+
+static LGFX display;
+static Screen screen(display);     // プロジェクトはクラスに束縛済み
+
+void setup() {
+  display.init();
+  screen.begin();                  // display 初期化後の設定フック
+
+  screen.show(Scene::Boot{});
+
+  Scene::Main main;
+  main.header.title     = "Main";
+  main.header.battery   = 82;
+  main.body.temperature = "24.5C";
+  screen.show(main);
+}
+
+void loop() {
+  static Scene::Main main;
+  main.header.battery   = readBattery();
+  main.body.temperature = formatTemp(readTemp());
+  screen.update(main);             // 値だけ差し替えて再描画
+  delay(1000);
+}
+```
+
+通常は `setProfile()` を呼ばず、既定の `Profile::Auto`（`getBoard()` による自動判定）に任せる。
+
+### 11.3 プロファイル選択（順不同・遅延解決）
+
+`setProfile()` と `begin()` の順序は固定しない。`setProfile()` は選択を記録するだけでハードウェアに触れないため、`begin()` の前後どちらでも、実行中の切り替えでも呼べる。`Profile::Auto` の実解決（`getBoard()`）と回転（`setRotation`）は描画時（`show` / `update`）に遅延適用するため、`display.init()` → `show()` の順さえ守れば順序を意識する必要はない。
+
+```cpp
+screen.setProfile(Profile::Stick);   // 自動判定を上書き（自作パネル等）。begin の前後どちらでも可
+screen.setProfile(Profile::Auto);    // 自動判定へ戻す
+```
+
+`Profile::Auto` は割り当て済みボードのみ解決し、未割り当て・未知ボードはデフォルトプロファイルへフォールバックする（§8.9）。ユーザーが指定するのはボードではなくプロファイルとする。`auto` は C/C++ 予約語のため、自動判定は `Auto` とする。複数プロジェクト同居時は `Screen` クラスが別型になり、他プロジェクトの `Profile` / `Scene` を渡すと型エラーになる（§8.11）。
 
 M5GFX は LovyanGFX 派生または互換 API として扱える範囲で同一 API に統合する。
 
@@ -801,7 +956,7 @@ GitHub Pages のプロジェクトページ配下でも動作するように、C
 最初の実装では以下を MVP とする。
 
 - Web オーサリングツールの基本画面
-- 画面サイズプリセット選択
+- プロファイル作成（画面サイズ・回転指定）
 - シーン作成
 - Text/Image/Rect/Group パーツ配置
 - PNG 画像アセット登録
