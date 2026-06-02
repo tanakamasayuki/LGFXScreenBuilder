@@ -17,7 +17,8 @@ python -m http.server 8000 --directory docs
   tabs); each profile holds an independent layout per scene (SPEC §8.9.6). Canvas
   rendering (Rect / Text with datum / Image placeholder), layer list, inspector,
   drag-move, arrow-key nudge/resize (§8.14), zoom, and scene-level properties on
-  deselect.
+  deselect. Scenes and parts can be added/deleted/renamed; adding or removing a
+  part/scene updates every profile's layout in lockstep (§8.9.6).
 - **i18n** (SPEC §14): all UI strings go through `src/i18n.js` (`t()` + `data-i18n`),
   en/ja with an en fallback and a language switcher; default follows the browser.
 - **Project persistence** (`src/persist.js`, SPEC §9): New / Open / Save toolbar

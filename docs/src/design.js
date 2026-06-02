@@ -4,6 +4,7 @@
 import { store, update } from './store.js';
 import {
   DATUMS, DATUM_FX, DATUM_FY, orient, pxOf, sceneById, profileById, partDef, placement,
+  addPart, removePart, renamePart, addScene, removeScene, renameScene,
 } from './model.js';
 import { t } from './i18n.js';
 
@@ -20,6 +21,7 @@ let scale = 1; // canvas px per logical px (fit * zoom)
 function renderScenes() {
   const el = $('scene-list');
   el.innerHTML = '';
+  $('scene-del').disabled = store.project.scenes.length <= 1;
   for (const s of store.project.scenes) {
     const it = document.createElement('div');
     it.className = 'sitem' + (s.id === store.ui.sceneId ? ' active' : '');
@@ -94,6 +96,7 @@ function renderParts() {
   const el = $('part-list');
   el.innerHTML = '';
   $('parts-title').textContent = t('parts.title', { scene: store.ui.sceneId });
+  $('part-del').disabled = !store.ui.selected;
   for (const def of curScene().parts) {
     const e = curPlacement(def.id);
     const it = document.createElement('div');
@@ -134,6 +137,7 @@ function renderInspector() {
   if (!def || !e) { el.innerHTML = `<p class="sub">${t('inspector.selectPart')}</p>`; return; }
 
   let h = '';
+  h += `<div class="field"><label>${t('field.partId')}</label><input type="text" id="p-id" value="${sel}"></div>`;
   if (def.type === 'Text') {
     h += `<div class="two">${row('x', t('field.anchorX'), 'number', e.x)}${row('y', t('field.anchorY'), 'number', e.y)}</div>`;
     h += `<div class="field"><label>${t('field.datum')}</label><select data-k="datum">` +
@@ -164,6 +168,12 @@ function renderInspector() {
   });
   const dsc = el.querySelector('#p-desc');
   if (dsc) dsc.oninput = (ev2) => { def.desc = ev2.target.value; };
+  // Rename on commit (change, not input): no-op on invalid/duplicate id.
+  const idInp = el.querySelector('#p-id');
+  if (idInp) idInp.addEventListener('change', () => {
+    const nid = renamePart(store.project, store.ui.sceneId, sel, idInp.value);
+    update((st) => { st.ui.selected = nid; });
+  });
 }
 
 // Part deselected -> edit the scene's own properties (§8.13).
@@ -171,12 +181,17 @@ function renderSceneProps() {
   const s = curScene();
   $('insp-title').textContent = t('inspector.scene', { scene: s.id });
   $('props').innerHTML =
-    readout(t('field.sceneId'), s.id) +
+    `<div class="field"><label>${t('field.sceneId')}</label><input type="text" id="s-id" value="${s.id}"></div>` +
     readout(t('field.partCount'), s.parts.length) +
     `<div class="field"><label>${t('field.descScene')}</label><textarea id="s-desc" rows="3">${s.desc || ''}</textarea></div>` +
     `<p class="sub">${t('hint.sceneProps')}</p>`;
   const dsc = $('s-desc');
   if (dsc) dsc.oninput = (ev) => { s.desc = ev.target.value; };
+  const idInp = $('s-id');
+  if (idInp) idInp.addEventListener('change', () => {
+    const nid = renameScene(store.project, s.id, idInp.value);
+    update((st) => { st.ui.sceneId = nid; });
+  });
 }
 
 function renderStatus() {
@@ -258,4 +273,33 @@ export function initDesign() {
   $('zoom-out').onclick = () => setZoom(store.ui.zoom / 1.2);
   $('zoom-reset').onclick = () => setZoom(1);
   scr.addEventListener('wheel', (ev) => { ev.preventDefault(); setZoom(store.ui.zoom * (ev.deltaY < 0 ? 1.1 : 1 / 1.1)); }, { passive: false });
+
+  // Scene add / delete (delete is disabled when only one scene remains).
+  $('scene-add').onclick = () => update((st) => {
+    st.ui.sceneId = addScene(st.project);
+    st.ui.selected = null;
+  });
+  $('scene-del').onclick = () => {
+    if (store.project.scenes.length <= 1) return;
+    if (!confirm(t('confirm.delScene', { id: store.ui.sceneId }))) return;
+    update((st) => {
+      removeScene(st.project, st.ui.sceneId);
+      st.ui.sceneId = st.project.scenes[0].id;
+      st.ui.selected = null;
+    });
+  };
+
+  // Part add (of the picked type) / delete (the selected part).
+  $('part-add').onclick = () => update((st) => {
+    st.ui.selected = addPart(st.project, st.ui.sceneId, $('part-type').value);
+  });
+  $('part-del').onclick = () => {
+    const sel = store.ui.selected;
+    if (!sel) return;
+    if (!confirm(t('confirm.delPart', { id: sel }))) return;
+    update((st) => {
+      removePart(st.project, st.ui.sceneId, sel);
+      st.ui.selected = null;
+    });
+  };
 }

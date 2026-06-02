@@ -141,6 +141,102 @@ export function placement(profile, sceneId, partId) {
   return s ? s[partId] : undefined;
 }
 
+// --- structural mutations ------------------------------------------------
+// Invariant (§8.2/§8.9.6): a part def (id/type/parent) is shared across all
+// profiles; its placement lives per profile, per scene. So adding/removing a
+// part or scene must touch every profile's layout in lockstep — that is why
+// these live here rather than scattered in the UI.
+
+// en: A valid C identifier (ids become struct members in generated code, §8.12).
+// ja: 生成コードで構造体メンバになるため C 識別子に限定（§8.12）。
+export const isValidId = (s) => /^[A-Za-z_]\w*$/.test(s);
+
+// Pick an unused id of the form base / base2 / base3 ... given taken ids.
+function uniqueId(base, taken) {
+  if (!taken.has(base)) return base;
+  let i = 2;
+  while (taken.has(base + i)) i++;
+  return base + i;
+}
+
+// Default placement for a freshly added part, roughly centered on the profile.
+function defaultPlacement(type, profile) {
+  const cx = Math.round(profile.w / 2), cy = Math.round(profile.h / 2);
+  if (type === 'Text') return text(cx, cy, 'MC', 1.5, '#ffffff', 'Text');
+  const w = Math.min(80, profile.w - 8), h = Math.min(48, profile.h - 8);
+  const x = cx - (w >> 1), y = cy - (h >> 1);
+  if (type === 'Image') return { x, y, w, h, visible: true };
+  return rect(x, y, w, h, '#1e2a30'); // Rect
+}
+
+// Add a part to a scene and create its placement in every profile. Returns id.
+export function addPart(project, sceneId, type) {
+  const scene = sceneById(project, sceneId);
+  const id = uniqueId(type.toLowerCase(), new Set(scene.parts.map((p) => p.id)));
+  scene.parts.push({ id, type, parent: null, desc: '' });
+  for (const pr of project.profiles) {
+    if (!pr.layout[sceneId]) pr.layout[sceneId] = {};
+    pr.layout[sceneId][id] = defaultPlacement(type, pr);
+  }
+  return id;
+}
+
+// Remove a part from a scene and from every profile's layout. Orphaned children
+// (of a deleted group) are re-parented to root.
+export function removePart(project, sceneId, partId) {
+  const scene = sceneById(project, sceneId);
+  scene.parts = scene.parts.filter((p) => p.id !== partId);
+  for (const p of scene.parts) if (p.parent === partId) p.parent = null;
+  for (const pr of project.profiles) {
+    const s = pr.layout[sceneId];
+    if (s) delete s[partId];
+  }
+}
+
+// Rename a part within a scene (updates parent refs and every profile's layout
+// key). No-op (returns oldId) on empty/duplicate/invalid id.
+export function renamePart(project, sceneId, oldId, newId) {
+  newId = (newId || '').trim();
+  if (!newId || newId === oldId || !isValidId(newId)) return oldId;
+  const scene = sceneById(project, sceneId);
+  if (scene.parts.some((p) => p.id === newId)) return oldId;
+  for (const p of scene.parts) {
+    if (p.id === oldId) p.id = newId;
+    if (p.parent === oldId) p.parent = newId;
+  }
+  for (const pr of project.profiles) {
+    const s = pr.layout[sceneId];
+    if (s && oldId in s) { s[newId] = s[oldId]; delete s[oldId]; }
+  }
+  return newId;
+}
+
+// Add an empty scene and an empty layout for it in every profile. Returns id.
+export function addScene(project, baseName = 'Scene') {
+  const id = uniqueId(baseName, new Set(project.scenes.map((s) => s.id)));
+  project.scenes.push({ id, desc: '', parts: [] });
+  for (const pr of project.profiles) pr.layout[id] = {};
+  return id;
+}
+
+// Remove a scene and its layout from every profile.
+export function removeScene(project, sceneId) {
+  project.scenes = project.scenes.filter((s) => s.id !== sceneId);
+  for (const pr of project.profiles) delete pr.layout[sceneId];
+}
+
+// Rename a scene (updates every profile's layout key). No-op on dup/invalid.
+export function renameScene(project, oldId, newId) {
+  newId = (newId || '').trim();
+  if (!newId || newId === oldId || !isValidId(newId)) return oldId;
+  if (project.scenes.some((s) => s.id === newId)) return oldId;
+  sceneById(project, oldId).id = newId;
+  for (const pr of project.profiles) {
+    if (pr.layout[oldId]) { pr.layout[newId] = pr.layout[oldId]; delete pr.layout[oldId]; }
+  }
+  return newId;
+}
+
 // Base font height (px) used to convert a text-size multiplier to a px hint (§8.7).
 export const BASE_FONT_PX = 8;
 export const pxOf = (size) => Math.round(size * BASE_FONT_PX);

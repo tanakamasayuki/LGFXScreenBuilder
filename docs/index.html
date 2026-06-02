@@ -35,11 +35,28 @@
   <div class="cols">
     <aside class="left">
       <div class="section">
-        <h2 data-i18n="pane.scenes">Scenes</h2>
+        <div class="sechead">
+          <h2 data-i18n="pane.scenes">Scenes</h2>
+          <div class="secacts">
+            <button class="icon" id="scene-add" data-i18n-title="act.addScene">＋</button>
+            <button class="icon" id="scene-del" data-i18n-title="act.delScene">🗑</button>
+          </div>
+        </div>
         <div class="list" id="scene-list"></div>
       </div>
       <div class="section">
-        <h2 id="parts-title" data-i18n="pane.parts">Parts</h2>
+        <div class="sechead">
+          <h2 id="parts-title" data-i18n="pane.parts">Parts</h2>
+          <div class="secacts">
+            <select class="icon" id="part-type">
+              <option value="Rect">Rect</option>
+              <option value="Text">Text</option>
+              <option value="Image">Image</option>
+            </select>
+            <button class="icon" id="part-add" data-i18n-title="act.addPart">＋</button>
+            <button class="icon" id="part-del" data-i18n-title="act.delPart">🗑</button>
+          </div>
+        </div>
         <div class="list" id="part-list"></div>
       </div>
       <div class="section">
