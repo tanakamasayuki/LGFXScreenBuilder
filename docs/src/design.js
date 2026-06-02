@@ -1,16 +1,18 @@
 // Design mode: two-axis editor (scenes in the left pane x profiles as top tabs).
 // Each profile holds an independent layout per scene; switching either axis
 // re-renders the canvas. Ported from the validated design probe.
-import { store, update, emit } from './store.js';
+import { store, update } from './store.js';
 import {
   DATUMS, DATUM_FX, DATUM_FY, orient, pxOf, sceneById, profileById, partDef, placement,
 } from './model.js';
+import { t } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 
 const curScene = () => sceneById(store.project, store.ui.sceneId);
 const curProfile = () => profileById(store.project, store.ui.profileId);
 const curPlacement = (partId) => placement(curProfile(), store.ui.sceneId, partId);
+const orientText = (w, h) => t('orient.' + orient(w, h));
 
 let scale = 1; // canvas px per logical px (fit * zoom)
 
@@ -21,7 +23,7 @@ function renderScenes() {
   for (const s of store.project.scenes) {
     const it = document.createElement('div');
     it.className = 'sitem' + (s.id === store.ui.sceneId ? ' active' : '');
-    it.innerHTML = `<span>${s.id}</span><span class="cnt">${s.parts.length} parts</span>`;
+    it.innerHTML = `<span>${s.id}</span><span class="cnt">${t('cnt.parts', { n: s.parts.length })}</span>`;
     it.onclick = () => update((st) => { st.ui.sceneId = s.id; st.ui.selected = null; });
     el.appendChild(it);
   }
@@ -32,13 +34,13 @@ function renderTabs() {
   const el = $('profile-tabs');
   el.innerHTML = '';
   for (const p of store.project.profiles) {
-    const t = document.createElement('div');
-    t.className = 'tab' + (p.id === store.ui.profileId ? ' active' : '');
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (p.id === store.ui.profileId ? ' active' : '');
     const def = store.project.defaultProfile === p.id ? '<span class="defbadge">default</span>' : '';
-    t.innerHTML = `<span class="t1">${p.id}${def}</span>` +
-      `<span class="t2">${p.w}×${p.h} · ${orient(p.w, p.h)} · rot${p.rotation}</span>`;
-    t.onclick = () => update((st) => { st.ui.profileId = p.id; });
-    el.appendChild(t);
+    tab.innerHTML = `<span class="t1">${p.id}${def}</span>` +
+      `<span class="t2">${p.w}×${p.h} · ${orientText(p.w, p.h)} · rot${p.rotation}</span>`;
+    tab.onclick = () => update((st) => { st.ui.profileId = p.id; });
+    el.appendChild(tab);
   }
 }
 
@@ -91,12 +93,12 @@ function renderCanvas() {
 function renderParts() {
   const el = $('part-list');
   el.innerHTML = '';
-  $('parts-title').textContent = `Parts（${store.ui.sceneId}）`;
+  $('parts-title').textContent = t('parts.title', { scene: store.ui.sceneId });
   for (const def of curScene().parts) {
     const e = curPlacement(def.id);
     const it = document.createElement('div');
     it.className = 'pitem' + (def.id === store.ui.selected ? ' active' : '');
-    it.innerHTML = `<span>${def.id}${e && e.visible ? '' : ' （非表示）'}</span><span class="ty">${def.type}</span>`;
+    it.innerHTML = `<span>${def.id}${e && e.visible ? '' : t('list.hidden')}</span><span class="ty">${def.type}</span>`;
     it.onclick = () => update((st) => { st.ui.selected = def.id; });
     el.appendChild(it);
   }
@@ -109,9 +111,9 @@ const readout = (label, value) => `<div class="field"><label>${label}</label><di
 function renderProfMeta() {
   const pr = curProfile();
   $('prof-meta').innerHTML =
-    readout('サイズ', `${pr.w} × ${pr.h}`) +
-    readout('回転', `${pr.rotation} <span class="unit">（${orient(pr.w, pr.h)}）</span>`) +
-    `<p class="sub">サイズ・回転・ボード割当は Profiles 画面。ここは配置編集。</p>`;
+    readout(t('field.size'), `${pr.w} × ${pr.h}`) +
+    readout(t('field.rotation'), `${pr.rotation} <span class="unit">（${orientText(pr.w, pr.h)}）</span>`) +
+    `<p class="sub">${t('hint.profileMeta')}</p>`;
 }
 
 // --- right: inspector ----------------------------------------------------
@@ -128,34 +130,34 @@ function renderInspector() {
   if (!sel) { renderSceneProps(); return; }
   const def = partDef(curScene(), sel);
   const e = curPlacement(sel);
-  $('insp-title').textContent = `プロパティ（${store.ui.sceneId} / ${store.ui.profileId}）`;
-  if (!def || !e) { el.innerHTML = '<p class="sub">パーツを選択してください。</p>'; return; }
+  $('insp-title').textContent = t('inspector.part', { scene: store.ui.sceneId, profile: store.ui.profileId });
+  if (!def || !e) { el.innerHTML = `<p class="sub">${t('inspector.selectPart')}</p>`; return; }
 
   let h = '';
   if (def.type === 'Text') {
-    h += `<div class="two">${row('x', 'アンカー X', 'number', e.x)}${row('y', 'アンカー Y', 'number', e.y)}</div>`;
-    h += `<div class="field"><label>基準点（datum）</label><select data-k="datum">` +
-      DATUMS.map(([v, l]) => `<option value="${v}" ${e.datum === v ? 'selected' : ''}>${v}（${l}）</option>`).join('') +
+    h += `<div class="two">${row('x', t('field.anchorX'), 'number', e.x)}${row('y', t('field.anchorY'), 'number', e.y)}</div>`;
+    h += `<div class="field"><label>${t('field.datum')}</label><select data-k="datum">` +
+      DATUMS.map((v) => `<option value="${v}" ${e.datum === v ? 'selected' : ''}>${v}（${t('datum.' + v)}）</option>`).join('') +
       `</select></div>`;
-    h += row('text', '文字', 'text', e.text);
-    h += `<div class="field"><div class="lab"><label>文字サイズ（倍率）</label><span class="sub" id="px-hint">≈ ${pxOf(e.size)}px</span></div>` +
+    h += row('text', t('field.text'), 'text', e.text);
+    h += `<div class="field"><div class="lab"><label>${t('field.textSize')}</label><span class="sub" id="px-hint">${t('units.pxApprox', { px: pxOf(e.size) })}</span></div>` +
       `<input type="number" data-k="size" step="0.25" min="0.25" value="${e.size}"></div>`;
   } else {
-    h += `<div class="two">${row('x', 'X', 'number', e.x)}${row('y', 'Y', 'number', e.y)}</div>`;
-    h += `<div class="two">${row('w', '幅', 'number', e.w)}${row('h', '高さ', 'number', e.h)}</div>`;
-    if (def.type === 'Rect') h += `<div class="field"><label>色</label><input type="color" data-k="color" value="${e.color}"></div>`;
+    h += `<div class="two">${row('x', t('field.x'), 'number', e.x)}${row('y', t('field.y'), 'number', e.y)}</div>`;
+    h += `<div class="two">${row('w', t('field.width'), 'number', e.w)}${row('h', t('field.height'), 'number', e.h)}</div>`;
+    if (def.type === 'Rect') h += `<div class="field"><label>${t('field.color')}</label><input type="color" data-k="color" value="${e.color}"></div>`;
   }
-  h += row('visible', '表示', 'checkbox', e.visible);
-  h += `<div class="field"><label>備考（全プロファイル共通）</label><textarea id="p-desc" rows="2">${def.desc || ''}</textarea></div>`;
+  h += row('visible', t('field.visible'), 'checkbox', e.visible);
+  h += `<div class="field"><label>${t('field.descPart')}</label><textarea id="p-desc" rows="2">${def.desc || ''}</textarea></div>`;
   el.innerHTML = h;
 
   el.querySelectorAll('[data-k]').forEach((inp) => {
-    const k = inp.dataset.k, t = inp.type;
-    const ev = t === 'checkbox' ? 'change' : 'input';
+    const k = inp.dataset.k, type = inp.type;
+    const ev = type === 'checkbox' ? 'change' : 'input';
     inp.addEventListener(ev, () => {
-      const v = t === 'checkbox' ? inp.checked : (t === 'number' ? (+inp.value || 0) : inp.value);
+      const v = type === 'checkbox' ? inp.checked : (type === 'number' ? (+inp.value || 0) : inp.value);
       e[k] = v;
-      if (k === 'size') { const hint = $('px-hint'); if (hint) hint.textContent = '≈ ' + pxOf(v) + 'px'; }
+      if (k === 'size') { const hint = $('px-hint'); if (hint) hint.textContent = t('units.pxApprox', { px: pxOf(v) }); }
       // keep focus: rerender canvas/list/status but not the inspector
       renderCanvas(); renderParts(); renderStatus();
     });
@@ -167,12 +169,12 @@ function renderInspector() {
 // Part deselected -> edit the scene's own properties (§8.13).
 function renderSceneProps() {
   const s = curScene();
-  $('insp-title').textContent = `画面プロパティ（${s.id}）`;
+  $('insp-title').textContent = t('inspector.scene', { scene: s.id });
   $('props').innerHTML =
-    readout('シーン ID', s.id) +
-    readout('パーツ数', s.parts.length) +
-    `<div class="field"><label>備考（この画面のメモ）</label><textarea id="s-desc" rows="3">${s.desc || ''}</textarea></div>` +
-    `<p class="sub">回転はプロファイル単位（Profiles 画面）。パーツを選ぶと配置を編集します。</p>`;
+    readout(t('field.sceneId'), s.id) +
+    readout(t('field.partCount'), s.parts.length) +
+    `<div class="field"><label>${t('field.descScene')}</label><textarea id="s-desc" rows="3">${s.desc || ''}</textarea></div>` +
+    `<p class="sub">${t('hint.sceneProps')}</p>`;
   const dsc = $('s-desc');
   if (dsc) dsc.oninput = (ev) => { s.desc = ev.target.value; };
 }
@@ -180,11 +182,15 @@ function renderSceneProps() {
 function renderStatus() {
   const pr = curProfile();
   const e = store.ui.selected ? curPlacement(store.ui.selected) : null;
-  const detail = e
-    ? ('w' in e ? `x:${e.x}, y:${e.y}, w:${e.w}, h:${e.h}` : `x:${e.x}, y:${e.y}, datum:${e.datum}, ×${e.size}`)
-    : '';
-  $('st-sel').textContent = e ? `${store.ui.sceneId} / 選択: ${store.ui.selected}  (${detail})` : `${store.ui.sceneId} / 未選択`;
-  $('st-prof').textContent = `${pr.id} ${pr.w}×${pr.h}（${orient(pr.w, pr.h)} / rotation ${pr.rotation}）`;
+  if (e) {
+    const detail = 'w' in e
+      ? `x:${e.x}, y:${e.y}, w:${e.w}, h:${e.h}`
+      : `x:${e.x}, y:${e.y}, datum:${e.datum}, ×${e.size}`;
+    $('st-sel').textContent = t('status.selected', { scene: store.ui.sceneId, id: store.ui.selected, detail });
+  } else {
+    $('st-sel').textContent = t('status.none', { scene: store.ui.sceneId });
+  }
+  $('st-prof').textContent = t('status.profile', { profile: pr.id, w: pr.w, h: pr.h, orient: orientText(pr.w, pr.h), rot: pr.rotation });
   $('zoom-label').textContent = Math.round(store.ui.zoom * 100) + '%';
 }
 

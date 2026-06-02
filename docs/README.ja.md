@@ -17,6 +17,8 @@ python -m http.server 8000 --directory docs
   シーンごとに独立レイアウトを持つ（SPEC §8.9.6）。キャンバス描画（Rect / Text は datum / Image は
   プレースホルダ）、レイヤー一覧、インスペクタ、ドラッグ移動、矢印キーの移動/リサイズ（§8.14）、
   ズーム、未選択時の画面（シーン）プロパティ。
+- **多言語化**（SPEC §14）: UI 文字列はすべて `src/i18n.js`（`t()` ＋ `data-i18n`）経由。en/ja・
+  en フォールバック・言語切替を実装。初期言語はブラウザ設定に追従。
 - Profiles / Assets / Export モード、プロジェクト保存/読込（`.lgfxsb.json`）、コード生成
   （`<Project>.h`）は未接続。
 
@@ -26,6 +28,7 @@ python -m http.server 8000 --directory docs
 - `styles.css`
 - `src/model.js` — プロジェクトデータモデル＋サンプル＋ヘルパ
 - `src/store.js` — リアクティブストア（プロジェクト＋エディタ UI 状態）
+- `src/i18n.js` — 翻訳（en/ja）＋ `t()` ＋静的マークアップ適用
 - `src/design.js` — Design モード（描画＋操作）
 - `src/main.js` — ブートストラップ
 

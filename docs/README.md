@@ -18,6 +18,8 @@ python -m http.server 8000 --directory docs
   rendering (Rect / Text with datum / Image placeholder), layer list, inspector,
   drag-move, arrow-key nudge/resize (§8.14), zoom, and scene-level properties on
   deselect.
+- **i18n** (SPEC §14): all UI strings go through `src/i18n.js` (`t()` + `data-i18n`),
+  en/ja with an en fallback and a language switcher; default follows the browser.
 - Profiles / Assets / Export modes, project save/load (`.lgfxsb.json`), and code
   generation (`<Project>.h`) are not wired up yet.
 
@@ -27,6 +29,7 @@ python -m http.server 8000 --directory docs
 - `styles.css`
 - `src/model.js` — project data model + sample project + helpers
 - `src/store.js` — reactive store (project + editor UI state)
+- `src/i18n.js` — translations (en/ja) + `t()` + static-markup applier
 - `src/design.js` — Design mode (render + interactions)
 - `src/main.js` — bootstrap
 

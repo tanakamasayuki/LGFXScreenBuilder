@@ -13,16 +13,14 @@
 
 export const PART_TYPES = ['Group', 'Rect', 'Text', 'Image'];
 
-// 9-point datum, ordering matches lgfxsb::Datum / LovyanGFX textdatum_t.
-export const DATUMS = [
-  ['TL', '左上'], ['TC', '上中'], ['TR', '右上'],
-  ['ML', '左中'], ['MC', '中央'], ['MR', '右中'],
-  ['BL', '左下'], ['BC', '下中'], ['BR', '右下'],
-];
+// 9-point datum codes, ordering matches lgfxsb::Datum / LovyanGFX textdatum_t.
+// Display labels are localized via i18n (datum.<code>).
+export const DATUMS = ['TL', 'TC', 'TR', 'ML', 'MC', 'MR', 'BL', 'BC', 'BR'];
 export const DATUM_FX = { L: 0, C: 0.5, R: 1 };
 export const DATUM_FY = { T: 0, M: 0.5, B: 1 };
 
-export const orient = (w, h) => (w > h ? '横' : h > w ? '縦' : '正方');
+// Orientation as a code; localized via i18n (orient.<code>).
+export const orient = (w, h) => (w > h ? 'landscape' : h > w ? 'portrait' : 'square');
 
 // Placement factories. Rect/Image carry w/h; Text carries datum/size (no box; §8.7).
 const rect = (x, y, w, h, color, visible = true) => ({ x, y, w, h, color, visible });

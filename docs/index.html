@@ -10,27 +10,33 @@
   <header class="topbar">
     <h1>LGFXScreenBuilder</h1>
     <nav class="modes" id="modes">
-      <button class="mode active" data-mode="design">Design</button>
-      <button class="mode" data-mode="profiles" disabled>Profiles</button>
-      <button class="mode" data-mode="assets" disabled>Assets</button>
-      <button class="mode" data-mode="export" disabled>Export</button>
+      <button class="mode active" data-mode="design" data-i18n="mode.design">Design</button>
+      <button class="mode" data-mode="profiles" data-i18n="mode.profiles" disabled>Profiles</button>
+      <button class="mode" data-mode="assets" data-i18n="mode.assets" disabled>Assets</button>
+      <button class="mode" data-mode="export" data-i18n="mode.export" disabled>Export</button>
     </nav>
     <span class="grow"></span>
-    <span class="note">MVP foundation — Design</span>
+    <span class="note" data-i18n="app.note">MVP foundation — Design</span>
+    <label class="langsel">🌐
+      <select id="lang">
+        <option value="en">EN</option>
+        <option value="ja">日本語</option>
+      </select>
+    </label>
   </header>
 
   <div class="cols">
     <aside class="left">
       <div class="section">
-        <h2>Scenes</h2>
+        <h2 data-i18n="pane.scenes">Scenes</h2>
         <div class="list" id="scene-list"></div>
       </div>
       <div class="section">
-        <h2 id="parts-title">Parts</h2>
+        <h2 id="parts-title" data-i18n="pane.parts">Parts</h2>
         <div class="list" id="part-list"></div>
       </div>
       <div class="section">
-        <h2>このプロファイル</h2>
+        <h2 data-i18n="pane.profile">This profile</h2>
         <div id="prof-meta"></div>
       </div>
     </aside>
@@ -38,7 +44,7 @@
     <main class="center">
       <div class="tabs" id="profile-tabs"></div>
       <div class="zbar">
-        <span class="sub">中ボタン=パン／ホイール=ズーム</span>
+        <span class="sub" data-i18n="zbar.hint">Middle button = pan / wheel = zoom</span>
         <span class="grow"></span>
         <button class="mini" id="zoom-out">−</button>
         <span class="sub" id="zoom-label">100%</span>
@@ -48,12 +54,12 @@
       <div class="stage" id="stage">
         <div class="device"><div class="screen" id="canvas-screen"></div></div>
       </div>
-      <div class="statusbar"><span id="st-sel">未選択</span><span id="st-prof"></span></div>
+      <div class="statusbar"><span id="st-sel"></span><span id="st-prof"></span></div>
     </main>
 
     <aside class="right">
       <div class="section">
-        <h2 id="insp-title">プロパティ</h2>
+        <h2 id="insp-title" data-i18n="inspector.title">Properties</h2>
         <div id="props"></div>
       </div>
     </aside>
