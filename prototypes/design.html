@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Design / per-profile layout probe — LGFXScreenBuilder</title>
+  <!--
+    使い捨てプローブ: Design でのプロファイル別レイアウト編集の手触り検証専用。
+    確定モデル（オーバーライド概念なし）:
+      - 各プロファイルは独立したフルレイアウトを持つ
+      - プロファイルタブ切替＝そのプロファイルの配置を「直接」編集する
+      - 新規プロファイルはクローンで開始（既存の好きなプロファイルから複製）
+      - 継承/上書きの概念・バッジ・「ベースに戻す」は無い
+      - default はランタイム fallback 用の純粋なフラグ（レイアウト保存とは独立）
+      - default プロファイルとの差分ハイライトは将来検討（後回し §8.13）。本プローブには出さない
+    ※本番には移さない。docs/ とは分離。
+
+    旧版との違い: ベース＋差分(ov)モデルを撤去し、profile.layout[partId] にフルセットを保持する形へ。
+  -->
+  <style>
+    :root{
+      --bg:#f5f7f8;--panel:#fff;--soft:#eef4f5;--line:#d6e0e3;--line2:#9fb2b8;
+      --text:#172126;--muted:#5d6d73;--accent:#087b76;--accent-soft:#dcefed;
+      --screen:#11191d;--sel:#4bd2c8;--def:#087b76;
+      font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.4;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text)}
+    button,input,select{font:inherit}
+    button{min-height:30px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);padding:0 10px;cursor:pointer}
+    button:hover{border-color:var(--line2);background:var(--soft)}
+    .topbar{display:flex;align-items:baseline;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+    .topbar h1{margin:0;font-size:16px}
+    .topbar .note{color:var(--muted);font-size:12px}
+    .cols{display:grid;grid-template-columns:210px minmax(420px,1fr) 300px;min-height:calc(100vh - 52px)}
+    .left{border-right:1px solid var(--line);background:var(--panel)}
+    .right{border-left:1px solid var(--line);background:var(--panel)}
+    .center{background:#dce6e8;display:grid;grid-template-rows:auto auto 1fr auto;min-height:0}
+    .section{padding:12px;border-bottom:1px solid var(--line)}
+    h2{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    .tabs{display:flex;gap:6px;flex-wrap:wrap;align-items:stretch;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line)}
+    .tab{display:grid;gap:1px;justify-items:start;border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;background:var(--panel);min-width:96px;position:relative}
+    .tab.active{border-color:var(--accent);background:var(--accent-soft)}
+    .tab .t1{font-size:13px;font-weight:650}
+    .tab .t2{font-size:11px;color:var(--muted)}
+    .tab .defbadge{font-size:10px;color:#fff;background:var(--def);border-radius:8px;padding:0 6px;margin-left:6px}
+    .stage{display:grid;place-items:center;padding:18px;overflow:auto;min-height:0}
+    .device{padding:12px;border:1px solid #253137;border-radius:8px;background:#263238}
+    .screen{position:relative;overflow:hidden;background:var(--screen);border:1px solid #000;touch-action:none;user-select:none}
+    .part{position:absolute;border:1px solid transparent;overflow:hidden;cursor:move;white-space:nowrap;box-sizing:border-box}
+    .part.text{display:flex;align-items:center;color:#fff;font-weight:650}
+    .part.selected{border-color:var(--sel);box-shadow:0 0 0 1px var(--sel) inset}
+    .part.hidden{opacity:.25}
+    .statusbar{display:flex;justify-content:space-between;gap:8px;padding:8px 12px;border-top:1px solid var(--line);background:rgba(255,255,255,.8);color:var(--muted);font-size:12px}
+    .list{display:grid;gap:4px}
+    .pitem{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px;border:1px solid transparent;border-radius:6px;padding:6px 8px;cursor:pointer;font-size:13px}
+    .pitem:hover{background:var(--soft)}
+    .pitem.active{border-color:#8fcac5;background:#e1f2f0}
+    .pitem .ty{color:var(--muted);font-size:11px}
+    .field{display:grid;gap:4px;margin-bottom:9px}
+    .field label{color:var(--muted);font-size:12px}
+    .field input,.field select{width:100%;min-height:30px;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--panel);color:var(--text)}
+    .field textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--panel);color:var(--text);resize:vertical;min-height:42px;font:inherit}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .mini{min-height:26px;padding:0 8px;font-size:12px;border-radius:5px}
+    .sub{color:var(--muted);font-size:12px}
+    .zbar{display:flex;gap:6px;align-items:center;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--line)}
+    .tips{position:fixed;right:14px;bottom:14px;z-index:20;background:rgba(23,33,38,.92);color:#cfe0e3;border:1px solid #33454d;border-radius:8px;padding:8px 10px;font-size:11px;line-height:1.6;box-shadow:0 10px 28px rgba(0,0,0,.28);max-width:250px}
+    .tips b{color:#fff;display:block;margin-bottom:3px}
+    .tips kbd{background:#33454d;border-radius:3px;padding:0 4px;font-family:inherit}
+    .tips .x{position:absolute;top:4px;right:6px;cursor:pointer;color:#8aa0a7}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Design — プロファイル別レイアウト</h1>
+    <span class="note">使い捨てプローブ — タブでプロファイル切替＝そのプロファイルの配置を直接編集。各プロファイルは独立（上書き概念なし）</span>
+  </header>
+
+  <div class="tips" id="tips">
+    <span class="x" onclick="this.parentNode.style.display='none'">×</span>
+    <b>操作のヒント</b>
+    タブ：プロファイル切替（各々が独立レイアウト）<br>
+    パーツドラッグ：移動<br>
+    <kbd>矢印</kbd> 移動（<kbd>Shift</kbd>=10px）<br>
+    <kbd>Ctrl</kbd>+<kbd>矢印</kbd> リサイズ／<kbd>Del</kbd> 不可（パーツ追加削除はSceneで）<br>
+    ホイール：拡大縮小／中ボタン＋ドラッグ：パン
+  </div>
+
+  <div class="cols">
+    <aside class="left">
+      <div class="section">
+        <h2>Parts（このプロファイルの配置）</h2>
+        <div class="list" id="part-list"></div>
+      </div>
+      <div class="section">
+        <h2>このプロファイル</h2>
+        <div id="prof-meta"></div>
+      </div>
+    </aside>
+
+    <main class="center">
+      <div class="tabs" id="tabs"></div>
+      <div class="zbar">
+        <span class="sub">中ボタン=パン／ホイール=ズーム</span><span style="flex:1"></span>
+        <button class="mini" id="z-out">−</button>
+        <span class="sub" id="z-val">100%</span>
+        <button class="mini" id="z-in">＋</button>
+        <button class="mini" id="z-reset">100%に戻す</button>
+      </div>
+      <div class="stage" id="stage">
+        <div class="device"><div class="screen" id="screen"></div></div>
+      </div>
+      <div class="statusbar"><span id="st-sel">未選択</span><span id="st-prof"></span></div>
+    </main>
+
+    <aside class="right">
+      <div class="section">
+        <h2 id="insp-title">プロパティ</h2>
+        <div id="props"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // パーツ定義（生成構造体に対応する不変部分: ID + 型 のみ）。座標/サイズ/スタイルは各プロファイルが保持。
+    const partDefs=[
+      {id:'headerBand',type:'rect',desc:''},
+      {id:'title',     type:'text',desc:''},
+      {id:'battery',   type:'text',desc:''},
+      {id:'temp',      type:'text',desc:'メイン計測値。機種ごとに最大化したい'},
+      {id:'panel',     type:'rect',desc:''},
+    ];
+    const partDef=id=>partDefs.find(p=>p.id===id);
+
+    // 各プロファイルは layout[partId] に「全項目」を独立保持（base/override の差分概念なし）。
+    function L(x,y,w,h,visible,extra){return Object.assign({x,y,w,h,visible},extra||{});}
+    const profiles=[
+      {id:'Core',w:320,h:240,rotation:1,default:true,layout:{
+        headerBand:L(0,0,320,40,true,{color:'#1e2a30'}),
+        title:     L(12,10,140,22,true,{text:'Main',font:16,color:'#ffffff'}),
+        battery:   L(250,12,60,18,true,{text:'82%',font:13,color:'#9ce5ac'}),
+        temp:      L(18,70,180,44,true,{text:'24.5C',font:34,color:'#ffffff'}),
+        panel:     L(18,150,284,54,true,{color:'#172126'}),
+      }},
+      {id:'Cardputer',w:240,h:135,rotation:1,default:false,layout:{
+        headerBand:L(0,0,240,26,true,{color:'#1e2a30'}),
+        title:     L(8,5,120,16,true,{text:'Main',font:13,color:'#ffffff'}),
+        battery:   L(186,6,50,14,true,{text:'82%',font:11,color:'#9ce5ac'}),
+        temp:      L(12,40,150,34,true,{text:'24.5C',font:26,color:'#ffffff'}),
+        panel:     L(12,86,216,40,false,{color:'#172126'}),
+      }},
+      {id:'Stick',w:135,h:240,rotation:0,default:false,layout:{
+        headerBand:L(0,0,135,30,true,{color:'#1e2a30'}),
+        title:     L(8,7,90,16,true,{text:'Main',font:13,color:'#ffffff'}),
+        battery:   L(8,180,90,16,true,{text:'82%',font:12,color:'#9ce5ac'}),
+        temp:      L(10,60,115,40,true,{text:'24.5',font:30,color:'#ffffff'}),
+        panel:     L(10,110,115,60,true,{color:'#172126'}),
+      }},
+    ];
+
+    let active='Core', selected='title';
+    const prof=()=>profiles.find(p=>p.id===active);
+    const lay=(p,id)=>p.layout[id];           // このプロファイルでの配置（必ず存在）
+    const cur=id=>lay(prof(),id);             // 選択中プロファイルの配置
+    const orient=(w,h)=>w>h?'横':h>w?'縦':'正方';
+
+    /* ---- tabs ---- */
+    function renderTabs(){
+      const el=document.getElementById('tabs'); el.innerHTML='';
+      profiles.forEach(p=>{
+        const t=document.createElement('div'); t.className='tab'+(p.id===active?' active':'');
+        t.innerHTML=`<span class="t1">${p.id}${p.default?'<span class="defbadge">default</span>':''}</span>`+
+          `<span class="t2">${p.w}×${p.h} · ${orient(p.w,p.h)} · rot${p.rotation}</span>`;
+        t.onclick=()=>{active=p.id;renderAll();};
+        el.appendChild(t);
+      });
+      // プロファイルの追加（＝クローンで新規）は Profiles 画面の責務。Design は配置編集に専念し、ここでは追加しない。
+    }
+
+    /* ---- canvas ---- */
+    let scale=1, zoom=1;
+    function renderCanvas(){
+      const pr=prof(), scr=document.getElementById('screen');
+      scale=Math.min(440/pr.w, 300/pr.h, 2.2)*zoom;
+      scr.style.width=(pr.w*scale)+'px'; scr.style.height=(pr.h*scale)+'px';
+      scr.innerHTML='';
+      partDefs.forEach(def=>{
+        const e=lay(pr,def.id);
+        const d=document.createElement('div');
+        d.className='part '+def.type+(def.id===selected?' selected':'')+(e.visible?'':' hidden');
+        d.dataset.id=def.id;
+        d.style.left=(e.x*scale)+'px'; d.style.top=(e.y*scale)+'px';
+        d.style.width=(e.w*scale)+'px'; d.style.height=(e.h*scale)+'px';
+        if(def.type==='text'){d.style.color=e.color;d.style.fontSize=(e.font*scale)+'px';d.textContent=e.text;}
+        else {d.style.background=e.color;}
+        scr.appendChild(d);
+      });
+    }
+
+    /* ---- part list ---- */
+    function renderList(){
+      const el=document.getElementById('part-list'); el.innerHTML='';
+      const pr=prof();
+      partDefs.forEach(def=>{
+        const e=lay(pr,def.id);
+        const it=document.createElement('div');
+        it.className='pitem'+(def.id===selected?' active':'');
+        it.innerHTML=`<span>${def.id}${e.visible?'':' （非表示）'}</span><span class="ty">${def.type}</span>`;
+        it.onclick=()=>{selected=def.id;renderAll();};
+        el.appendChild(it);
+      });
+    }
+
+    /* ---- profile meta (left) ---- */
+    function renderProfMeta(){
+      const pr=prof(), el=document.getElementById('prof-meta');
+      el.innerHTML=
+        `<div class="field"><label>サイズ</label><input value="${pr.w} × ${pr.h}" disabled></div>`+
+        `<div class="field"><label>回転 (rotation)</label><input value="${pr.rotation}（${orient(pr.w,pr.h)}）" disabled></div>`+
+        `<div class="field"><label>既定 (default)</label><input value="${pr.default?'はい（自動判定外のフォールバック）':'いいえ'}" disabled></div>`+
+        `<p class="sub">サイズ・回転・既定は Profiles 画面で編集。ここは配置編集。</p>`;
+    }
+
+    /* ---- inspector ---- */
+    function fieldRow(key,label,type){
+      const e=cur(selected);
+      if(type==='checkbox'){
+        return `<div class="field"><label>${label}</label><input type="checkbox" data-k="${key}" ${e[key]?'checked':''} style="width:auto;min-height:auto"></div>`;
+      }
+      return `<div class="field"><label>${label}</label><input type="${type}" data-k="${key}" value="${e[key]}"></div>`;
+    }
+    function renderProps(){
+      const def=partDef(selected), el=document.getElementById('props'), pr=prof();
+      document.getElementById('insp-title').textContent = `プロパティ（${pr.id} のレイアウト）`;
+      if(!def){el.innerHTML='<p class="sub">パーツを選択してください。</p>';return;}
+      let h='';
+      h+=`<div class="two">${fieldRow('x','X','number')}${fieldRow('y','Y','number')}</div>`;
+      h+=`<div class="two">${fieldRow('w','幅','number')}${fieldRow('h','高さ','number')}</div>`;
+      if(def.type==='text'){ h+=fieldRow('text','文字','text'); h+=fieldRow('font','文字サイズ(px)','number'); }
+      h+=fieldRow('visible','表示','checkbox');
+      h+=`<div class="field"><label>備考（全プロファイル共通のメモ）</label><textarea id="p-desc" rows="2">${def.desc||''}</textarea></div>`;
+      el.innerHTML=h;
+      el.querySelectorAll('[data-k]').forEach(inp=>{
+        const k=inp.dataset.k, t=inp.type;
+        const ev=(t==='checkbox')?'change':'input';
+        inp.addEventListener(ev,()=>{
+          const v = t==='checkbox'?inp.checked : (t==='number'?(+inp.value||0):inp.value);
+          cur(selected)[k]=v;
+          renderCanvas(); renderList(); renderStatus();
+          // 入力中はフォーカス維持のため props は作り直さない
+        });
+      });
+      const dsc=el.querySelector('#p-desc'); if(dsc)dsc.oninput=e=>{def.desc=e.target.value;};
+    }
+
+    function renderStatus(){
+      const pr=prof(), e=selected?cur(selected):null;
+      document.getElementById('st-sel').textContent = e?`選択: ${selected}  (x:${e.x}, y:${e.y}, w:${e.w}, h:${e.h})`:'未選択';
+      document.getElementById('st-prof').textContent = `${pr.id} ${pr.w}×${pr.h}（${orient(pr.w,pr.h)} / rotation ${pr.rotation}）${pr.default?' · default':''}`;
+      const zv=document.getElementById('z-val'); if(zv)zv.textContent=Math.round(zoom*100)+'%';
+    }
+
+    function renderAll(){renderTabs();renderCanvas();renderList();renderProfMeta();renderProps();renderStatus();}
+
+    /* ---- drag move ---- */
+    let drag=null;
+    const screen=document.getElementById('screen');
+    screen.addEventListener('pointerdown',e=>{
+      if(e.button!==0)return;   // 左ボタンのみ（中ボタンはパン）
+      const id=e.target.dataset.id; if(!id){selected=null;renderAll();return;}
+      selected=id; renderAll();
+      const e0=cur(id); drag={id,sx:e.clientX,sy:e.clientY,ox:e0.x,oy:e0.y};
+      screen.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    screen.addEventListener('pointermove',e=>{
+      if(!drag)return;
+      const dx=Math.round((e.clientX-drag.sx)/scale), dy=Math.round((e.clientY-drag.sy)/scale);
+      const e0=cur(drag.id); e0.x=drag.ox+dx; e0.y=drag.oy+dy;
+      // drag 中も一覧・座標をライブ更新
+      renderCanvas(); renderList(); renderProps(); renderStatus();
+    });
+    screen.addEventListener('pointerup',()=>{if(drag){drag=null;renderProps();}});
+
+    // マウスホイールで拡大縮小（自動フィットに対する倍率）
+    function setZoom(v){ zoom=Math.max(0.4,Math.min(6,v)); renderCanvas(); renderStatus(); }
+    screen.addEventListener('wheel',e=>{ e.preventDefault(); setZoom(zoom*(e.deltaY<0?1.1:1/1.1)); },{passive:false});
+    document.getElementById('z-in').onclick=()=>setZoom(zoom*1.2);
+    document.getElementById('z-out').onclick=()=>setZoom(zoom/1.2);
+    document.getElementById('z-reset').onclick=()=>setZoom(1);
+    // 中ボタンドラッグでパン（CAD風）
+    const stage=document.getElementById('stage'); let pan=null;
+    stage.addEventListener('pointerdown',e=>{ if(e.button!==1)return; e.preventDefault(); pan={x:e.clientX,y:e.clientY,sl:stage.scrollLeft,st:stage.scrollTop}; stage.setPointerCapture(e.pointerId); stage.style.cursor='grabbing'; });
+    stage.addEventListener('pointermove',e=>{ if(!pan)return; stage.scrollLeft=pan.sl-(e.clientX-pan.x); stage.scrollTop=pan.st-(e.clientY-pan.y); });
+    stage.addEventListener('pointerup',()=>{ if(pan){pan=null;stage.style.cursor='';} });
+
+    // キー操作: 矢印=移動(±1) / Shift+矢印=移動(±10) / Ctrl(⌘)+矢印=リサイズ。選択中プロファイルの配置を直接変更。
+    document.addEventListener('keydown',e=>{
+      if(!selected)return;
+      const t=document.activeElement&&document.activeElement.tagName;
+      if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA')return;
+      const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+      if(!dir)return; e.preventDefault();
+      const step=e.shiftKey?10:1, e0=cur(selected);
+      if(e.ctrlKey||e.metaKey){ e0.w=Math.max(2,e0.w+dir[0]*step); e0.h=Math.max(2,e0.h+dir[1]*step); }
+      else { e0.x+=dir[0]*step; e0.y+=dir[1]*step; }
+      renderCanvas();renderList();renderProps();renderStatus();
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>
