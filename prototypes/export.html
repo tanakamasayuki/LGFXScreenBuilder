@@ -99,7 +99,7 @@
     // 確定データモデルに沿ったサンプルプロジェクト
     const project={
       name:'MyScreen',
-      profiles:[{id:'Core',w:320,h:240,base:true,def:true},{id:'Cardputer',w:240,h:135},{id:'Stick',w:135,h:240}],
+      profiles:[{id:'Core',w:320,h:240},{id:'Cardputer',w:240,h:135},{id:'Stick',w:135,h:240}],
       scenes:[
         {id:'Boot',groups:[]},
         {id:'Main',groups:[
@@ -111,6 +111,13 @@
     };
     const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
     let included=new Set(project.profiles.map(p=>p.id));   // 対象プロファイル（既定=全部）
+    // default（runtime フォールバック）は Profiles ではなく出力時に選ぶ。出力対象の中から1つ。
+    let defaultProfile=project.profiles[0].id;
+    function ensureDefaultValid(){
+      if(included.size>1 && !included.has(defaultProfile)){
+        const first=project.profiles.find(p=>included.has(p.id)); if(first)defaultProfile=first.id;
+      }
+    }
     // 出力ファイル名はプロジェクト名ベース（複数プロジェクト同居時の衝突回避）
     const fGen=()=>`${project.name}.h`;
     const fAssets=()=>`${project.name}_assets.h`;
@@ -209,15 +216,25 @@
       });
     }
     function renderProfSel(){
+      ensureDefaultValid();
       const el=document.getElementById('prof-sel'); el.innerHTML='';
+      const multi=included.size>1;
       project.profiles.forEach(p=>{
-        const must=p.def;   // default は必須（フォールバック）
-        const w=document.createElement('label');
-        w.style.cssText='display:flex;gap:6px;align-items:center;font-size:13px;color:var(--text);margin:3px 0';
-        w.innerHTML=`<input type="checkbox" ${included.has(p.id)?'checked':''} style="width:auto;min-height:auto"> ${p.id}${p.def?'（default）':''}`;
-        w.querySelector('input').onchange=e=>{ e.target.checked?included.add(p.id):included.delete(p.id); renderMain(); };
+        const inc=included.has(p.id);
+        const w=document.createElement('div');
+        w.style.cssText='display:flex;gap:10px;align-items:center;font-size:13px;color:var(--text);margin:3px 0';
+        let html=`<label style="display:flex;gap:6px;align-items:center;flex:1"><input type="checkbox" class="inc" ${inc?'checked':''} style="width:auto;min-height:auto"> ${p.id} <span class="meta">${p.w}×${p.h}</span></label>`;
+        if(multi&&inc) html+=`<label style="display:flex;gap:4px;align-items:center;color:var(--muted)"><input type="radio" name="defprof" class="def" ${defaultProfile===p.id?'checked':''} style="width:auto;min-height:auto"> fallback</label>`;
+        w.innerHTML=html;
+        w.querySelector('.inc').onchange=e=>{ e.target.checked?included.add(p.id):included.delete(p.id); renderMain(); };
+        const dr=w.querySelector('.def'); if(dr)dr.onchange=()=>{ defaultProfile=p.id; renderMain(); };
         el.appendChild(w);
       });
+      const note=document.createElement('p'); note.className='sub'; note.style.margin='6px 0 0';
+      note.textContent = included.size<=1
+        ? '単一機種ビルドは fallback 不要。'
+        : '複数出力時は、自動判定できないボード用の fallback を1つ選びます。';
+      el.appendChild(note);
     }
     function renderMain(){
       renderProfSel();
@@ -247,12 +264,10 @@
       ];
       const unused=project.assets.filter(a=>!a.used).map(a=>a.id);
       if(unused.length) checks.push({ok:false,t:`未使用アセット: ${unused.join(', ')}`});
-      // プロファイル出力の妥当性（単一=任意でOK／複数=default必須）
-      const defId=project.profiles.find(p=>p.def)?.id;
+      // プロファイル出力の妥当性（単一=任意でOK／複数=fallback を出力対象から選ぶ）
       if(included.size===0) checks.push({ok:false,t:'出力プロファイルを1つ以上選択してください'});
       else if(included.size===1) checks.push({ok:true,t:`単一機種ビルド（${[...included][0]} 専用・fallback 不要）`});
-      else if(!included.has(defId)) checks.push({ok:false,t:`複数出力時は default(${defId}) を含めてください（fallback）`});
-      else checks.push({ok:true,t:`複数出力（fallback: ${defId}）`});
+      else checks.push({ok:true,t:`複数出力（fallback: ${defaultProfile}）`});
       checks.forEach(c=>{
         const d=document.createElement('div'); d.className='check '+(c.ok?'ok':'warn');
         d.innerHTML=`<span class="i">${c.ok?'✓':'⚠'}</span><span>${c.t}</span>`;
