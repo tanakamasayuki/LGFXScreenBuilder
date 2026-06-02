@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Asset slice probe — LGFXScreenBuilder</title>
+  <!--
+    使い捨てプローブ（戦略C / post-MVP）: シート画像のスライス操作の手触り検証専用。
+    確認したいこと: 画像上でドラッグして矩形を切る・移動/リサイズ・命名・一覧・グリッド一括生成。
+    ※本番には移さない。docs/ とは分離。サンプル画像はSVGプレースホルダ。
+  -->
+  <style>
+    :root{
+      --bg:#f5f7f8;--panel:#fff;--soft:#eef4f5;--line:#d6e0e3;--line2:#9fb2b8;
+      --text:#172126;--muted:#5d6d73;--accent:#087b76;--accent-soft:#dcefed;--sel:#4bd2c8;
+      font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.4;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text)}
+    button,input{font:inherit}
+    button{min-height:30px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);padding:0 10px;cursor:pointer}
+    button:hover{border-color:var(--line2);background:var(--soft)}
+    .topbar{display:flex;align-items:baseline;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+    .topbar h1{margin:0;font-size:16px}.topbar .note{color:var(--muted);font-size:12px}
+    .cols{display:grid;grid-template-columns:220px minmax(420px,1fr) 280px;min-height:calc(100vh - 52px)}
+    .left{border-right:1px solid var(--line);background:var(--panel)}
+    .right{border-left:1px solid var(--line);background:var(--panel)}
+    .center{background:#dce6e8;display:grid;grid-template-rows:auto 1fr auto;min-height:0}
+    .section{padding:12px;border-bottom:1px solid var(--line)}
+    h2{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    .bar{display:flex;gap:8px;align-items:center;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+    .bar .sub{color:var(--muted);font-size:12px}
+    .stage{display:grid;place-items:center;padding:18px;overflow:auto;min-height:0}
+    .sheetwrap{padding:10px;border:1px solid #253137;border-radius:8px;background:#10181c}
+    .sheet{position:relative;background-repeat:no-repeat;background-size:100% 100%;image-rendering:pixelated;touch-action:none;user-select:none;cursor:crosshair}
+    .slice{position:absolute;border:1px solid var(--accent);background:rgba(8,123,118,.16);box-sizing:border-box}
+    .slice.selected{border-color:var(--sel);background:rgba(75,210,200,.18);box-shadow:0 0 0 1px var(--sel)}
+    .slice .lbl{position:absolute;top:-1px;left:-1px;background:var(--accent);color:#fff;font-size:10px;padding:0 4px;border-radius:0 0 4px 0;white-space:nowrap;pointer-events:none}
+    .slice.selected .lbl{background:var(--sel);color:#06343099}
+    .h{position:absolute;width:9px;height:9px;background:#fff;border:1px solid var(--sel);border-radius:2px;z-index:5}
+    .h.nw{cursor:nwse-resize}.h.ne{cursor:nesw-resize}.h.sw{cursor:nesw-resize}.h.se{cursor:nwse-resize}
+    .rubber{position:absolute;border:1px dashed var(--sel);background:rgba(75,210,200,.12);pointer-events:none}
+    .statusbar{display:flex;justify-content:space-between;gap:8px;padding:8px 12px;border-top:1px solid var(--line);background:rgba(255,255,255,.8);color:var(--muted);font-size:12px}
+    .list{display:grid;gap:4px}
+    .item{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;border:1px solid transparent;border-radius:6px;padding:6px 8px;cursor:pointer;font-size:13px}
+    .item:hover{background:var(--soft)}.item.active{border-color:#8fcac5;background:#e1f2f0}
+    .item .meta{color:var(--muted);font-size:11px}
+    .field{display:grid;gap:4px;margin-bottom:9px}
+    .field label{color:var(--muted);font-size:12px}
+    .field input{width:100%;min-height:30px;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--panel);color:var(--text)}
+    .field textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--panel);color:var(--text);resize:vertical;min-height:42px;font:inherit}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .mini{min-height:26px;padding:0 8px;font-size:12px;border-radius:5px}
+    .row{display:flex;gap:6px;align-items:center}
+    .sub{color:var(--muted);font-size:12px}
+    .tips{position:fixed;right:14px;bottom:14px;z-index:20;background:rgba(23,33,38,.92);color:#cfe0e3;border:1px solid #33454d;border-radius:8px;padding:8px 10px;font-size:11px;line-height:1.6;box-shadow:0 10px 28px rgba(0,0,0,.28);max-width:240px}
+    .tips b{color:#fff;display:block;margin-bottom:3px;font-size:11px}
+    .tips kbd{background:#33454d;border-radius:3px;padding:0 4px;font-family:inherit}
+    .tips .x{position:absolute;top:4px;right:6px;cursor:pointer;color:#8aa0a7}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Asset slice</h1>
+    <span class="note">使い捨てプローブ（post-MVP）— シート画像を矩形で切り出す手触り確認</span>
+  </header>
+
+  <div class="tips" id="tips">
+    <span class="x" onclick="this.parentNode.style.display='none'">×</span>
+    <b>操作のヒント</b>
+    空き領域ドラッグ：新規スライス<br>
+    スライスドラッグ：移動／角：リサイズ<br>
+    <kbd>矢印</kbd> 移動（<kbd>Shift</kbd>=10px）<br>
+    <kbd>Ctrl</kbd>+<kbd>矢印</kbd> リサイズ<br>
+    <kbd>Del</kbd> 削除／ホイール：拡大縮小<br>
+    マウス中ボタン＋ドラッグ：パン
+  </div>
+
+  <div class="cols">
+    <aside class="left">
+      <div class="section">
+        <h2>Slices</h2>
+        <div class="list" id="slice-list"></div>
+      </div>
+      <div class="section">
+        <h2>グリッド一括生成（スプライトシート）</h2>
+        <div class="two">
+          <div class="field"><label>列</label><input id="g-cols" type="number" value="8"></div>
+          <div class="field"><label>行</label><input id="g-rows" type="number" value="4"></div>
+        </div>
+        <div class="field"><label>接頭辞</label><input id="g-prefix" value="frame"></div>
+        <button class="mini" id="g-make">グリッドで生成（置き換え）</button>
+      </div>
+    </aside>
+
+    <main class="center">
+      <div class="bar">
+        <span class="sub" id="img-size"></span>
+        <span style="flex:1"></span>
+        <button class="mini" id="z-out">−</button>
+        <span class="sub" id="z-val">100%</span>
+        <button class="mini" id="z-in">＋</button>
+        <button class="mini" id="z-reset">100%に戻す</button>
+      </div>
+      <div class="stage" id="stage">
+        <div class="sheetwrap"><div class="sheet" id="sheet"></div></div>
+      </div>
+      <div class="statusbar"><span id="st-sel">未選択</span><span id="st-count"></span></div>
+    </main>
+
+    <aside class="right">
+      <div class="section">
+        <h2>スライス プロパティ</h2>
+        <div id="props"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const NATIVE={w:256,h:128};
+    const DEFAULT_SCALE=2.4;
+    let scale=2.4;
+    let seq=1;
+    function setScale(v){ scale=Math.max(0.8,Math.min(10,v)); renderSheet(); renderStatus(); }
+    let slices=[
+      {id:'logo',   x:10,y:10,w:60,h:28},
+      {id:'icon',   x:94,y:10,w:28,h:28},
+    ];
+    let selected='logo';
+
+    const byId=id=>slices.find(s=>s.id===id);
+    const clampSlice=s=>{s.x=Math.max(0,Math.min(s.x,NATIVE.w-1));s.y=Math.max(0,Math.min(s.y,NATIVE.h-1));s.w=Math.max(2,Math.min(s.w,NATIVE.w-s.x));s.h=Math.max(2,Math.min(s.h,NATIVE.h-s.y));};
+
+    /* ---- placeholder sheet (SVG) ---- */
+    function sheetBg(){
+      let g='';
+      for(let x=0;x<=NATIVE.w;x+=32)g+=`<line x1='${x}' y1='0' x2='${x}' y2='${NATIVE.h}'/>`;
+      for(let y=0;y<=NATIVE.h;y+=32)g+=`<line x1='0' y1='${y}' x2='${NATIVE.w}' y2='${y}'/>`;
+      const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='${NATIVE.w}' height='${NATIVE.h}'>`+
+        `<rect width='100%' height='100%' fill='#1b2930'/>`+
+        `<g stroke='#2b3e48' stroke-width='1'>${g}</g>`+
+        `<rect x='12' y='12' width='56' height='24' rx='4' fill='#3a8f86'/>`+
+        `<circle cx='108' cy='24' r='13' fill='#c97f2a'/>`+
+        `<rect x='140' y='12' width='24' height='24' fill='#8e7bd0'/>`+
+        `<rect x='176' y='14' width='20' height='20' fill='#d05a6e'/>`+
+        `<g fill='#7f99a1' font-family='sans-serif' font-size='9'><text x='6' y='${NATIVE.h-6}'>sample sheet ${NATIVE.w}×${NATIVE.h}</text></g>`+
+        `</svg>`;
+      return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+    }
+
+    const sheet=document.getElementById('sheet');
+    const HANDLES=[['nw',0,0],['ne',1,0],['sw',0,1],['se',1,1]];
+
+    function renderSheet(){
+      sheet.style.width=(NATIVE.w*scale)+'px';
+      sheet.style.height=(NATIVE.h*scale)+'px';
+      sheet.style.backgroundImage=sheetBg();
+      sheet.innerHTML='';
+      slices.forEach(s=>{
+        const d=document.createElement('div');
+        d.className='slice'+(s.id===selected?' selected':'');
+        d.dataset.id=s.id;
+        d.style.left=(s.x*scale)+'px';d.style.top=(s.y*scale)+'px';
+        d.style.width=(s.w*scale)+'px';d.style.height=(s.h*scale)+'px';
+        d.innerHTML=`<span class="lbl">${s.id==='__tmp__'?'＋':s.id}</span>`;
+        sheet.appendChild(d);
+      });
+      const sel=byId(selected);
+      if(sel){HANDLES.forEach(([dir,fx,fy])=>{
+        const h=document.createElement('div');h.className='h '+dir;h.dataset.h=dir;
+        h.style.left=((sel.x+sel.w*fx)*scale-4.5)+'px';h.style.top=((sel.y+sel.h*fy)*scale-4.5)+'px';
+        sheet.appendChild(h);
+      });}
+    }
+    function renderList(){
+      const el=document.getElementById('slice-list');el.innerHTML='';
+      if(!slices.length)el.innerHTML='<p class="sub">スライスがありません。画像をドラッグして作成。</p>';
+      slices.forEach(s=>{
+        const it=document.createElement('div');it.className='item'+(s.id===selected?' active':'');
+        it.innerHTML=`<span>${s.id==='__tmp__'?'（新規）':s.id}</span><span class="meta">${s.w}×${s.h}</span>`;
+        it.onclick=()=>{selected=s.id;renderAll();};
+        el.appendChild(it);
+      });
+    }
+    function renderProps(){
+      const s=byId(selected),el=document.getElementById('props');
+      if(!s){el.innerHTML='<p class="sub">スライスを選択／作成してください。</p>';return;}
+      el.innerHTML=
+        `<div class="field"><label>ID</label><input id="p-id" value="${s.id}"></div>`+
+        `<div class="two"><div class="field"><label>X</label><input id="p-x" type="number" value="${s.x}"></div>`+
+        `<div class="field"><label>Y</label><input id="p-y" type="number" value="${s.y}"></div></div>`+
+        `<div class="two"><div class="field"><label>幅</label><input id="p-w" type="number" value="${s.w}"></div>`+
+        `<div class="field"><label>高さ</label><input id="p-h" type="number" value="${s.h}"></div></div>`+
+        `<div class="field"><label>備考</label><textarea id="p-desc" rows="2">${s.desc||''}</textarea></div>`+
+        `<button class="mini" id="p-del">このスライスを削除</button>`;
+      const upd=(k,v)=>{s[k]=v;clampSlice(s);renderSheet();renderList();renderStatus();};
+      el.querySelector('#p-id').oninput=e=>{const v=e.target.value.trim();if(v){const old=s.id;s.id=v;if(selected===old)selected=v;}renderList();renderSheet();renderStatus();};
+      el.querySelector('#p-x').oninput=e=>upd('x',+e.target.value||0);
+      el.querySelector('#p-y').oninput=e=>upd('y',+e.target.value||0);
+      el.querySelector('#p-w').oninput=e=>upd('w',+e.target.value||0);
+      el.querySelector('#p-h').oninput=e=>upd('h',+e.target.value||0);
+      el.querySelector('#p-desc').oninput=e=>{s.desc=e.target.value;};
+      el.querySelector('#p-del').onclick=()=>{ if(!confirm(`スライス「${s.id}」を削除しますか？`))return; slices=slices.filter(x=>x!==s);selected=slices[0]?.id||null;renderAll();};
+    }
+    function renderStatus(){
+      const s=byId(selected);
+      document.getElementById('st-sel').textContent=s?`選択: ${s.id} (x:${s.x}, y:${s.y}, w:${s.w}, h:${s.h})`:'未選択';
+      document.getElementById('st-count').textContent=`${slices.length} スライス`;
+      document.getElementById('img-size').textContent=`シート ${NATIVE.w}×${NATIVE.h}`;
+      document.getElementById('z-val').textContent=Math.round(scale/DEFAULT_SCALE*100)+'%';
+    }
+    function renderAll(){renderSheet();renderList();renderProps();renderStatus();}
+
+    /* ---- pointer: create / move / resize ---- */
+    let act=null;
+    const toImg=(clientX,clientY)=>{const r=sheet.getBoundingClientRect();return{x:Math.round((clientX-r.left)/scale),y:Math.round((clientY-r.top)/scale)};};
+    sheet.addEventListener('pointerdown',e=>{
+      if(e.button!==0)return;   // 左ボタンのみ（中ボタンはパン）
+      const hd=e.target.dataset.h, sid=e.target.dataset.id||e.target.closest('.slice')?.dataset.id;
+      const p=toImg(e.clientX,e.clientY);
+      if(hd){const s=byId(selected);act={mode:'resize',dir:hd,s,ox:s.x,oy:s.y,ow:s.w,oh:s.h,sx:p.x,sy:p.y};}
+      else if(sid){selected=sid;renderAll();const s=byId(sid);act={mode:'move',s,ox:s.x,oy:s.y,sx:p.x,sy:p.y};}
+      else { // 空き領域 → 新規矩形（ID/番号は確定時に割り当て＝キャンセル時は番号を消費しない）
+        const s={id:'__tmp__',x:p.x,y:p.y,w:0,h:0};slices.push(s);selected=s.id;
+        act={mode:'create',s,sx:p.x,sy:p.y};renderAll();
+      }
+      sheet.setPointerCapture(e.pointerId);e.preventDefault();
+    });
+    sheet.addEventListener('pointermove',e=>{
+      if(!act)return;const p=toImg(e.clientX,e.clientY),s=act.s;
+      if(act.mode==='move'){s.x=act.ox+(p.x-act.sx);s.y=act.oy+(p.y-act.sy);}
+      else if(act.mode==='create'){s.x=Math.min(act.sx,p.x);s.y=Math.min(act.sy,p.y);s.w=Math.abs(p.x-act.sx);s.h=Math.abs(p.y-act.sy);}
+      else { const d=act.dir;
+        if(d.includes('e'))s.w=Math.max(2,act.ow+(p.x-act.sx));
+        if(d.includes('s'))s.h=Math.max(2,act.oh+(p.y-act.sy));
+        if(d.includes('w')){s.w=Math.max(2,act.ow-(p.x-act.sx));s.x=act.ox+(act.ow-s.w);}
+        if(d.includes('n')){s.h=Math.max(2,act.oh-(p.y-act.sy));s.y=act.oy+(act.oh-s.h);}
+      }
+      clampSlice(s);renderSheet();renderStatus();
+    });
+    // マウスホイールで拡大縮小
+    sheet.addEventListener('wheel',e=>{ e.preventDefault(); setScale(scale*(e.deltaY<0?1.1:1/1.1)); },{passive:false});
+    sheet.addEventListener('pointerup',()=>{
+      if(!act)return;
+      if(act.mode==='create'){
+        if(act.s.w<3||act.s.h<3){slices=slices.filter(x=>x!==act.s);selected=slices[0]?.id||null;} // 小さすぎ＝キャンセル（番号据え置き）
+        else {act.s.id='slice'+(seq++);selected=act.s.id;}                                          // 確定時に番号割り当て
+      }
+      act=null;renderAll();
+    });
+
+    /* ---- grid generator (spritesheet) ---- */
+    document.getElementById('g-make').onclick=()=>{
+      const cols=Math.max(1,+document.getElementById('g-cols').value||1);
+      const rows=Math.max(1,+document.getElementById('g-rows').value||1);
+      const pre=document.getElementById('g-prefix').value.trim()||'frame';
+      const cw=Math.floor(NATIVE.w/cols), ch=Math.floor(NATIVE.h/rows);
+      slices=[];let n=0;
+      for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)slices.push({id:`${pre}${n++}`,x:c*cw,y:r*ch,w:cw,h:ch});
+      selected=slices[0]?.id||null;renderAll();
+    };
+
+    // キー操作: 矢印=移動(±1) / Shift+矢印=移動(±10) / Ctrl(⌘)+矢印=リサイズ(→←=幅,↓↑=高さ)
+    document.addEventListener('keydown',e=>{
+      if(!selected)return;
+      const t=document.activeElement&&document.activeElement.tagName;
+      if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA')return;
+      if(e.key==='Delete'||e.key==='Backspace'){ e.preventDefault(); const s=byId(selected); if(s&&confirm(`スライス「${s.id}」を削除しますか？`)){slices=slices.filter(x=>x!==s);selected=slices[0]?.id||null;renderAll();} return; }
+      const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+      if(!dir)return; e.preventDefault();
+      const step=e.shiftKey?10:1, s=byId(selected);
+      if(e.ctrlKey||e.metaKey){ s.w+=dir[0]*step; s.h+=dir[1]*step; }
+      else { s.x+=dir[0]*step; s.y+=dir[1]*step; }
+      clampSlice(s); renderSheet(); renderList(); renderProps(); renderStatus();
+    });
+
+    // ズームUI
+    document.getElementById('z-in').onclick=()=>setScale(scale*1.2);
+    document.getElementById('z-out').onclick=()=>setScale(scale/1.2);
+    document.getElementById('z-reset').onclick=()=>setScale(DEFAULT_SCALE);
+    // 中ボタンドラッグでパン（CAD風）
+    const stage=document.getElementById('stage'); let pan=null;
+    stage.addEventListener('pointerdown',e=>{ if(e.button!==1)return; e.preventDefault(); pan={x:e.clientX,y:e.clientY,sl:stage.scrollLeft,st:stage.scrollTop}; stage.setPointerCapture(e.pointerId); stage.style.cursor='grabbing'; });
+    stage.addEventListener('pointermove',e=>{ if(!pan)return; stage.scrollLeft=pan.sl-(e.clientX-pan.x); stage.scrollTop=pan.st-(e.clientY-pan.y); });
+    stage.addEventListener('pointerup',()=>{ if(pan){pan=null;stage.style.cursor='';} });
+
+    renderAll();
+  </script>
+</body>
+</html>

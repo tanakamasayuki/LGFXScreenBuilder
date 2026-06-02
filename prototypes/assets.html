@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Assets flow probe — LGFXScreenBuilder</title>
+  <!--
+    使い捨てプローブ（戦略C）: Assets の流れ全体を検証。
+      画像 Import（実ファイル可）→ 一覧 → 選択 → そのままインラインでスライス。
+    スライス操作の細部は asset-slice.html と同等。※本番には移さない。
+  -->
+  <style>
+    :root{
+      --bg:#f5f7f8;--panel:#fff;--soft:#eef4f5;--line:#d6e0e3;--line2:#9fb2b8;
+      --text:#172126;--muted:#5d6d73;--accent:#087b76;--accent-soft:#dcefed;--sel:#4bd2c8;
+      font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.4;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text)}
+    button,input,select{font:inherit}
+    button{min-height:30px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);padding:0 10px;cursor:pointer}
+    button:hover{border-color:var(--line2);background:var(--soft)}
+    button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+    .topbar{display:flex;align-items:baseline;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+    .topbar h1{margin:0;font-size:16px}.topbar .note{color:var(--muted);font-size:12px}
+    .cols{display:grid;grid-template-columns:230px minmax(420px,1fr) 280px;min-height:calc(100vh - 52px)}
+    .left{border-right:1px solid var(--line);background:var(--panel);overflow:auto}
+    .right{border-left:1px solid var(--line);background:var(--panel);overflow:auto}
+    .center{background:#dce6e8;display:grid;grid-template-rows:auto 1fr auto;min-height:0}
+    .section{padding:12px;border-bottom:1px solid var(--line)}
+    .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}
+    h2{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    .list{display:grid;gap:4px}
+    .item{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:8px;border:1px solid transparent;border-radius:6px;padding:6px 8px;cursor:pointer;font-size:13px}
+    .item:hover{background:var(--soft)}.item.active{border-color:#8fcac5;background:#e1f2f0}
+    .item .thumb{width:24px;height:18px;border:1px solid var(--line);border-radius:3px;background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#10181c}
+    .item .meta{color:var(--muted);font-size:11px}
+    .bar{display:flex;gap:8px;align-items:center;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line)}
+    .sub{color:var(--muted);font-size:12px}
+    .stage{display:grid;place-items:center;padding:18px;overflow:auto;min-height:0}
+    .sheetwrap{padding:10px;border:1px solid #253137;border-radius:8px;background:#10181c}
+    .sheet{position:relative;background-repeat:no-repeat;background-size:100% 100%;image-rendering:pixelated;touch-action:none;user-select:none;cursor:crosshair}
+    .slice{position:absolute;border:1px solid var(--accent);background:rgba(8,123,118,.16);box-sizing:border-box}
+    .slice.selected{border-color:var(--sel);background:rgba(75,210,200,.18);box-shadow:0 0 0 1px var(--sel)}
+    .slice .lbl{position:absolute;top:-1px;left:-1px;background:var(--accent);color:#fff;font-size:10px;padding:0 4px;border-radius:0 0 4px 0;white-space:nowrap;pointer-events:none}
+    .slice.selected .lbl{background:var(--sel);color:#063430}
+    .h{position:absolute;width:9px;height:9px;background:#fff;border:1px solid var(--sel);border-radius:2px;z-index:5}
+    .h.nw{cursor:nwse-resize}.h.ne{cursor:nesw-resize}.h.sw{cursor:nesw-resize}.h.se{cursor:nwse-resize}
+    .statusbar{display:flex;justify-content:space-between;gap:8px;padding:8px 12px;border-top:1px solid var(--line);background:rgba(255,255,255,.8);color:var(--muted);font-size:12px}
+    .field{display:grid;gap:4px;margin-bottom:9px}
+    .field label{color:var(--muted);font-size:12px}
+    .field input,.field select{width:100%;min-height:30px;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--panel);color:var(--text)}
+    .field textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--panel);color:var(--text);resize:vertical;min-height:42px;font:inherit}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .mini{min-height:26px;padding:0 8px;font-size:12px;border-radius:5px}
+    .tips{position:fixed;right:14px;bottom:14px;z-index:20;background:rgba(23,33,38,.92);color:#cfe0e3;border:1px solid #33454d;border-radius:8px;padding:8px 10px;font-size:11px;line-height:1.6;box-shadow:0 10px 28px rgba(0,0,0,.28);max-width:250px}
+    .tips b{color:#fff;display:block;margin-bottom:3px}
+    .tips kbd{background:#33454d;border-radius:3px;padding:0 4px;font-family:inherit}
+    .tips .x{position:absolute;top:4px;right:6px;cursor:pointer;color:#8aa0a7}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Assets</h1>
+    <span class="note">使い捨てプローブ — Import → 一覧 → 選択 → そのままスライス、の流れ確認</span>
+  </header>
+
+  <div class="tips" id="tips">
+    <span class="x" onclick="this.parentNode.style.display='none'">×</span>
+    <b>操作のヒント</b>
+    Import で画像登録 → 一覧で選択<br>
+    画像の空き領域ドラッグ：新規スライス<br>
+    スライスドラッグ：移動／角：リサイズ<br>
+    <kbd>矢印</kbd>移動（<kbd>Shift</kbd>=10）／<kbd>Ctrl</kbd>+<kbd>矢印</kbd>リサイズ<br>
+    <kbd>Del</kbd>削除／ホイール:ズーム／中ボタン:パン
+  </div>
+
+  <div class="cols">
+    <aside class="left">
+      <div class="section">
+        <div class="section-head"><h2>Images</h2>
+          <span>
+            <input type="file" id="file" accept="image/*" multiple hidden>
+            <button class="mini primary" id="import">Import</button>
+          </span>
+        </div>
+        <div class="list" id="image-list"></div>
+      </div>
+      <div class="section"><h2>Fonts</h2><p class="sub">Default 2 / NotoSansJP（このプローブでは編集しない）</p></div>
+      <div class="section"><h2>Output</h2><p class="sub">Header/PROGMEM + RAW RGB565（MVP標準）</p></div>
+    </aside>
+
+    <main class="center">
+      <div class="bar">
+        <span class="sub" id="asset-name"></span>
+        <span style="flex:1"></span>
+        <button class="mini" id="z-out">−</button>
+        <span class="sub" id="z-val">100%</span>
+        <button class="mini" id="z-in">＋</button>
+        <button class="mini" id="z-reset">100%に戻す</button>
+      </div>
+      <div class="stage" id="stage">
+        <div class="sheetwrap"><div class="sheet" id="sheet"></div></div>
+      </div>
+      <div class="statusbar"><span id="st-sel">未選択</span><span id="st-count"></span></div>
+    </main>
+
+    <aside class="right">
+      <div class="section">
+        <h2 id="insp-title">プロパティ</h2>
+        <div id="props"></div>
+      </div>
+      <div class="section">
+        <h2>Slices</h2>
+        <div class="list" id="slice-list"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    /* ---- sample images (SVG data URL) ---- */
+    function dataSVG(w,h,inner){return 'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">${inner}</svg>`);}
+    function sheetInner(w,h){let g='';for(let x=0;x<=w;x+=32)g+=`<line x1='${x}' y1='0' x2='${x}' y2='${h}'/>`;for(let y=0;y<=h;y+=32)g+=`<line x1='0' y1='${y}' x2='${w}' y2='${y}'/>`;
+      return `<rect width='100%' height='100%' fill='#1b2930'/><g stroke='#2b3e48'>${g}</g><rect x='12' y='12' width='56' height='24' rx='4' fill='#3a8f86'/><circle cx='108' cy='24' r='13' fill='#c97f2a'/><rect x='140' y='12' width='24' height='24' fill='#8e7bd0'/><rect x='176' y='14' width='20' height='20' fill='#d05a6e'/>`;}
+    const logoInner=`<rect width='100%' height='100%' fill='#0e2a28'/><rect x='4' y='4' width='88' height='24' rx='6' fill='#3a8f86'/><text x='14' y='21' fill='#fff' font-family='sans-serif' font-size='13'>LOGO</text>`;
+    function iconsInner(){let s='<rect width=\'100%\' height=\'100%\' fill=\'#16232a\'/>';const cols=['#3a8f86','#c97f2a','#8e7bd0','#d05a6e'];let i=0;for(let y=0;y<128;y+=32)for(let x=0;x<128;x+=32){s+=`<rect x='${x+6}' y='${y+6}' width='20' height='20' rx='4' fill='${cols[i++%4]}'/>`;}return s;}
+
+    let seqSlice=1, seqAsset=1, zoom=1, scale=1;
+    let assets=[
+      {id:'sheet',name:'sheet.png',w:256,h:128,src:dataSVG(256,128,sheetInner(256,128)),slices:[{id:'logo',x:10,y:10,w:60,h:28},{id:'icon',x:94,y:10,w:28,h:28}]},
+      {id:'logo', name:'logo.png', w:96, h:32, src:dataSVG(96,32,logoInner),slices:[]},
+      {id:'icons',name:'icons.png',w:128,h:128,src:dataSVG(128,128,iconsInner()),slices:[]},
+    ];
+    let selAsset='sheet', selSlice='logo';
+
+    const curAsset=()=>assets.find(a=>a.id===selAsset);
+    const curSlices=()=>curAsset()?curAsset().slices:[];
+    const sliceById=id=>curSlices().find(s=>s.id===id);
+    const clampSlice=s=>{const a=curAsset();s.x=Math.max(0,Math.min(s.x,a.w-1));s.y=Math.max(0,Math.min(s.y,a.h-1));s.w=Math.max(2,Math.min(s.w,a.w-s.x));s.h=Math.max(2,Math.min(s.h,a.h-s.y));};
+    function uniqueId(base){let id=base.replace(/\.[^.]+$/,'').replace(/[^A-Za-z0-9_]/g,'_')||('image'+(seqAsset++));let n=1,x=id;while(assets.some(a=>a.id===x))x=id+'_'+(++n);return x;}
+
+    const sheet=document.getElementById('sheet');
+    const HANDLES=[['nw',0,0],['ne',1,0],['sw',0,1],['se',1,1]];
+
+    /* ---- import ---- */
+    document.getElementById('import').onclick=()=>document.getElementById('file').click();
+    document.getElementById('file').onchange=e=>{
+      [...e.target.files].forEach(f=>{
+        const r=new FileReader();
+        r.onload=()=>{const img=new Image();img.onload=()=>{
+          const id=uniqueId(f.name);
+          assets.push({id,name:f.name,w:img.naturalWidth,h:img.naturalHeight,src:r.result,slices:[]});
+          selAsset=id;selSlice=null;zoom=1;renderAll();
+        };img.src=r.result;};
+        r.readAsDataURL(f);
+      });
+      e.target.value='';
+    };
+
+    /* ---- renders ---- */
+    function setScale(){ const a=curAsset(); const fit=Math.min(440/a.w,300/a.h,6); scale=fit*zoom; }
+    function renderImages(){
+      const el=document.getElementById('image-list');el.innerHTML='';
+      assets.forEach(a=>{
+        const it=document.createElement('div');it.className='item'+(a.id===selAsset?' active':'');
+        it.innerHTML=`<span class="thumb" style="background-image:url('${a.src}')"></span><span>${a.id}</span><span class="meta">${a.w}×${a.h}</span>`;
+        it.onclick=()=>{selAsset=a.id;selSlice=null;zoom=1;renderAll();};
+        el.appendChild(it);
+      });
+    }
+    function renderCanvas(){
+      const a=curAsset();if(!a)return;setScale();
+      sheet.style.width=(a.w*scale)+'px';sheet.style.height=(a.h*scale)+'px';
+      sheet.style.backgroundImage=`url("${a.src}")`;
+      sheet.innerHTML='';
+      a.slices.forEach(s=>{
+        const d=document.createElement('div');d.className='slice'+(s.id===selSlice?' selected':'');d.dataset.id=s.id;
+        d.style.left=(s.x*scale)+'px';d.style.top=(s.y*scale)+'px';d.style.width=(s.w*scale)+'px';d.style.height=(s.h*scale)+'px';
+        d.innerHTML=`<span class="lbl">${s.id==='__tmp__'?'＋':s.id}</span>`;
+        sheet.appendChild(d);
+      });
+      const sel=sliceById(selSlice);
+      if(sel)HANDLES.forEach(([dir,fx,fy])=>{const h=document.createElement('div');h.className='h '+dir;h.dataset.h=dir;
+        h.style.left=((sel.x+sel.w*fx)*scale-4.5)+'px';h.style.top=((sel.y+sel.h*fy)*scale-4.5)+'px';sheet.appendChild(h);});
+    }
+    function renderSliceList(){
+      const el=document.getElementById('slice-list');el.innerHTML='';
+      const s=curSlices();
+      if(!s.length){el.innerHTML='<p class="sub">スライスなし。画像をドラッグして作成。</p>';return;}
+      s.forEach(sl=>{const it=document.createElement('div');it.className='item'+(sl.id===selSlice?' active':'');
+        it.innerHTML=`<span></span><span>${sl.id==='__tmp__'?'（新規）':sl.id}</span><span class="meta">${sl.w}×${sl.h}</span>`;
+        it.onclick=()=>{selSlice=sl.id;renderAll();};el.appendChild(it);});
+    }
+    function renderProps(){
+      const el=document.getElementById('props'),a=curAsset(),s=sliceById(selSlice);
+      if(s){ // スライス選択中
+        document.getElementById('insp-title').textContent='スライス プロパティ';
+        el.innerHTML=`<div class="field"><label>ID</label><input id="s-id" value="${s.id}"></div>`+
+          `<div class="two"><div class="field"><label>X</label><input id="s-x" type="number" value="${s.x}"></div><div class="field"><label>Y</label><input id="s-y" type="number" value="${s.y}"></div></div>`+
+          `<div class="two"><div class="field"><label>幅</label><input id="s-w" type="number" value="${s.w}"></div><div class="field"><label>高さ</label><input id="s-h" type="number" value="${s.h}"></div></div>`+
+          `<div class="field"><label>備考</label><textarea id="s-desc" rows="2">${s.desc||''}</textarea></div>`+
+          `<button class="mini" id="s-del">スライス削除（Del）</button>`;
+        const upd=(k,v)=>{s[k]=v;clampSlice(s);renderCanvas();renderSliceList();renderStatus();};
+        el.querySelector('#s-id').oninput=e=>{const v=e.target.value.trim();if(v){const o=s.id;s.id=v;if(selSlice===o)selSlice=v;}renderCanvas();renderSliceList();};
+        el.querySelector('#s-x').oninput=e=>upd('x',+e.target.value||0);
+        el.querySelector('#s-y').oninput=e=>upd('y',+e.target.value||0);
+        el.querySelector('#s-w').oninput=e=>upd('w',+e.target.value||0);
+        el.querySelector('#s-h').oninput=e=>upd('h',+e.target.value||0);
+        el.querySelector('#s-desc').oninput=e=>{s.desc=e.target.value;};
+        el.querySelector('#s-del').onclick=()=>{ if(!confirm(`スライス「${s.id}」を削除しますか？`))return; a.slices=a.slices.filter(x=>x!==s);selSlice=null;renderAll();};
+      } else { // アセット選択中
+        document.getElementById('insp-title').textContent='アセット プロパティ';
+        if(!a){el.innerHTML='<p class="sub">画像を選択／Importしてください。</p>';return;}
+        el.innerHTML=`<div class="field"><label>ID</label><input id="a-id" value="${a.id}"></div>`+
+          `<div class="field"><label>元ファイル</label><input value="${a.name}" readonly></div>`+
+          `<div class="field"><label>サイズ</label><input value="${a.w} × ${a.h}" readonly></div>`+
+          `<div class="field"><label>出力形式</label><select><option>Header/PROGMEM + RAW RGB565</option><option>PNG参照</option></select></div>`+
+          `<div class="field"><label>スライス数</label><input value="${a.slices.length}" readonly></div>`+
+          `<div class="field"><label>備考</label><textarea id="a-desc" rows="2">${a.desc||''}</textarea></div>`+
+          `<button class="mini" id="a-del">この画像を削除</button>`;
+        el.querySelector('#a-id').oninput=e=>{const v=e.target.value.trim();if(v){const o=a.id;a.id=v;if(selAsset===o)selAsset=v;}renderImages();};
+        el.querySelector('#a-desc').oninput=e=>{a.desc=e.target.value;};
+        el.querySelector('#a-del').onclick=()=>{ if(!confirm(`画像「${a.id}」を削除しますか？（スライスも消えます）`))return; assets=assets.filter(x=>x!==a);selAsset=assets[0]?.id||null;selSlice=null;zoom=1;renderAll();};
+      }
+    }
+    function renderStatus(){
+      const a=curAsset(),s=sliceById(selSlice);
+      document.getElementById('asset-name').textContent=a?`${a.name}（${a.w}×${a.h}）`:'画像なし';
+      document.getElementById('st-sel').textContent=s?`スライス: ${s.id} (x:${s.x}, y:${s.y}, w:${s.w}, h:${s.h})`:(a?`画像: ${a.id}`:'未選択');
+      document.getElementById('st-count').textContent=a?`${a.slices.length} スライス`:'';
+      document.getElementById('z-val').textContent=Math.round(zoom*100)+'%';
+    }
+    function renderAll(){renderImages();renderCanvas();renderSliceList();renderProps();renderStatus();}
+
+    /* ---- slice create/move/resize ---- */
+    let act=null;
+    const toImg=(cx,cy)=>{const r=sheet.getBoundingClientRect();return{x:Math.round((cx-r.left)/scale),y:Math.round((cy-r.top)/scale)};};
+    sheet.addEventListener('pointerdown',e=>{
+      if(e.button!==0)return;
+      if(!curAsset())return;
+      const hd=e.target.dataset.h, sid=e.target.dataset.id||e.target.closest('.slice')?.dataset.id;
+      const p=toImg(e.clientX,e.clientY);
+      if(hd){const s=sliceById(selSlice);act={mode:'resize',dir:hd,s,ox:s.x,oy:s.y,ow:s.w,oh:s.h,sx:p.x,sy:p.y};}
+      else if(sid){selSlice=sid;renderAll();const s=sliceById(sid);act={mode:'move',s,ox:s.x,oy:s.y,sx:p.x,sy:p.y};}
+      else { const s={id:'__tmp__',x:p.x,y:p.y,w:0,h:0};curAsset().slices.push(s);selSlice=s.id;act={mode:'create',s,sx:p.x,sy:p.y};renderAll(); }
+      sheet.setPointerCapture(e.pointerId);e.preventDefault();
+    });
+    sheet.addEventListener('pointermove',e=>{
+      if(!act)return;const p=toImg(e.clientX,e.clientY),s=act.s;
+      if(act.mode==='move'){s.x=act.ox+(p.x-act.sx);s.y=act.oy+(p.y-act.sy);}
+      else if(act.mode==='create'){s.x=Math.min(act.sx,p.x);s.y=Math.min(act.sy,p.y);s.w=Math.abs(p.x-act.sx);s.h=Math.abs(p.y-act.sy);}
+      else{const d=act.dir;
+        if(d.includes('e'))s.w=Math.max(2,act.ow+(p.x-act.sx));
+        if(d.includes('s'))s.h=Math.max(2,act.oh+(p.y-act.sy));
+        if(d.includes('w')){s.w=Math.max(2,act.ow-(p.x-act.sx));s.x=act.ox+(act.ow-s.w);}
+        if(d.includes('n')){s.h=Math.max(2,act.oh-(p.y-act.sy));s.y=act.oy+(act.oh-s.h);}}
+      clampSlice(s);renderCanvas();renderStatus();
+    });
+    sheet.addEventListener('pointerup',()=>{
+      if(!act)return;
+      if(act.mode==='create'){
+        if(act.s.w<3||act.s.h<3){curAsset().slices=curAsset().slices.filter(x=>x!==act.s);selSlice=null;}
+        else{act.s.id='slice'+(seqSlice++);selSlice=act.s.id;}
+      }
+      act=null;renderAll();
+    });
+    // 空き領域クリックでアセット表示に戻す（小操作）
+    sheet.addEventListener('click',e=>{ if(!e.target.dataset.id&&!e.target.dataset.h&&!act){ /* create中でなければ */ } });
+
+    /* ---- zoom UI / wheel / pan ---- */
+    function applyZoom(v){zoom=Math.max(0.2,Math.min(8,v));renderCanvas();renderStatus();}
+    sheet.addEventListener('wheel',e=>{e.preventDefault();applyZoom(zoom*(e.deltaY<0?1.1:1/1.1));},{passive:false});
+    document.getElementById('z-in').onclick=()=>applyZoom(zoom*1.2);
+    document.getElementById('z-out').onclick=()=>applyZoom(zoom/1.2);
+    document.getElementById('z-reset').onclick=()=>applyZoom(1);
+    const stage=document.getElementById('stage');let pan=null;
+    stage.addEventListener('pointerdown',e=>{if(e.button!==1)return;e.preventDefault();pan={x:e.clientX,y:e.clientY,sl:stage.scrollLeft,st:stage.scrollTop};stage.setPointerCapture(e.pointerId);stage.style.cursor='grabbing';});
+    stage.addEventListener('pointermove',e=>{if(!pan)return;stage.scrollLeft=pan.sl-(e.clientX-pan.x);stage.scrollTop=pan.st-(e.clientY-pan.y);});
+    stage.addEventListener('pointerup',()=>{if(pan){pan=null;stage.style.cursor='';}});
+
+    /* ---- keys ---- */
+    document.addEventListener('keydown',e=>{
+      const t=document.activeElement&&document.activeElement.tagName;
+      if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA')return;
+      const s=sliceById(selSlice);if(!s)return;
+      if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault(); if(!confirm(`スライス「${s.id}」を削除しますか？`))return; curAsset().slices=curAsset().slices.filter(x=>x!==s);selSlice=null;renderAll();return;}
+      const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(!dir)return;e.preventDefault();
+      const step=e.shiftKey?10:1;
+      if(e.ctrlKey||e.metaKey){s.w+=dir[0]*step;s.h+=dir[1]*step;}else{s.x+=dir[0]*step;s.y+=dir[1]*step;}
+      clampSlice(s);renderCanvas();renderSliceList();renderProps();renderStatus();
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>

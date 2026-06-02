@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Profiles probe — LGFXScreenBuilder</title>
+  <!--
+    使い捨てプローブ（戦略C）: Profiles 画面の手触り検証専用。
+    確認したいこと: プロファイル一覧/追加・向きとサイズが見えるビュー・ボード割当・default 指定。
+    ※本番には移さない。docs/ とは分離。
+  -->
+  <style>
+    :root{
+      --bg:#f5f7f8; --panel:#fff; --soft:#eef4f5; --line:#d6e0e3; --line2:#9fb2b8;
+      --text:#172126; --muted:#5d6d73; --accent:#087b76; --accent-soft:#dcefed;
+      --warn:#9a5b00; --warn-bg:#fdf2dd; --screen:#11191d; --sel:#4bd2c8;
+      font-family:system-ui,-apple-system,"Segoe UI",sans-serif; line-height:1.4;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text)}
+    button,input,select{font:inherit}
+    button{min-height:32px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);padding:0 10px;cursor:pointer}
+    button:hover{border-color:var(--line2);background:var(--soft)}
+    button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+    .topbar{display:flex;align-items:baseline;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+    .topbar h1{margin:0;font-size:16px}
+    .topbar .note{color:var(--muted);font-size:12px}
+    .cols{display:grid;grid-template-columns:240px minmax(420px,1fr) 300px;min-height:calc(100vh - 86px)}
+    .left{border-right:1px solid var(--line);background:var(--panel)}
+    .right{border-left:1px solid var(--line);background:var(--panel)}
+    .center{background:#dce6e8;display:grid;grid-template-rows:auto 1fr auto;min-height:0}
+    .section{padding:12px;border-bottom:1px solid var(--line)}
+    .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    h2{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    .list{display:grid;gap:6px}
+    .item{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;border:1px solid transparent;border-radius:6px;padding:7px 8px;cursor:pointer}
+    .item:hover{background:var(--soft)}
+    .item.active{border-color:#8fcac5;background:#e1f2f0}
+    .item .star{width:16px;text-align:center;color:#c9a227}
+    .item .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+    .item .meta{color:var(--muted);font-size:12px;white-space:nowrap}
+    .field{display:grid;gap:5px;margin-bottom:10px}
+    .field label{color:var(--muted);font-size:12px}
+    .field input,.field select{width:100%;min-height:32px;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--panel);color:var(--text)}
+    .field textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--panel);color:var(--text);resize:vertical;min-height:44px;font:inherit}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .row{display:flex;align-items:center;gap:8px}
+    .stage{display:grid;place-items:center;padding:18px;overflow:auto;min-height:0}
+    .preview{display:grid;gap:10px;justify-items:center}
+    .device{padding:14px;border:1px solid #253137;border-radius:8px;background:#263238;box-shadow:0 14px 36px rgba(15,31,36,.22)}
+    .screen{position:relative;background:var(--screen);border:1px solid #000;display:grid;place-items:center;color:#7f99a1;font-size:12px}
+    .badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;background:var(--accent-soft);color:#075f5c;border:1px solid #9ed0cc}
+    .sizelabel{font-size:15px;font-weight:650}
+    .sub{color:var(--muted);font-size:12px}
+    .chips{display:flex;flex-wrap:wrap;gap:6px}
+    .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:14px;padding:3px 8px;font-size:12px;background:var(--panel)}
+    .chip button{min-height:18px;width:18px;padding:0;border:0;border-radius:9px;line-height:1;background:transparent;color:var(--muted)}
+    .catalog{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+    .board{border:1px solid var(--line);border-radius:6px;padding:7px 8px;cursor:pointer;background:var(--panel);text-align:left}
+    .board:hover{background:var(--soft)}
+    .board.assigned{border-color:#8fcac5;background:#e1f2f0}
+    .board.mismatch{border-color:#e3c887;background:var(--warn-bg)}
+    .board .bn{font-size:13px}
+    .board .bd{color:var(--muted);font-size:11px}
+    .board .taken{color:var(--warn);font-size:11px}
+    .statusbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-top:1px solid var(--line);background:rgba(255,255,255,.8);color:var(--muted);font-size:12px}
+    .banner{padding:6px 14px;font-size:12px}
+    .banner.ok{color:var(--accent)}
+    .banner.bad{color:var(--warn);background:var(--warn-bg)}
+    .mini{min-height:26px;padding:0 8px;font-size:12px;border-radius:5px}
+    .menu-wrap{position:relative}
+    .menu{position:absolute;left:0;right:auto;top:32px;z-index:10;display:none;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.18);padding:6px;width:230px;max-height:60vh;overflow:auto}
+    .menu-item{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:0;border-radius:6px;padding:7px 8px;text-align:left;background:transparent;width:100%;cursor:pointer}
+    .menu-item:hover{background:var(--soft)}
+    .menu-item .res{font-size:13px}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Profiles</h1>
+    <span class="note">使い捨てプローブ — プロファイル定義（サイズ・回転・ボード割当・default）の手触り確認</span>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <div class="cols">
+    <aside class="left">
+      <div class="section">
+        <div class="section-head"><h2>Profiles</h2>
+          <span class="menu-wrap">
+            <button class="mini" id="add-profile">+ 追加 ▾</button>
+            <div class="menu" id="add-menu"></div>
+          </span>
+        </div>
+        <div class="list" id="profile-list"></div>
+      </div>
+    </aside>
+
+    <main class="center">
+      <div class="section" style="background:var(--panel)">
+        <div class="section-head"><h2>向き・サイズ</h2><span class="sub" id="profile-title"></span></div>
+      </div>
+      <div class="stage">
+        <div class="preview">
+          <div class="device" id="device-frame"><div class="screen" id="screen"></div></div>
+          <div class="sizelabel" id="size-label"></div>
+          <div><span class="badge" id="rot-badge"></span> <span class="sub" id="orient-sub"></span></div>
+          <div style="margin-top:6px;width:100%">
+            <h2 style="margin-bottom:6px">割り当てボード</h2>
+            <div class="chips" id="assigned-chips"></div>
+          </div>
+        </div>
+      </div>
+      <div class="section" style="background:var(--panel)">
+        <h2 style="margin-bottom:6px">ボードを割り当て（クリックでトグル）</h2>
+        <div class="catalog" id="board-catalog"></div>
+      </div>
+    </main>
+
+    <aside class="right">
+      <div class="section">
+        <div class="section-head"><h2>プロパティ</h2></div>
+        <div id="props"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // M5GFX board_t のネイティブ解像度（縦横は自然な向き）
+    const BOARDS = [
+      {id:'M5Stack',     w:320,h:240}, {id:'Core2',  w:320,h:240}, {id:'CoreS3', w:320,h:240},
+      {id:'Tough',       w:320,h:240}, {id:'Station',w:320,h:240},
+      {id:'StickCPlus',  w:135,h:240}, {id:'StickCPlus2',w:135,h:240}, {id:'StickC',w:80,h:160},
+      {id:'Cardputer',   w:240,h:135}, {id:'DinMeter',w:240,h:135},
+      {id:'Dial',        w:240,h:240}, {id:'AtomS3', w:128,h:128},
+      {id:'CoreInk',     w:200,h:200}, {id:'Paper',  w:540,h:960},
+    ];
+    const boardById = (id)=>BOARDS.find(b=>b.id===id);
+    const dimKey = (w,h)=>[Math.min(w,h),Math.max(w,h)].join('x'); // 向き非依存の寸法セット
+
+    let seq = 1;
+    const state = {
+      selected:'Core',
+      profiles:[
+        {id:'Core',     w:320,h:240,rotation:1,boards:['M5Stack','Core2','CoreS3','Tough'],def:true},
+        {id:'Stick',    w:135,h:240,rotation:0,boards:['StickCPlus','StickCPlus2'],def:false},
+        {id:'Cardputer',w:240,h:135,rotation:1,boards:['Cardputer','DinMeter'],def:false},
+      ],
+    };
+    const cur = ()=>state.profiles.find(p=>p.id===state.selected);
+    const orient = (w,h)=> w>h?'横（Landscape）': h>w?'縦（Portrait）':'正方（Square）';
+
+    function boardOwner(boardId, exceptId){
+      return state.profiles.find(p=>p.id!==exceptId && p.boards.includes(boardId));
+    }
+
+    /* ---- render ---- */
+    function renderList(){
+      const el=document.getElementById('profile-list'); el.innerHTML='';
+      state.profiles.forEach(p=>{
+        const it=document.createElement('div');
+        it.className='item'+(p.id===state.selected?' active':'');
+        it.innerHTML=`<span class="star">${p.def?'★':''}</span>`+
+          `<span class="name">${p.id}</span>`+
+          `<span class="meta">${p.w}×${p.h} · ${p.boards.length}台</span>`;
+        it.onclick=()=>{state.selected=p.id;renderAll();};
+        el.appendChild(it);
+      });
+    }
+
+    function renderCenter(){
+      const p=cur();
+      document.getElementById('profile-title').textContent = p? `${p.id}` : '';
+      const scr=document.getElementById('screen');
+      const frame=document.getElementById('device-frame');
+      if(!p){frame.style.display='none';return;} frame.style.display='';
+      const scale = 240/Math.max(p.w,p.h);
+      scr.style.width=(p.w*scale)+'px'; scr.style.height=(p.h*scale)+'px';
+      scr.textContent = `${p.w} × ${p.h}`;
+      document.getElementById('size-label').textContent = `${orient(p.w,p.h).split('（')[0]} ${p.w}×${p.h}`;
+      document.getElementById('rot-badge').textContent = `rotation ${p.rotation}`;
+      document.getElementById('orient-sub').textContent = orient(p.w,p.h);
+
+      // assigned chips
+      const chips=document.getElementById('assigned-chips'); chips.innerHTML='';
+      if(!p.boards.length) chips.innerHTML='<span class="sub">未割り当て（手動 setProfile 専用）</span>';
+      p.boards.forEach(bid=>{
+        const b=boardById(bid);
+        const mism = b && dimKey(b.w,b.h)!==dimKey(p.w,p.h);
+        const c=document.createElement('span'); c.className='chip';
+        c.innerHTML=`<span${mism?' style="color:var(--warn)"':''}>${bid}${mism?' ⚠':''}</span><button title="外す">×</button>`;
+        c.querySelector('button').onclick=()=>{p.boards=p.boards.filter(x=>x!==bid);renderAll();};
+        chips.appendChild(c);
+      });
+
+      // catalog
+      const cat=document.getElementById('board-catalog'); cat.innerHTML='';
+      BOARDS.forEach(b=>{
+        const assigned=p.boards.includes(b.id);
+        const mism = dimKey(b.w,b.h)!==dimKey(p.w,p.h);
+        const owner = boardOwner(b.id,p.id);
+        const btn=document.createElement('button');
+        btn.className='board'+(assigned?' assigned':'')+(assigned&&mism?' mismatch':'');
+        btn.innerHTML=`<div class="bn">${assigned?'✓ ':''}${b.id}</div>`+
+          `<div class="bd">${b.w}×${b.h}${mism?' · 寸法不一致 ⚠':''}</div>`+
+          (owner&&!assigned?`<div class="taken">${owner.id} に割当中（移動）</div>`:'');
+        btn.onclick=()=>toggleBoard(b.id);
+        cat.appendChild(btn);
+      });
+    }
+
+    function renderProps(){
+      const p=cur(); const el=document.getElementById('props');
+      if(!p){el.innerHTML='<p class="sub">プロファイルを選択してください。</p>';return;}
+      el.innerHTML=
+        `<div class="field"><label>ID</label><input id="f-id" value="${p.id}"></div>`+
+        `<div class="two">`+
+          `<div class="field"><label>幅 (px)</label><input id="f-w" type="number" value="${p.w}"></div>`+
+          `<div class="field"><label>高さ (px)</label><input id="f-h" type="number" value="${p.h}"></div>`+
+        `</div>`+
+        `<div class="row" style="margin-bottom:10px"><button class="mini" id="f-swap">縦横入れ替え</button><span class="sub">${orient(p.w,p.h)}</span></div>`+
+        `<div class="field"><label>デフォルト回転 (setRotation 0–3)</label>`+
+          `<select id="f-rot">${[0,1,2,3].map(r=>`<option value="${r}"${r===p.rotation?' selected':''}>${r}</option>`).join('')}</select></div>`+
+        `<div class="field"><label class="row"><input id="f-def" type="checkbox" ${p.def?'checked':''} style="width:auto;min-height:auto"> default プロファイル（フォールバック）</label></div>`+
+        `<div class="field"><label>備考</label><textarea id="f-desc" rows="2">${p.desc||''}</textarea></div>`+
+        `<button class="mini" id="f-del">このプロファイルを削除</button>`;
+      const reW=()=>{renderCenter();renderList();renderBanner();};
+      el.querySelector('#f-id').oninput=e=>{const v=e.target.value.trim()||p.id;const old=p.id;p.id=v;if(state.selected===old)state.selected=v;renderList();document.getElementById('profile-title').textContent=p.id;renderBanner();};
+      el.querySelector('#f-w').oninput=e=>{p.w=+e.target.value||p.w;reW();};
+      el.querySelector('#f-h').oninput=e=>{p.h=+e.target.value||p.h;reW();};
+      el.querySelector('#f-swap').onclick=()=>{[p.w,p.h]=[p.h,p.w];renderAll();};
+      el.querySelector('#f-rot').onchange=e=>{p.rotation=+e.target.value;renderCenter();};
+      el.querySelector('#f-def').onchange=e=>{ if(e.target.checked){state.profiles.forEach(x=>x.def=false);p.def=true;} else {p.def=true;e.target.checked=true;} renderAll();};
+      el.querySelector('#f-desc').oninput=e=>{p.desc=e.target.value;};
+      el.querySelector('#f-del').onclick=()=>{ if(!confirm(`プロファイル「${p.id}」を削除しますか？`))return; delProfile(p.id); };
+    }
+
+    function renderBanner(){
+      const b=document.getElementById('banner');
+      const defs=state.profiles.filter(p=>p.def).length;
+      const msgs=[];
+      if(defs!==1) msgs.push(`default プロファイルは1つにしてください（現在 ${defs}）`);
+      // 寸法不一致のボード
+      state.profiles.forEach(p=>p.boards.forEach(bid=>{const bd=boardById(bid);if(bd&&dimKey(bd.w,bd.h)!==dimKey(p.w,p.h))msgs.push(`${p.id} に寸法の合わないボード ${bid}（${bd.w}×${bd.h}）`);}));
+      if(msgs.length){b.className='banner bad';b.textContent='⚠ '+msgs.join(' / ');}
+      else {b.className='banner ok';b.textContent='✓ 妥当：default は1つ、ボード寸法も一致';}
+    }
+
+    function renderAll(){renderList();renderCenter();renderProps();renderBanner();}
+
+    /* ---- actions ---- */
+    function toggleBoard(boardId){
+      const p=cur(); if(!p) return;
+      if(p.boards.includes(boardId)){ p.boards=p.boards.filter(x=>x!==boardId); }
+      else {
+        // 自動判定は1ボード=1プロファイル。他にあれば移動。
+        state.profiles.forEach(x=>{ if(x!==p) x.boards=x.boards.filter(b=>b!==boardId); });
+        p.boards.push(boardId);
+      }
+      renderAll();
+    }
+    // ボードカタログから代表解像度（向き別）を生成
+    function commonResolutions(){
+      const map=new Map();
+      BOARDS.forEach(b=>{const k=`${b.w}x${b.h}`; if(!map.has(k))map.set(k,{w:b.w,h:b.h,boards:[]}); map.get(k).boards.push(b.id);});
+      return [...map.values()];
+    }
+    function renderMenu(){
+      const m=document.getElementById('add-menu'); m.innerHTML='';
+      commonResolutions().forEach(r=>{
+        const it=document.createElement('button'); it.className='menu-item';
+        it.innerHTML=`<span class="res">${r.w}×${r.h}</span><span class="sub">${r.boards.join(' / ')}</span>`;
+        it.onclick=()=>{addProfile(r.w,r.h);hideMenu();};
+        m.appendChild(it);
+      });
+      const c=document.createElement('button'); c.className='menu-item';
+      c.innerHTML='<span class="res">カスタム…</span><span class="sub">後で幅高さを編集</span>';
+      c.onclick=()=>{addProfile(320,240);hideMenu();};
+      m.appendChild(c);
+    }
+    const addMenu=()=>document.getElementById('add-menu');
+    function showMenu(){renderMenu();addMenu().style.display='grid';}
+    function hideMenu(){addMenu().style.display='none';}
+
+    function addProfile(w,h){
+      const id='Profile'+(++seq);
+      state.profiles.push({id,w,h,rotation: w>h?1:0,boards:[],def:false});
+      state.selected=id; renderAll();
+    }
+    function delProfile(id){
+      const wasDef=state.profiles.find(p=>p.id===id)?.def;
+      state.profiles=state.profiles.filter(p=>p.id!==id);
+      if(wasDef&&state.profiles.length) state.profiles[0].def=true;   // default を1つ維持
+      state.selected=state.profiles[0]?.id||null; renderAll();
+    }
+
+    document.getElementById('add-profile').onclick=(e)=>{e.stopPropagation(); addMenu().style.display==='grid'?hideMenu():showMenu();};
+    addMenu().onclick=(e)=>e.stopPropagation();
+    document.addEventListener('click',hideMenu);
+    renderAll();
+  </script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Export preview probe — LGFXScreenBuilder</title>
+  <!--
+    使い捨てプローブ（戦略C）: Export 画面の検証。
+      生成物（ui_generated.h / ui_assets.h / Basic.ino）のプレビュー・出力設定・チェック。
+    生成コードは確定データモデル（プロジェクト名前空間 + Profile + 生成ファサード Screen）に準拠。
+  -->
+  <style>
+    :root{
+      --bg:#f5f7f8;--panel:#fff;--soft:#eef4f5;--line:#d6e0e3;--line2:#9fb2b8;
+      --text:#172126;--muted:#5d6d73;--accent:#087b76;--accent-soft:#dcefed;--sel:#4bd2c8;
+      --ok:#087b76;--warn:#9a5b00;--warn-bg:#fdf2dd;
+      font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.4;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text)}
+    button,select{font:inherit}
+    button{min-height:30px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);padding:0 10px;cursor:pointer}
+    button:hover{border-color:var(--line2);background:var(--soft)}
+    button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+    .topbar{display:flex;align-items:baseline;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+    .topbar h1{margin:0;font-size:16px}.topbar .note{color:var(--muted);font-size:12px}
+    .cols{display:grid;grid-template-columns:230px minmax(440px,1fr) 290px;min-height:calc(100vh - 52px)}
+    .left{border-right:1px solid var(--line);background:var(--panel);overflow:auto}
+    .right{border-left:1px solid var(--line);background:var(--panel);overflow:auto}
+    .center{background:#dce6e8;display:grid;grid-template-rows:auto auto 1fr auto;min-height:0}
+    .section{padding:12px;border-bottom:1px solid var(--line)}
+    h2{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    .list{display:grid;gap:4px}
+    .item{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;border:1px solid transparent;border-radius:6px;padding:7px 8px;cursor:pointer;font-size:13px}
+    .item:hover{background:var(--soft)}.item.active{border-color:#8fcac5;background:#e1f2f0}
+    .item .meta{color:var(--muted);font-size:11px}
+    .bar{display:flex;gap:8px;align-items:center;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line)}
+    .sub{color:var(--muted);font-size:12px}
+    .codewrap{padding:14px;overflow:auto;min-height:0}
+    pre.code{margin:0;padding:12px;border-radius:8px;background:#10181c;color:#d9f3f1;font-size:12px;line-height:1.5;overflow:auto;white-space:pre;font-family:ui-monospace,Menlo,Consolas,monospace}
+    .statusbar{display:flex;justify-content:space-between;gap:8px;padding:8px 12px;border-top:1px solid var(--line);background:rgba(255,255,255,.8);color:var(--muted);font-size:12px}
+    .field{display:grid;gap:4px;margin-bottom:10px}
+    .field label{color:var(--muted);font-size:12px}
+    .field select{width:100%;min-height:32px;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--panel);color:var(--text)}
+    .check{display:flex;gap:8px;align-items:flex-start;font-size:13px;padding:4px 0}
+    .check .i{width:16px;text-align:center}
+    .check.ok .i{color:var(--ok)} .check.warn{color:var(--warn)} .check.warn .i{color:var(--warn)}
+    .banner{margin:0 14px 0;padding:6px 10px;border-radius:6px;background:var(--accent-soft);color:#075f5c;font-size:12px}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Export</h1>
+    <span class="note">使い捨てプローブ — 生成物のプレビュー・出力設定・チェック</span>
+  </header>
+
+  <div class="cols">
+    <aside class="left">
+      <div class="section">
+        <h2>Files</h2>
+        <div class="list" id="file-list"></div>
+      </div>
+      <div class="section">
+        <h2>概要</h2>
+        <p class="sub" id="summary"></p>
+      </div>
+    </aside>
+
+    <main class="center">
+      <div class="bar">
+        <strong id="cur-file" style="font-size:13px"></strong>
+        <span style="flex:1"></span>
+        <button class="primary" id="download">ダウンロード</button>
+      </div>
+      <div class="banner" id="pkg-banner" style="margin-top:8px"></div>
+      <div class="codewrap"><pre class="code"><code id="code"></code></pre></div>
+      <div class="statusbar"><span id="st-l"></span><span id="st-r"></span></div>
+    </main>
+
+    <aside class="right">
+      <div class="section">
+        <h2>出力設定</h2>
+        <div class="field"><label>パッケージ</label>
+          <select id="set-pkg"><option>Single header</option><option>Zip パッケージ</option></select></div>
+        <div class="field"><label>アセットの出力（RAW RGB565）</label>
+          <select id="set-asset"><option>別ヘッダ ui_assets.h</option><option>生成ヘッダに同梱</option><option>LittleFS ファイル</option></select></div>
+        <div class="field"><label>対象プロファイル</label><div id="prof-sel"></div></div>
+        <div class="field"><label>プロジェクトJSON埋め込み</label>
+          <select id="set-embed"><option>しない</option><option>小規模のみ</option></select></div>
+      </div>
+      <div class="section">
+        <h2>チェック</h2>
+        <div id="checks"></div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // 確定データモデルに沿ったサンプルプロジェクト
+    const project={
+      name:'MyScreen',
+      profiles:[{id:'Core',w:320,h:240,base:true,def:true},{id:'Cardputer',w:240,h:135},{id:'Stick',w:135,h:240}],
+      scenes:[
+        {id:'Boot',groups:[]},
+        {id:'Main',groups:[
+          {id:'header',parts:[{id:'title',type:'Text'},{id:'battery',type:'Text'}]},
+          {id:'body',parts:[{id:'temperature',type:'Text'},{id:'loading',type:'Image'}]},
+        ]},
+      ],
+      assets:[{id:'logo',w:96,h:32,used:true},{id:'icons',w:128,h:128,used:false}],
+    };
+    const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+    let included=new Set(project.profiles.map(p=>p.id));   // 対象プロファイル（既定=全部）
+    // 出力ファイル名はプロジェクト名ベース（複数プロジェクト同居時の衝突回避）
+    const fGen=()=>`${project.name}.h`;
+    const fAssets=()=>`${project.name}_assets.h`;
+    const fIno=()=>`${project.name}_example.ino`;
+    const setPkg=()=>document.getElementById('set-pkg').value;
+    const setAsset=()=>document.getElementById('set-asset').value;
+    const setEmbed=()=>document.getElementById('set-embed').value;
+
+    /* ---- generators ---- */
+    function fieldDecl(pt){ return pt.type==='Text'?`const char* ${pt.id} = "";`:`bool ${pt.id}Visible = true;`; }
+    function genGenerated(){
+      const p=project; let s='';
+      s+=`#pragma once\n#include <LGFXScreenBuilder.h>\n\n`;
+      s+=`namespace ${p.name} {\n\n`;
+      s+=`enum class Profile : uint8_t { Auto = 0, ${p.profiles.filter(x=>included.has(x.id)).map(x=>x.id).join(', ')} };\n\n`;
+      s+=`namespace Scene {\n\n`;
+      p.scenes.forEach(sc=>{
+        s+=`struct ${sc.id} {\n  static constexpr SceneId id = SceneId::${sc.id};\n`;
+        sc.groups.forEach(g=>{
+          s+=`  struct ${cap(g.id)} {\n`;
+          g.parts.forEach(pt=>s+=`    ${fieldDecl(pt)}\n`);
+          s+=`  } ${g.id};\n`;
+        });
+        s+=`};\n\n`;
+      });
+      s+=`} // namespace Scene\n\n`;
+      s+=`extern const lgfxsb::Project project;   // プロファイル/配置/アセット索引\n\n`;
+      s+=`class Screen : public lgfxsb::Renderer {\npublic:\n  explicit Screen(LovyanGFX& gfx) : Renderer(gfx, project) {}\n  void setProfile(Profile p);\n  template <class TScene> void show(const TScene& s);\n  template <class TScene> void update(const TScene& s);\n};\n\n`;
+      if(setAsset()==='生成ヘッダに同梱'){ s+=`\n`+assetsBlock(); }
+      s+=`} // namespace ${p.name}\n`;
+      return s;
+    }
+    function assetsBlock(){
+      let s=`namespace assets {\n`;
+      project.assets.forEach(a=>{ s+=`  // ${a.id}  ${a.w}x${a.h}\n  const uint16_t ${a.id}[${a.w}*${a.h}] PROGMEM = { 0x0000, 0xFFFF, 0x07E0, 0xF800, /* ... ${a.w*a.h} px ... */ };\n`; });
+      s+=`}\n`;
+      return s;
+    }
+    function genIno(){
+      return `#include <LovyanGFX.hpp>\n#include <LGFX_AUTODETECT.hpp>\n#include <LGFXScreenBuilder.h>\n#include "${fGen()}"\n\n`+
+        `using namespace ${project.name};\n\n`+
+        `static LGFX display;\nstatic Screen screen(display);   // プロジェクトを束縛\n\n`+
+        `void setup() {\n  display.init();\n  screen.begin();                // Profile::Auto（getBoard 自動判定）\n\n`+
+        `  screen.show(Scene::Boot{});\n\n`+
+        `  Scene::Main main;\n  main.header.title       = "Main";\n  main.header.battery     = "82%";\n  main.body.temperature   = "24.5C";\n  screen.show(main);\n}\n\n`+
+        `void loop() {\n  static Scene::Main main;\n  main.header.battery = "80%";\n  screen.update(main);           // 値だけ差し替え\n  delay(1000);\n}\n`;
+    }
+    function genAssets(){
+      if(setAsset()==='LittleFS ファイル'){
+        return `// LittleFS 配置（data/ にコピーしてアップロード）\n`+
+          project.assets.map(a=>`//   data/${a.id}.rgb565   (${a.w}x${a.h}, RAW RGB565)`).join('\n')+`\n`;
+      }
+      return `#pragma once\n#include <pgmspace.h>\n// 自動生成: RAW RGB565\n\nnamespace ${project.name} {\n\n`+assetsBlock()+`\n} // namespace ${project.name}\n`;
+    }
+
+    function fileList(){
+      const f=[{name:fGen(),meta:'C++'}];
+      const a=setAsset();
+      if(a==='別ヘッダ ui_assets.h') f.push({name:fAssets(),meta:'RAW'});
+      else if(a==='LittleFS ファイル') f.push({name:'data/ (LittleFS)',meta:'RAW'});
+      // 「生成ヘッダに同梱」は別ファイルなし（${project.name}.h に含む）
+      f.push({name:fIno(),meta:'Sample'});
+      return f;
+    }
+    function contentOf(name){
+      if(name===fGen())return genGenerated();
+      if(name===fIno())return genIno();
+      if(name===fAssets()||name.startsWith('data'))return genAssets();
+      return '';
+    }
+
+    let selFile='';
+    function renderFiles(){
+      const el=document.getElementById('file-list'); el.innerHTML='';
+      const names=fileList().map(f=>f.name);
+      if(!names.includes(selFile)) selFile=names[0];
+      fileList().forEach(f=>{
+        const it=document.createElement('div'); it.className='item'+(f.name===selFile?' active':'');
+        it.innerHTML=`<span>${f.name}</span><span class="meta">${f.meta}</span>`;
+        it.onclick=()=>{selFile=f.name;renderMain();};
+        el.appendChild(it);
+      });
+    }
+    function renderProfSel(){
+      const el=document.getElementById('prof-sel'); el.innerHTML='';
+      project.profiles.forEach(p=>{
+        const must=p.def;   // default は必須（フォールバック）
+        const w=document.createElement('label');
+        w.style.cssText='display:flex;gap:6px;align-items:center;font-size:13px;color:var(--text);margin:3px 0';
+        w.innerHTML=`<input type="checkbox" ${included.has(p.id)?'checked':''} ${must?'disabled':''} style="width:auto;min-height:auto"> ${p.id}${p.def?'（default・必須）':''}`;
+        w.querySelector('input').onchange=e=>{ e.target.checked?included.add(p.id):included.delete(p.id); renderMain(); };
+        el.appendChild(w);
+      });
+    }
+    function renderMain(){
+      renderProfSel();
+      renderFiles();
+      document.getElementById('cur-file').textContent=selFile;
+      document.getElementById('code').textContent=contentOf(selFile);
+      const pkg=setPkg()==='Zip パッケージ';
+      document.getElementById('pkg-banner').textContent = pkg
+        ? `${project.name}.zip にまとめてダウンロード（${fGen()} / アセット / ${fIno()} を同梱）`
+        : '単一ヘッダ + 付随ファイルを個別ダウンロード（MVP 標準）';
+      const parts=project.scenes.reduce((n,s)=>n+s.groups.reduce((m,g)=>m+g.parts.length,0),0);
+      document.getElementById('st-l').textContent=`${project.scenes.length} scenes · ${included.size}/${project.profiles.length} profiles · ${parts} parts · ${project.assets.length} assets`;
+      document.getElementById('st-r').textContent=`${setAsset()}${setEmbed()!=='しない'?' · JSON埋込':''}`;
+      renderChecks();
+      renderSummary();
+    }
+    function renderSummary(){
+      document.getElementById('summary').textContent=
+        `${project.name} / ${setPkg()} / ${setAsset()}`;
+    }
+    function renderChecks(){
+      const el=document.getElementById('checks'); el.innerHTML='';
+      const checks=[
+        {ok:true, t:'不正な ID なし'},
+        {ok:true, t:'ID 重複なし'},
+        {ok:false,t:'フォント近似プレビュー警告 1 件（実機と差異の可能性）'},
+      ];
+      const unused=project.assets.filter(a=>!a.used).map(a=>a.id);
+      if(unused.length) checks.push({ok:false,t:`未使用アセット: ${unused.join(', ')}`});
+      checks.forEach(c=>{
+        const d=document.createElement('div'); d.className='check '+(c.ok?'ok':'warn');
+        d.innerHTML=`<span class="i">${c.ok?'✓':'⚠'}</span><span>${c.t}</span>`;
+        el.appendChild(d);
+      });
+    }
+
+    ['set-pkg','set-asset','set-embed'].forEach(id=>document.getElementById(id).onchange=renderMain);
+    document.getElementById('download').onclick=()=>alert('ダウンロード（モック）: '+(setPkg()==='Zip パッケージ'?project.name+'.zip':selFile));
+
+    renderMain();
+  </script>
+</body>
+</html>
