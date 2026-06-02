@@ -79,6 +79,11 @@
   <header class="topbar">
     <h1>Profiles</h1>
     <span class="note">使い捨てプローブ — プロファイル定義（サイズ・回転・ボード割当・default）の手触り確認</span>
+    <label style="margin-left:auto;font-size:12px;color:var(--muted)">対象ライブラリ
+      <select id="lib" style="min-height:30px;border:1px solid var(--line);border-radius:6px;padding:2px 6px">
+        <option>M5Unified</option><option>M5GFX</option><option>LovyanGFX</option>
+      </select>
+    </label>
   </header>
 
   <div class="banner" id="banner"></div>
@@ -136,6 +141,11 @@
       {id:'CoreInk',     w:200,h:200}, {id:'Paper',  w:540,h:960},
     ];
     const boardById = (id)=>BOARDS.find(b=>b.id===id);
+    // LovyanGFX 1.2.21 が board_t で判定できる M5 ボード（実ソース準拠の代表）
+    const LGFX_KNOWN=new Set(['M5Stack','Core2','CoreS3','Tough','Station','StickC','StickCPlus','StickCPlus2','AtomS3','CoreInk','Paper']);
+    let lib='M5Unified';
+    const boardCatalog=()=> lib==='LovyanGFX' ? BOARDS.filter(b=>LGFX_KNOWN.has(b.id)) : BOARDS;
+    const detectable=(bid)=> lib!=='LovyanGFX' || LGFX_KNOWN.has(bid);   // 現ライブラリで自動判定できるか
     const dimKey = (w,h)=>[Math.min(w,h),Math.max(w,h)].join('x'); // 向き非依存の寸法セット
 
     let seq = 1;
@@ -187,15 +197,23 @@
       p.boards.forEach(bid=>{
         const b=boardById(bid);
         const mism = b && dimKey(b.w,b.h)!==dimKey(p.w,p.h);
+        const undet = !detectable(bid);
+        const warn = mism||undet;
         const c=document.createElement('span'); c.className='chip';
-        c.innerHTML=`<span${mism?' style="color:var(--warn)"':''}>${bid}${mism?' ⚠':''}</span><button title="外す">×</button>`;
+        const sfx = (undet?' 自動判定不可':'')+(mism?' ⚠寸法':'');
+        c.innerHTML=`<span${warn?' style="color:var(--warn)"':''}>${bid}${warn?' ⚠':''}${sfx}</span><button title="外す">×</button>`;
         c.querySelector('button').onclick=()=>{p.boards=p.boards.filter(x=>x!==bid);renderAll();};
         chips.appendChild(c);
       });
 
-      // catalog
+      // catalog（対象ライブラリで絞り込み）
       const cat=document.getElementById('board-catalog'); cat.innerHTML='';
-      BOARDS.forEach(b=>{
+      if(lib==='LovyanGFX'){
+        const note=document.createElement('div'); note.className='sub'; note.style.gridColumn='1/-1';
+        note.textContent='LovyanGFX は新しめのM5ボード(Cardputer/Dial 等)を自動判定不可。未収録機種はボード未割り当て＋手動 setProfile で対応。';
+        cat.appendChild(note);
+      }
+      boardCatalog().forEach(b=>{
         const assigned=p.boards.includes(b.id);
         const mism = dimKey(b.w,b.h)!==dimKey(p.w,p.h);
         const owner = boardOwner(b.id,p.id);
@@ -242,6 +260,7 @@
       if(defs!==1) msgs.push(`default プロファイルは1つにしてください（現在 ${defs}）`);
       // 寸法不一致のボード
       state.profiles.forEach(p=>p.boards.forEach(bid=>{const bd=boardById(bid);if(bd&&dimKey(bd.w,bd.h)!==dimKey(p.w,p.h))msgs.push(`${p.id} に寸法の合わないボード ${bid}（${bd.w}×${bd.h}）`);}));
+      if(lib==='LovyanGFX') state.profiles.forEach(p=>p.boards.forEach(bid=>{ if(!LGFX_KNOWN.has(bid)) msgs.push(`${p.id} の ${bid} は LovyanGFX で自動判定不可（解像度フォールバック/手動 setProfile）`); }));
       if(msgs.length){b.className='banner bad';b.textContent='⚠ '+msgs.join(' / ');}
       else {b.className='banner ok';b.textContent='✓ 妥当：default は1つ、ボード寸法も一致';}
     }
@@ -294,6 +313,7 @@
       state.selected=state.profiles[0]?.id||null; renderAll();
     }
 
+    document.getElementById('lib').onchange=(e)=>{lib=e.target.value;renderAll();};
     document.getElementById('add-profile').onclick=(e)=>{e.stopPropagation(); addMenu().style.display==='grid'?hideMenu():showMenu();};
     addMenu().onclick=(e)=>e.stopPropagation();
     document.addEventListener('click',hideMenu);

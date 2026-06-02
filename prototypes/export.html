@@ -83,7 +83,7 @@
         <div class="field"><label>パッケージ</label>
           <select id="set-pkg"><option>Single header</option><option>Zip パッケージ</option></select></div>
         <div class="field"><label>対象フレームワーク</label>
-          <select id="set-fw"><option>LovyanGFX</option><option>M5Unified</option></select></div>
+          <select id="set-fw"><option>M5Unified</option><option>M5GFX</option><option>LovyanGFX</option></select></div>
         <div class="field"><label>アセットの出力（RAW RGB565）</label>
           <select id="set-asset"><option>別ヘッダ ui_assets.h</option><option>生成ヘッダに同梱</option><option>LittleFS ファイル</option></select></div>
         <div class="field"><label>対象プロファイル</label><div id="prof-sel"></div></div>
@@ -158,6 +158,13 @@
           `static Screen screen(M5.Display);   // M5.Display を束縛\n\n`+
           `void setup() {\n  M5.begin();\n  screen.begin();                // Profile::Auto（M5.getBoard 自動判定）\n\n`+body+`\n}\n\n`+
           `void loop() {\n  M5.update();\n  static Scene::Main main;\n  main.header.battery = "80%";\n  screen.update(main);\n  delay(1000);\n}\n`;
+      }
+      if(setFw()==='M5GFX'){
+        return `#include <M5GFX.h>\n#include <LGFXScreenBuilder.h>\n#include "${fGen()}"\n\n`+
+          `using namespace ${project.name};\n\n`+
+          `static M5GFX display;\nstatic Screen screen(display);\n\n`+
+          `void setup() {\n  display.begin();\n  screen.begin();                // Profile::Auto（getBoard 自動判定）\n\n`+body+`\n}\n\n`+
+          `void loop() {\n  static Scene::Main main;\n  main.header.battery = "80%";\n  screen.update(main);\n  delay(1000);\n}\n`;
       }
       return `#include <LovyanGFX.hpp>\n#include <LGFX_AUTODETECT.hpp>\n#include <LGFXScreenBuilder.h>\n#include "${fGen()}"\n\n`+
         `using namespace ${project.name};\n\n`+
