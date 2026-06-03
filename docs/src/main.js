@@ -8,7 +8,8 @@ import { renderAssets, initAssets } from './assets.js';
 import { renderFonts, initFonts } from './fontsview.js';
 import { initNewProject } from './newproject.js';
 import { generateHeader } from './codegen.js';
-import { detectLanguage, setLang, getLang, applyStatic } from './i18n.js';
+import { sampleProject } from './model.js';
+import { detectLanguage, setLang, getLang, applyStatic, t } from './i18n.js';
 import { saveProjectFile, openProjectFile, downloadText, autosave, loadAutosave } from './persist.js';
 
 const $ = (id) => document.getElementById(id);
@@ -66,6 +67,10 @@ document.addEventListener('keydown', (ev) => {
 
 // New project opens a dialog (§9.1) to choose name/library/profile/scene.
 initNewProject('btn-new');
+// Demo loads the rich sample project (multi-profile, Boot/Main/Settings) so a
+// fresh user can explore a populated project instead of the blank New scene.
+// Confirm first since it replaces the current project.
+onClick('btn-demo', () => { if (confirm(t('demo.confirm'))) loadProject(sampleProject()); });
 onClick('btn-open', async () => {
   try {
     const project = await openProjectFile();
