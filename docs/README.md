@@ -49,8 +49,10 @@ python -m http.server 8000 --directory docs
   per font (approximate CSS preview as a fallback). The same harness also reports
   each font's **exact flash size** (attributed from the linked ELF in a single
   build, no per-font compiles), shown per font and summed as a per-profile flash
-  budget — the rationale for enabling fonts per profile. Text wiring (`setFont`)
-  is a later slice.
+  budget — the rationale for enabling fonts per profile. The Text inspector has a
+  per-profile font dropdown (only the fonts enabled for that profile) and the
+  Design canvas previews the chosen font at its native height × multiplier with
+  an approximate family. Emitting `setFont` in codegen is the remaining slice.
 - **i18n** (SPEC §14): all UI strings go through `src/i18n.js` (`t()` + `data-i18n`),
   en/ja with an en fallback and a language switcher; default follows the browser.
 - **Undo / Redo**: snapshot-based project history (toolbar ↶/↷ and Ctrl/Cmd+Z,

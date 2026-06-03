@@ -5,9 +5,19 @@ import { store, update, mutate, checkpoint } from './store.js';
 import {
   DATUMS, DATUM_FX, DATUM_FY, orient, pxOf, sceneById, profileById, partDef, placement,
   addPart, removePart, renamePart, addScene, removeScene, renameScene,
-  absOrigin, reorderPart, groupParts, ungroupPart, reparentPart, assetById,
+  absOrigin, reorderPart, groupParts, ungroupPart, reparentPart, assetById, profileFonts,
 } from './model.js';
+import { loadMetrics, metricsFor, approxCss, fontByName } from './fonts.js';
 import { t } from './i18n.js';
+
+// Approximate on-canvas height (px) of a Text part's font at multiplier 1.
+// Uses the host-introspected native height when available, else the default
+// 8px (Font0). The exact glyphs differ (approximate preview, SPEC §8.7.3).
+function fontBaseHeight(fontName) {
+  if (!fontName) return 8;
+  const m = metricsFor(fontName);
+  return (m && m.height) || 8;
+}
 
 const $ = (id) => document.getElementById(id);
 
@@ -72,7 +82,13 @@ function renderCanvas() {
 
     if (def.type === 'Text') {
       d.style.color = e.color;
-      d.style.fontSize = e.size * 8 * scale + 'px';
+      // Size = chosen font's native px height × multiplier (default font = 8px).
+      // Family/style approximate the preset (exact glyphs come from the device).
+      const cat = e.font ? fontByName(e.font) : null;
+      d.style.fontSize = fontBaseHeight(e.font) * e.size * scale + 'px';
+      d.style.fontFamily = cat ? approxCss(cat) : '';
+      d.style.fontWeight = cat && cat.bold ? '700' : '';
+      d.style.fontStyle = cat && cat.italic ? 'italic' : '';
       d.textContent = e.text;
       scr.appendChild(d); // append first to measure
       const bw = d.offsetWidth, bh = d.offsetHeight;
@@ -191,6 +207,14 @@ function renderInspector() {
     h += row('text', t('field.text'), 'text', e.text);
     h += `<div class="field"><div class="lab"><label>${t('field.textSize')}</label><span class="sub" id="px-hint">${t('units.pxApprox', { px: pxOf(e.size) })}</span></div>` +
       `<input type="number" data-k="size" step="0.25" min="0.25" value="${e.size}"></div>`;
+    // Font dropdown: only the fonts enabled for this profile (§8.7.3/§8.7.4).
+    const enabled = profileFonts(store.project, store.ui.profileId);
+    h += `<div class="field"><label>${t('field.font')}</label><select data-k="font">` +
+      `<option value="" ${!e.font ? 'selected' : ''}>${t('font.default')}</option>` +
+      enabled.map((n) => `<option value="${n}" ${e.font === n ? 'selected' : ''}>${n}</option>`).join('') +
+      `</select>` +
+      (enabled.length ? '' : `<span class="sub">${t('font.noneEnabled')}</span>`) +
+      `</div>`;
   } else if (def.type === 'Group') {
     h += `<div class="two">${row('x', t('field.x'), 'number', e.x)}${row('y', t('field.y'), 'number', e.y)}</div>`;
     h += `<p class="sub">${t('hint.group')}</p>`;
@@ -215,7 +239,7 @@ function renderInspector() {
     const ev = type === 'checkbox' ? 'change' : 'input';
     inp.addEventListener(ev, () => {
       const v = type === 'checkbox' ? inp.checked : (type === 'number' ? (+inp.value || 0) : inp.value);
-      e[k] = v;
+      e[k] = (k === 'font' && v === '') ? null : v; // empty font = default
       if (k === 'size') { const hint = $('px-hint'); if (hint) hint.textContent = t('units.pxApprox', { px: pxOf(v) }); }
       // keep focus: rerender canvas/list/status but not the inspector
       renderCanvas(); renderParts(); renderStatus();
@@ -275,6 +299,9 @@ export function renderDesign() {
 let drag = null;
 export function initDesign() {
   const scr = $('canvas-screen');
+
+  // Host font metrics refine Text sizing on the canvas; re-render once loaded.
+  loadMetrics().then((m) => { if (m && store.ui.mode === 'design') renderCanvas(); });
 
   scr.addEventListener('pointerdown', (ev) => {
     if (ev.button !== 0) return;
