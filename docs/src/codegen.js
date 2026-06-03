@@ -5,6 +5,7 @@
 // Output shape matches examples/Basic/MyScreen.h. Generated-code comments are
 // English-only per SPEC §10/§13.
 import { sceneById, placement, DATUMS } from './model.js';
+import { boardEnum } from './boards.js';
 
 const PART_ENUM = { Group: 'Group', Rect: 'Rect', Text: 'Text', Image: 'Image' };
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -119,10 +120,21 @@ export function generateHeader(project) {
   });
   s += `};\n\n`;
 
+  // Per-profile board tables for getBoard() auto-detect (§8.9.4). Boards not
+  // compilable on the target library are omitted (§8.9.5).
+  const lib = project.targetLibrary || 'M5Unified';
+  const boardNames = (pr) => (pr.boards || []).map((b) => boardEnum(lib, b)).filter(Boolean);
+  project.profiles.forEach((pr) => {
+    const names = boardNames(pr);
+    if (names.length) s += `static const int16_t kBoards_${pr.id}[] = { ${names.map((n) => `(int16_t)lgfx::board_t::${n}`).join(', ')} };\n`;
+  });
+  s += `\n`;
+
   s += `static const lgfxsb::ProfileDesc kProfiles[] = {\n`;
   project.profiles.forEach((pr) => {
-    // boards[] auto-detect table is emitted empty for now (runtime falls back to default).
-    s += `  {${pr.w}, ${pr.h}, ${pr.rotation}, nullptr, 0},\n`;
+    const names = boardNames(pr);
+    const ref = names.length ? `kBoards_${pr.id}, ${names.length}` : 'nullptr, 0';
+    s += `  {${pr.w}, ${pr.h}, ${pr.rotation}, ${ref}},\n`;
   });
   s += `};\n\n} // namespace detail\n\n`;
 

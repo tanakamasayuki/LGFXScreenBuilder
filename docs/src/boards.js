@@ -17,11 +17,25 @@ export const LGFX_KNOWN = new Set([
 
 export const TARGET_LIBS = ['M5Unified', 'M5GFX', 'LovyanGFX'];
 
+// Our board ids -> lgfx::board_t enum names. Shared boards use the same name in
+// LovyanGFX and M5GFX; the newer ones (Cardputer/Dial/DinMeter) exist only in
+// M5GFX's board_t. boardEnum() returns null when a board can't compile on the
+// target library, so codegen omits it (§8.9.5).
+export const BOARD_T = {
+  M5Stack: 'board_M5Stack', Core2: 'board_M5StackCore2', CoreS3: 'board_M5StackCoreS3',
+  Tough: 'board_M5Tough', Station: 'board_M5Station',
+  StickC: 'board_M5StickC', StickCPlus: 'board_M5StickCPlus', StickCPlus2: 'board_M5StickCPlus2',
+  Cardputer: 'board_M5Cardputer', DinMeter: 'board_M5DinMeter', Dial: 'board_M5Dial',
+  AtomS3: 'board_M5AtomS3', CoreInk: 'board_M5StackCoreInk', Paper: 'board_M5Paper',
+};
+
 export const boardById = (id) => BOARDS.find((b) => b.id === id);
 // Orientation-independent dimension key (135x240 == 240x135).
 export const dimKey = (w, h) => [Math.min(w, h), Math.max(w, h)].join('x');
 // Can the target library auto-detect this board?
 export const boardDetectable = (lib, id) => lib !== 'LovyanGFX' || LGFX_KNOWN.has(id);
+// board_t name to emit for the target library, or null if not compilable there.
+export const boardEnum = (lib, id) => (boardDetectable(lib, id) ? (BOARD_T[id] || null) : null);
 // Boards offered as assignment candidates for the target library.
 export const boardCatalog = (lib) => (lib === 'LovyanGFX' ? BOARDS.filter((b) => LGFX_KNOWN.has(b.id)) : BOARDS);
 

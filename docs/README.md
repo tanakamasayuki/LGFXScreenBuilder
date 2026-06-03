@@ -27,7 +27,9 @@ python -m http.server 8000 --directory docs
   rename/delete, board assignment (click-to-toggle, one board per profile),
   orientation/size preview, and a validation banner (size mismatch, boards not
   auto-detectable on LovyanGFX). The fallback profile is chosen at export, not
-  here. (Board → `getBoard()` auto-resolve in generated code is still pending.)
+  here. Board assignments are emitted as per-profile `board_t` tables so
+  `Profile::Auto` resolves via `getBoard()` at runtime (boards not present in the
+  target library's `board_t` are omitted; §8.9.5).
 - **i18n** (SPEC §14): all UI strings go through `src/i18n.js` (`t()` + `data-i18n`),
   en/ja with an en fallback and a language switcher; default follows the browser.
 - **Project persistence** (`src/persist.js`, SPEC §9): New / Open / Save toolbar
