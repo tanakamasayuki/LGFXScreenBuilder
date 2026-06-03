@@ -128,6 +128,7 @@ export function sampleProject() {
     profiles,
     scenes,
     assets: [], // image assets: { id, w, h, dataUrl (preview), rgb565: [] (export) }
+    fonts: [],  // adopted preset fonts: { name } (§8.7.3); profile.fonts enables per profile
   };
 }
 
@@ -171,7 +172,7 @@ export function assetUsage(project, id) {
 // Build a fresh project from the New-project dialog inputs (§9.1): one profile
 // and one empty scene. Ids are assumed pre-validated as C identifiers (§8.12).
 export function newProject({ name, targetLibrary, profileId, w, h, rotation, boards, sceneName }) {
-  const profile = { id: profileId, w, h, rotation, boards: boards ? [...boards] : [], layout: { [sceneName]: {} } };
+  const profile = { id: profileId, w, h, rotation, boards: boards ? [...boards] : [], fonts: [], layout: { [sceneName]: {} } };
   return {
     name,
     targetLibrary: targetLibrary || 'M5Unified',
@@ -180,7 +181,65 @@ export function newProject({ name, targetLibrary, profileId, w, h, rotation, boa
     profiles: [profile],
     scenes: [{ id: sceneName, desc: '', parts: [] }],
     assets: [],
+    fonts: [],
   };
+}
+
+// --- font adoption (§8.7.3/§8.7.4) ---------------------------------------
+// project.fonts = adopted preset fonts [{ name }] (name = catalog/`fonts::` symbol).
+// profile.fonts = names enabled for that profile (per-profile usage flag, §8.7.4).
+export const isFontAdopted = (project, name) => (project.fonts || []).some((f) => f.name === name);
+export const profileFonts = (project, profileId) => {
+  const adopted = new Set((project.fonts || []).map((f) => f.name));
+  const p = profileById(project, profileId);
+  return ((p && p.fonts) || []).filter((n) => adopted.has(n));
+};
+
+// Adopt a preset font into the project and enable it for every profile by default.
+export function adoptFont(project, name) {
+  if (!project.fonts) project.fonts = [];
+  if (!project.fonts.some((f) => f.name === name)) project.fonts.push({ name });
+  for (const p of project.profiles) { if (!p.fonts) p.fonts = []; if (!p.fonts.includes(name)) p.fonts.push(name); }
+  return name;
+}
+
+// Drop an adopted font everywhere (project, every profile, and any Text using it).
+export function removeFont(project, name) {
+  project.fonts = (project.fonts || []).filter((f) => f.name !== name);
+  for (const p of project.profiles) {
+    if (p.fonts) p.fonts = p.fonts.filter((n) => n !== name);
+    clearFontRefs(p, name);
+  }
+}
+
+// Enable/disable an adopted font for one profile. Disabling clears Text in that
+// profile that referenced it (falls back to the default font).
+export function toggleProfileFont(project, profileId, name) {
+  const p = profileById(project, profileId);
+  if (!p) return;
+  if (!p.fonts) p.fonts = [];
+  if (p.fonts.includes(name)) { p.fonts = p.fonts.filter((n) => n !== name); clearFontRefs(p, name); }
+  else p.fonts.push(name);
+}
+
+function clearFontRefs(profile, name) {
+  for (const sid in (profile.layout || {})) {
+    const s = profile.layout[sid];
+    for (const pid in s) if (s[pid] && s[pid].font === name) s[pid].font = null;
+  }
+}
+
+// Where a font is used: list of "profile/scene.part" labels.
+export function fontUsage(project, name) {
+  const out = [];
+  for (const p of project.profiles) {
+    for (const sc of project.scenes) {
+      const s = p.layout[sc.id];
+      if (!s) continue;
+      for (const part of sc.parts) if (s[part.id] && s[part.id].font === name) out.push(`${p.id}/${sc.id}.${part.id}`);
+    }
+  }
+  return out;
 }
 
 // --- profile mutations (§8.9) --------------------------------------------

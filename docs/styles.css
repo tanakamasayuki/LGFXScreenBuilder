@@ -132,6 +132,24 @@ pre.code { margin: 0; padding: 12px; border-radius: 8px; background: #10181c; co
 .asset-item .meta { color: var(--muted); font-size: 11px; }
 .asset-preview { border: 1px solid var(--line); image-rendering: pixelated; background-repeat: no-repeat; background-position: center; background-size: 100% 100%; background-color: #fff; box-shadow: 0 10px 30px rgba(15, 31, 36, .18); }
 
+/* --- Fonts view -------------------------------------------------------- */
+.fontgrid-wrap { overflow: auto; min-height: 0; padding: 12px; }
+.fontgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.ftile { display: grid; gap: 6px; text-align: left; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); cursor: pointer; min-height: auto; }
+.ftile:hover { border-color: var(--line2); background: var(--soft); }
+.ftile.adopted { border-color: var(--accent); background: var(--accent-soft); }
+.ftile .fprev { color: var(--text); line-height: 1.1; min-height: 32px; overflow: hidden; white-space: nowrap; }
+/* Host-rendered sample (white glyphs on black, cropped from the atlas). */
+.ftile .fprev.real { background-color: #000; border-radius: 4px; image-rendering: pixelated; max-width: 100%; }
+.ftile .fn { font-size: 12px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ftile .fd { font-size: 11px; color: var(--muted); }
+.ftile .badge { justify-self: start; }
+.fontrow { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; }
+.fontrow .fn { font-size: 12px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fontrow .profs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.fontrow .profs label { display: flex; gap: 4px; align-items: center; font-size: 11px; color: var(--muted); }
+.fontrow .rm { min-height: 22px; width: 22px; padding: 0; border-radius: 5px; }
+
 /* --- Modal dialog ------------------------------------------------------ */
 .overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(15, 31, 36, .42); }
 .overlay[hidden] { display: none; }

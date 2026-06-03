@@ -32,6 +32,14 @@ python -m http.server 8000 --directory docs
   参照し、Design キャンバスでプレビュー表示。codegen が RGB565 データ＋`AssetDesc` テーブルを
   出力し、ランタイムが `pushImage` で描画（host backend で end-to-end 検証済み）。
   スライス・スプライトシート・フォントは post-MVP。
+- **Fonts** モード（SPEC §8.7）: プリセットカタログ（`src/font-catalog.js`、`tools/gen-fonts.mjs`
+  がピン版 LovyanGFX から生成）を種別/ファミリ/スタイル/スクリプト/検索で絞り込み、少数を
+  プロジェクトに採用し、各フォントをプロファイル毎に有効化（小画面は小フォントだけに）。
+  タイルは **host 実描画のグリフ**を表示する — `tests/font_introspect` ハーネスが lang-ship host で
+  全プリセットを内省（メトリクス＋ASCII/CJK カバレッジ＋実サイズのサンプル）し、テストがサンプルを
+  1 枚のアトラス（`src/font-atlas.png`＋`src/font-metrics.json`）に詰め、グリッドがフォント毎に
+  切り出して表示する（未生成時は近似 CSS プレビューにフォールバック）。Text への `setFont` 配線と
+  フォント毎フラッシュサイズは後続スライス。
 - **多言語化**（SPEC §14）: UI 文字列はすべて `src/i18n.js`（`t()` ＋ `data-i18n`）経由。en/ja・
   en フォールバック・言語切替を実装。初期言語はブラウザ設定に追従。
 - **Undo / Redo**: スナップショット式のプロジェクト履歴（ツールバー ↶/↷、Ctrl/⌘+Z、
@@ -59,6 +67,11 @@ python -m http.server 8000 --directory docs
 - `src/exporter.js` — Export モード（プレビュー＋出力サブセット/fallback＋ダウンロード）
 - `src/assets.js` — Assets モード（PNG 取り込み/RGB565 デコード・プレビュー・使用箇所）
 - `src/newproject.js` — 新規プロジェクトダイアログ（§9.1）
+- `src/fontsview.js` — Fonts モード（カタログ閲覧/採用＋プロファイル毎有効化）
+- `src/fonts.js` — プリセットフォントのカタログ照会＋プレビュー（host サンプル／近似）
+- `src/font-catalog.js` — 生成済みプリセットカタログ（`../tools/gen-fonts.mjs` が生成）
+- `src/font-metrics.json` ＋ `src/font-atlas.png` — host 内省メトリクス＋サンプルアトラス
+  （`../tests/font_introspect` が生成）
 - `src/store.js` — リアクティブストア（プロジェクト＋UI状態）＋ loadProject
 - `src/i18n.js` — 翻訳（en/ja）＋ `t()` ＋静的マークアップ適用
 - `src/persist.js` — `.lgfxsb.json` 保存/読込 ＋ localStorage 自動保存

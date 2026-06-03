@@ -1,0 +1,2798 @@
+{
+"source": "LovyanGFX 1.2.21",
+"atlas": "font-atlas.png",
+"atlasW": 420,
+"atlasH": 4641,
+"fonts": {
+"Font0": {
+"height": 8,
+"baseline": 7,
+"xAdvance": 6,
+"yAdvance": 8,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+0,
+56,
+10
+]
+},
+"Font2": {
+"height": 16,
+"baseline": 13,
+"xAdvance": 0,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+10,
+71,
+18
+]
+},
+"Font4": {
+"height": 26,
+"baseline": 19,
+"xAdvance": 0,
+"yAdvance": 26,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+28,
+140,
+28
+]
+},
+"Font6": {
+"height": 48,
+"baseline": 36,
+"xAdvance": 0,
+"yAdvance": 48,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+56,
+170,
+50
+]
+},
+"Font7": {
+"height": 48,
+"baseline": 47,
+"xAdvance": 0,
+"yAdvance": 48,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+106,
+170,
+50
+]
+},
+"Font8": {
+"height": 75,
+"baseline": 73,
+"xAdvance": 0,
+"yAdvance": 75,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+156,
+341,
+77
+]
+},
+"Font8x8C64": {
+"height": 8,
+"baseline": 7,
+"xAdvance": 8,
+"yAdvance": 8,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+233,
+74,
+10
+]
+},
+"AsciiFont8x16": {
+"height": 16,
+"baseline": 13,
+"xAdvance": 8,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+243,
+74,
+18
+]
+},
+"AsciiFont24x48": {
+"height": 48,
+"baseline": 40,
+"xAdvance": 24,
+"yAdvance": 48,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+261,
+218,
+50
+]
+},
+"TomThumb": {
+"height": 6,
+"baseline": 5,
+"xAdvance": 24,
+"yAdvance": 6,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+311,
+41,
+8
+]
+},
+"FreeMono9pt7b": {
+"height": 15,
+"baseline": 11,
+"xAdvance": 24,
+"yAdvance": 18,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+319,
+101,
+17
+]
+},
+"FreeMono12pt7b": {
+"height": 20,
+"baseline": 15,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+336,
+128,
+22
+]
+},
+"FreeMono18pt7b": {
+"height": 30,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 35,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+358,
+191,
+32
+]
+},
+"FreeMono24pt7b": {
+"height": 40,
+"baseline": 30,
+"xAdvance": 24,
+"yAdvance": 47,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+390,
+254,
+42
+]
+},
+"FreeMonoBold9pt7b": {
+"height": 17,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 18,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+432,
+101,
+19
+]
+},
+"FreeMonoBold12pt7b": {
+"height": 22,
+"baseline": 16,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+451,
+129,
+24
+]
+},
+"FreeMonoBold18pt7b": {
+"height": 31,
+"baseline": 23,
+"xAdvance": 24,
+"yAdvance": 35,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+475,
+192,
+33
+]
+},
+"FreeMonoBold24pt7b": {
+"height": 42,
+"baseline": 32,
+"xAdvance": 24,
+"yAdvance": 47,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+508,
+255,
+44
+]
+},
+"FreeMonoOblique9pt7b": {
+"height": 15,
+"baseline": 11,
+"xAdvance": 24,
+"yAdvance": 18,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+552,
+101,
+17
+]
+},
+"FreeMonoOblique12pt7b": {
+"height": 20,
+"baseline": 15,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+569,
+128,
+22
+]
+},
+"FreeMonoOblique18pt7b": {
+"height": 30,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 35,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+591,
+191,
+32
+]
+},
+"FreeMonoOblique24pt7b": {
+"height": 40,
+"baseline": 30,
+"xAdvance": 24,
+"yAdvance": 47,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+623,
+254,
+42
+]
+},
+"FreeMonoBoldOblique9pt7b": {
+"height": 17,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 18,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+665,
+101,
+19
+]
+},
+"FreeMonoBoldOblique12pt7b": {
+"height": 22,
+"baseline": 16,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+684,
+128,
+24
+]
+},
+"FreeMonoBoldOblique18pt7b": {
+"height": 31,
+"baseline": 23,
+"xAdvance": 24,
+"yAdvance": 35,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+708,
+192,
+33
+]
+},
+"FreeMonoBoldOblique24pt7b": {
+"height": 42,
+"baseline": 32,
+"xAdvance": 24,
+"yAdvance": 47,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+741,
+255,
+44
+]
+},
+"FreeSans9pt7b": {
+"height": 18,
+"baseline": 13,
+"xAdvance": 24,
+"yAdvance": 22,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+785,
+100,
+20
+]
+},
+"FreeSans12pt7b": {
+"height": 23,
+"baseline": 17,
+"xAdvance": 24,
+"yAdvance": 29,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+805,
+130,
+25
+]
+},
+"FreeSans18pt7b": {
+"height": 35,
+"baseline": 26,
+"xAdvance": 24,
+"yAdvance": 42,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+830,
+190,
+37
+]
+},
+"FreeSans24pt7b": {
+"height": 45,
+"baseline": 34,
+"xAdvance": 24,
+"yAdvance": 56,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+867,
+256,
+47
+]
+},
+"FreeSansBold9pt7b": {
+"height": 18,
+"baseline": 13,
+"xAdvance": 24,
+"yAdvance": 22,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+914,
+104,
+20
+]
+},
+"FreeSansBold12pt7b": {
+"height": 23,
+"baseline": 17,
+"xAdvance": 24,
+"yAdvance": 29,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+934,
+138,
+25
+]
+},
+"FreeSansBold18pt7b": {
+"height": 33,
+"baseline": 25,
+"xAdvance": 24,
+"yAdvance": 42,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+959,
+198,
+35
+]
+},
+"FreeSansBold24pt7b": {
+"height": 47,
+"baseline": 35,
+"xAdvance": 24,
+"yAdvance": 56,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+994,
+267,
+49
+]
+},
+"FreeSansOblique9pt7b": {
+"height": 18,
+"baseline": 13,
+"xAdvance": 24,
+"yAdvance": 22,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1043,
+102,
+20
+]
+},
+"FreeSansOblique12pt7b": {
+"height": 24,
+"baseline": 17,
+"xAdvance": 24,
+"yAdvance": 29,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1063,
+133,
+26
+]
+},
+"FreeSansOblique18pt7b": {
+"height": 35,
+"baseline": 26,
+"xAdvance": 24,
+"yAdvance": 42,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1089,
+193,
+37
+]
+},
+"FreeSansOblique24pt7b": {
+"height": 46,
+"baseline": 35,
+"xAdvance": 24,
+"yAdvance": 56,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1126,
+260,
+48
+]
+},
+"FreeSansBoldOblique9pt7b": {
+"height": 21,
+"baseline": 16,
+"xAdvance": 24,
+"yAdvance": 22,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1174,
+106,
+23
+]
+},
+"FreeSansBoldOblique12pt7b": {
+"height": 28,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 29,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1197,
+140,
+30
+]
+},
+"FreeSansBoldOblique18pt7b": {
+"height": 35,
+"baseline": 26,
+"xAdvance": 24,
+"yAdvance": 42,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1227,
+200,
+37
+]
+},
+"FreeSansBoldOblique24pt7b": {
+"height": 46,
+"baseline": 35,
+"xAdvance": 24,
+"yAdvance": 56,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1264,
+273,
+48
+]
+},
+"FreeSerif9pt7b": {
+"height": 17,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 22,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1312,
+91,
+19
+]
+},
+"FreeSerif12pt7b": {
+"height": 22,
+"baseline": 16,
+"xAdvance": 24,
+"yAdvance": 29,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1331,
+120,
+24
+]
+},
+"FreeSerif18pt7b": {
+"height": 33,
+"baseline": 24,
+"xAdvance": 24,
+"yAdvance": 42,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1355,
+175,
+35
+]
+},
+"FreeSerif24pt7b": {
+"height": 44,
+"baseline": 33,
+"xAdvance": 24,
+"yAdvance": 56,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1390,
+237,
+46
+]
+},
+"FreeSerifItalic9pt7b": {
+"height": 17,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 22,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1436,
+90,
+19
+]
+},
+"FreeSerifItalic12pt7b": {
+"height": 23,
+"baseline": 17,
+"xAdvance": 24,
+"yAdvance": 29,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1455,
+119,
+25
+]
+},
+"FreeSerifItalic18pt7b": {
+"height": 33,
+"baseline": 25,
+"xAdvance": 24,
+"yAdvance": 42,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1480,
+170,
+35
+]
+},
+"FreeSerifItalic24pt7b": {
+"height": 44,
+"baseline": 33,
+"xAdvance": 24,
+"yAdvance": 56,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1515,
+229,
+46
+]
+},
+"FreeSerifBold9pt7b": {
+"height": 17,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 22,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1561,
+96,
+19
+]
+},
+"FreeSerifBold12pt7b": {
+"height": 23,
+"baseline": 17,
+"xAdvance": 24,
+"yAdvance": 29,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1580,
+127,
+25
+]
+},
+"FreeSerifBold18pt7b": {
+"height": 33,
+"baseline": 25,
+"xAdvance": 24,
+"yAdvance": 42,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1605,
+184,
+35
+]
+},
+"FreeSerifBold24pt7b": {
+"height": 44,
+"baseline": 34,
+"xAdvance": 24,
+"yAdvance": 56,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1640,
+246,
+46
+]
+},
+"FreeSerifBoldItalic9pt7b": {
+"height": 17,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 22,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1686,
+94,
+19
+]
+},
+"FreeSerifBoldItalic12pt7b": {
+"height": 23,
+"baseline": 17,
+"xAdvance": 24,
+"yAdvance": 29,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1705,
+123,
+25
+]
+},
+"FreeSerifBoldItalic18pt7b": {
+"height": 33,
+"baseline": 25,
+"xAdvance": 24,
+"yAdvance": 42,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1730,
+178,
+35
+]
+},
+"FreeSerifBoldItalic24pt7b": {
+"height": 44,
+"baseline": 33,
+"xAdvance": 24,
+"yAdvance": 56,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1765,
+237,
+46
+]
+},
+"Orbitron_Light_24": {
+"height": 30,
+"baseline": 24,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 94,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1811,
+163,
+32
+]
+},
+"Orbitron_Light_32": {
+"height": 41,
+"baseline": 33,
+"xAdvance": 24,
+"yAdvance": 32,
+"ascii": 94,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1843,
+225,
+43
+]
+},
+"Roboto_Thin_24": {
+"height": 26,
+"baseline": 20,
+"xAdvance": 24,
+"yAdvance": 29,
+"ascii": 94,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1886,
+133,
+28
+]
+},
+"Satisfy_24": {
+"height": 34,
+"baseline": 21,
+"xAdvance": 24,
+"yAdvance": 36,
+"ascii": 94,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1914,
+119,
+36
+]
+},
+"Yellowtail_32": {
+"height": 37,
+"baseline": 27,
+"xAdvance": 24,
+"yAdvance": 45,
+"ascii": 94,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1950,
+150,
+39
+]
+},
+"DejaVu9": {
+"height": 10,
+"baseline": 7,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+1989,
+67,
+12
+]
+},
+"DejaVu12": {
+"height": 13,
+"baseline": 9,
+"xAdvance": 24,
+"yAdvance": 13,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+2001,
+84,
+15
+]
+},
+"DejaVu18": {
+"height": 18,
+"baseline": 13,
+"xAdvance": 24,
+"yAdvance": 18,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+2016,
+114,
+20
+]
+},
+"DejaVu24": {
+"height": 25,
+"baseline": 18,
+"xAdvance": 24,
+"yAdvance": 25,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+2036,
+151,
+27
+]
+},
+"DejaVu40": {
+"height": 42,
+"baseline": 31,
+"xAdvance": 24,
+"yAdvance": 42,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+2063,
+246,
+44
+]
+},
+"DejaVu56": {
+"height": 58,
+"baseline": 44,
+"xAdvance": 24,
+"yAdvance": 58,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+2107,
+344,
+60
+]
+},
+"DejaVu72": {
+"height": 75,
+"baseline": 57,
+"xAdvance": 24,
+"yAdvance": 75,
+"ascii": 95,
+"cjk": false,
+"sample": "AaBbGg012",
+"box": [
+0,
+2167,
+420,
+77
+]
+},
+"lgfxJapanMincho_8": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2244,
+34,
+12
+]
+},
+"lgfxJapanMincho_12": {
+"height": 13,
+"baseline": 11,
+"xAdvance": 24,
+"yAdvance": 13,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2256,
+50,
+15
+]
+},
+"lgfxJapanMincho_16": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2271,
+66,
+18
+]
+},
+"lgfxJapanMincho_20": {
+"height": 21,
+"baseline": 18,
+"xAdvance": 24,
+"yAdvance": 21,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2289,
+82,
+23
+]
+},
+"lgfxJapanMincho_24": {
+"height": 24,
+"baseline": 21,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2312,
+98,
+26
+]
+},
+"lgfxJapanMincho_28": {
+"height": 28,
+"baseline": 25,
+"xAdvance": 24,
+"yAdvance": 28,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2338,
+114,
+30
+]
+},
+"lgfxJapanMincho_32": {
+"height": 32,
+"baseline": 28,
+"xAdvance": 24,
+"yAdvance": 32,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2368,
+130,
+34
+]
+},
+"lgfxJapanMincho_36": {
+"height": 36,
+"baseline": 32,
+"xAdvance": 24,
+"yAdvance": 36,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2402,
+146,
+38
+]
+},
+"lgfxJapanMincho_40": {
+"height": 40,
+"baseline": 35,
+"xAdvance": 24,
+"yAdvance": 40,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2440,
+162,
+42
+]
+},
+"lgfxJapanMinchoP_8": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2482,
+40,
+12
+]
+},
+"lgfxJapanMinchoP_12": {
+"height": 14,
+"baseline": 11,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2494,
+58,
+16
+]
+},
+"lgfxJapanMinchoP_16": {
+"height": 20,
+"baseline": 15,
+"xAdvance": 24,
+"yAdvance": 20,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2510,
+77,
+22
+]
+},
+"lgfxJapanMinchoP_20": {
+"height": 24,
+"baseline": 18,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2532,
+94,
+26
+]
+},
+"lgfxJapanMinchoP_24": {
+"height": 29,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 29,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2558,
+114,
+31
+]
+},
+"lgfxJapanMinchoP_28": {
+"height": 33,
+"baseline": 26,
+"xAdvance": 24,
+"yAdvance": 33,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2589,
+132,
+35
+]
+},
+"lgfxJapanMinchoP_32": {
+"height": 37,
+"baseline": 29,
+"xAdvance": 24,
+"yAdvance": 37,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2624,
+152,
+39
+]
+},
+"lgfxJapanMinchoP_36": {
+"height": 42,
+"baseline": 33,
+"xAdvance": 24,
+"yAdvance": 42,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2663,
+170,
+44
+]
+},
+"lgfxJapanMinchoP_40": {
+"height": 47,
+"baseline": 37,
+"xAdvance": 24,
+"yAdvance": 47,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2707,
+189,
+49
+]
+},
+"lgfxJapanGothic_8": {
+"height": 9,
+"baseline": 7,
+"xAdvance": 24,
+"yAdvance": 9,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2756,
+34,
+11
+]
+},
+"lgfxJapanGothic_12": {
+"height": 13,
+"baseline": 11,
+"xAdvance": 24,
+"yAdvance": 13,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2767,
+50,
+15
+]
+},
+"lgfxJapanGothic_16": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2782,
+66,
+18
+]
+},
+"lgfxJapanGothic_20": {
+"height": 20,
+"baseline": 18,
+"xAdvance": 24,
+"yAdvance": 20,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2800,
+82,
+22
+]
+},
+"lgfxJapanGothic_24": {
+"height": 24,
+"baseline": 21,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2822,
+98,
+26
+]
+},
+"lgfxJapanGothic_28": {
+"height": 28,
+"baseline": 25,
+"xAdvance": 24,
+"yAdvance": 28,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2848,
+114,
+30
+]
+},
+"lgfxJapanGothic_32": {
+"height": 32,
+"baseline": 28,
+"xAdvance": 24,
+"yAdvance": 32,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2878,
+130,
+34
+]
+},
+"lgfxJapanGothic_36": {
+"height": 36,
+"baseline": 32,
+"xAdvance": 24,
+"yAdvance": 36,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2912,
+146,
+38
+]
+},
+"lgfxJapanGothic_40": {
+"height": 40,
+"baseline": 35,
+"xAdvance": 24,
+"yAdvance": 40,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2950,
+162,
+42
+]
+},
+"lgfxJapanGothicP_8": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+2992,
+38,
+12
+]
+},
+"lgfxJapanGothicP_12": {
+"height": 14,
+"baseline": 11,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3004,
+58,
+16
+]
+},
+"lgfxJapanGothicP_16": {
+"height": 19,
+"baseline": 15,
+"xAdvance": 24,
+"yAdvance": 19,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3020,
+75,
+21
+]
+},
+"lgfxJapanGothicP_20": {
+"height": 24,
+"baseline": 19,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3041,
+94,
+26
+]
+},
+"lgfxJapanGothicP_24": {
+"height": 28,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 28,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3067,
+111,
+30
+]
+},
+"lgfxJapanGothicP_28": {
+"height": 33,
+"baseline": 26,
+"xAdvance": 24,
+"yAdvance": 33,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3097,
+130,
+35
+]
+},
+"lgfxJapanGothicP_32": {
+"height": 38,
+"baseline": 30,
+"xAdvance": 24,
+"yAdvance": 38,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3132,
+147,
+40
+]
+},
+"lgfxJapanGothicP_36": {
+"height": 42,
+"baseline": 33,
+"xAdvance": 24,
+"yAdvance": 42,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3172,
+167,
+44
+]
+},
+"lgfxJapanGothicP_40": {
+"height": 47,
+"baseline": 37,
+"xAdvance": 24,
+"yAdvance": 47,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3216,
+183,
+49
+]
+},
+"efontCN_10": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3265,
+42,
+12
+]
+},
+"efontCN_10_b": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3277,
+42,
+12
+]
+},
+"efontCN_10_bi": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3289,
+43,
+12
+]
+},
+"efontCN_10_i": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3301,
+42,
+12
+]
+},
+"efontCN_12": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3313,
+50,
+14
+]
+},
+"efontCN_12_b": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3327,
+50,
+14
+]
+},
+"efontCN_12_bi": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3341,
+52,
+14
+]
+},
+"efontCN_12_i": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3355,
+51,
+14
+]
+},
+"efontCN_14": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3369,
+58,
+16
+]
+},
+"efontCN_14_b": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3385,
+58,
+16
+]
+},
+"efontCN_14_bi": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3401,
+60,
+16
+]
+},
+"efontCN_14_i": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3417,
+59,
+16
+]
+},
+"efontCN_16": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3433,
+66,
+18
+]
+},
+"efontCN_16_b": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3451,
+66,
+18
+]
+},
+"efontCN_16_bi": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3469,
+67,
+18
+]
+},
+"efontCN_16_i": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3487,
+66,
+18
+]
+},
+"efontCN_24": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3505,
+98,
+26
+]
+},
+"efontCN_24_b": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3531,
+98,
+26
+]
+},
+"efontCN_24_bi": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3557,
+100,
+26
+]
+},
+"efontCN_24_i": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3583,
+99,
+26
+]
+},
+"efontJA_10": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3609,
+42,
+12
+]
+},
+"efontJA_10_b": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3621,
+42,
+12
+]
+},
+"efontJA_10_bi": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3633,
+43,
+12
+]
+},
+"efontJA_10_i": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3645,
+42,
+12
+]
+},
+"efontJA_12": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3657,
+50,
+14
+]
+},
+"efontJA_12_b": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3671,
+50,
+14
+]
+},
+"efontJA_12_bi": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3685,
+52,
+14
+]
+},
+"efontJA_12_i": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3699,
+51,
+14
+]
+},
+"efontJA_14": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3713,
+58,
+16
+]
+},
+"efontJA_14_b": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3729,
+58,
+16
+]
+},
+"efontJA_14_bi": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3745,
+60,
+16
+]
+},
+"efontJA_14_i": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3761,
+59,
+16
+]
+},
+"efontJA_16": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3777,
+66,
+18
+]
+},
+"efontJA_16_b": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3795,
+66,
+18
+]
+},
+"efontJA_16_bi": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3813,
+67,
+18
+]
+},
+"efontJA_16_i": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3831,
+66,
+18
+]
+},
+"efontJA_24": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3849,
+98,
+26
+]
+},
+"efontJA_24_b": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3875,
+98,
+26
+]
+},
+"efontJA_24_bi": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3901,
+100,
+26
+]
+},
+"efontJA_24_i": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3927,
+99,
+26
+]
+},
+"efontKR_10": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3953,
+42,
+12
+]
+},
+"efontKR_10_b": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3965,
+42,
+12
+]
+},
+"efontKR_10_bi": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3977,
+43,
+12
+]
+},
+"efontKR_10_i": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+3989,
+42,
+12
+]
+},
+"efontKR_12": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4001,
+50,
+14
+]
+},
+"efontKR_12_b": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4015,
+50,
+14
+]
+},
+"efontKR_12_bi": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4029,
+52,
+14
+]
+},
+"efontKR_12_i": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4043,
+51,
+14
+]
+},
+"efontKR_14": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4057,
+58,
+16
+]
+},
+"efontKR_14_b": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4073,
+58,
+16
+]
+},
+"efontKR_14_bi": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4089,
+60,
+16
+]
+},
+"efontKR_14_i": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4105,
+59,
+16
+]
+},
+"efontKR_16": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4121,
+66,
+18
+]
+},
+"efontKR_16_b": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4139,
+66,
+18
+]
+},
+"efontKR_16_bi": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4157,
+67,
+18
+]
+},
+"efontKR_16_i": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4175,
+66,
+18
+]
+},
+"efontKR_24": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4193,
+98,
+26
+]
+},
+"efontKR_24_b": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4219,
+98,
+26
+]
+},
+"efontKR_24_bi": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4245,
+100,
+26
+]
+},
+"efontKR_24_i": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4271,
+99,
+26
+]
+},
+"efontTW_10": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4297,
+32,
+12
+]
+},
+"efontTW_10_b": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4309,
+42,
+12
+]
+},
+"efontTW_10_bi": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4321,
+49,
+12
+]
+},
+"efontTW_10_i": {
+"height": 10,
+"baseline": 8,
+"xAdvance": 24,
+"yAdvance": 10,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4333,
+32,
+12
+]
+},
+"efontTW_12": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4345,
+38,
+14
+]
+},
+"efontTW_12_b": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4359,
+38,
+14
+]
+},
+"efontTW_12_bi": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4373,
+40,
+14
+]
+},
+"efontTW_12_i": {
+"height": 12,
+"baseline": 10,
+"xAdvance": 24,
+"yAdvance": 12,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4387,
+39,
+14
+]
+},
+"efontTW_14": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4401,
+58,
+16
+]
+},
+"efontTW_14_b": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4417,
+58,
+16
+]
+},
+"efontTW_14_bi": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4433,
+68,
+16
+]
+},
+"efontTW_14_i": {
+"height": 14,
+"baseline": 12,
+"xAdvance": 24,
+"yAdvance": 14,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4449,
+67,
+16
+]
+},
+"efontTW_16": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4465,
+50,
+18
+]
+},
+"efontTW_16_b": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4483,
+50,
+18
+]
+},
+"efontTW_16_bi": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4501,
+51,
+18
+]
+},
+"efontTW_16_i": {
+"height": 16,
+"baseline": 14,
+"xAdvance": 24,
+"yAdvance": 16,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4519,
+76,
+18
+]
+},
+"efontTW_24": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4537,
+98,
+26
+]
+},
+"efontTW_24_b": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4563,
+98,
+26
+]
+},
+"efontTW_24_bi": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4589,
+114,
+26
+]
+},
+"efontTW_24_i": {
+"height": 24,
+"baseline": 22,
+"xAdvance": 24,
+"yAdvance": 24,
+"ascii": 95,
+"cjk": true,
+"sample": "AあBが12",
+"box": [
+0,
+4615,
+113,
+26
+]
+}
+}
+}

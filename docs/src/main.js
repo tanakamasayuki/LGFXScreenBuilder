@@ -5,6 +5,7 @@ import { renderDesign, initDesign } from './design.js';
 import { renderProfiles, initProfiles } from './profiles.js';
 import { renderExport, initExport } from './exporter.js';
 import { renderAssets, initAssets } from './assets.js';
+import { renderFonts, initFonts } from './fontsview.js';
 import { initNewProject } from './newproject.js';
 import { generateHeader } from './codegen.js';
 import { detectLanguage, setLang, getLang, applyStatic } from './i18n.js';
@@ -16,15 +17,17 @@ function render() {
   applyStatic(document); // static [data-i18n] labels
   const mode = store.ui.mode;
   document.querySelectorAll('.mode[data-mode]').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
-  const dv = $('view-design'), pv = $('view-profiles'), ev = $('view-export'), av = $('view-assets');
+  const dv = $('view-design'), pv = $('view-profiles'), ev = $('view-export'), av = $('view-assets'), fv = $('view-fonts');
   if (dv) dv.hidden = mode !== 'design';
   if (pv) pv.hidden = mode !== 'profiles';
   if (ev) ev.hidden = mode !== 'export';
   if (av) av.hidden = mode !== 'assets';
+  if (fv) fv.hidden = mode !== 'fonts';
   if (mode === 'design') renderDesign();
   else if (mode === 'profiles') renderProfiles();
   else if (mode === 'export') renderExport();
   else if (mode === 'assets') renderAssets();
+  else if (mode === 'fonts') renderFonts();
   const ub = $('btn-undo'), rb = $('btn-redo');
   if (ub) ub.disabled = !canUndo();
   if (rb) rb.disabled = !canRedo();
@@ -84,6 +87,7 @@ initDesign();
 initProfiles();
 initExport();
 initAssets();
+initFonts();
 subscribe(render);
 
 // Restore the last autosaved project if present; otherwise keep the sample.

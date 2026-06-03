@@ -445,11 +445,12 @@ The MVP handles only the **preset fonts built into LovyanGFX / M5GFX**. The runt
 
 The list (catalog) of available preset fonts is **generated offline and shipped as JSON**, and the browser tool only reads it (the same standing as the board list; no C++ is parsed at runtime).
 
-- **The set differs per library.** LovyanGFX and M5GFX each have their own `lgfx_fonts.hpp` (~186 in 1.2.21, ~187 in M5GFX 0.2.22, including efont-family Japanese/Chinese/Korean), with shared fonts declared under the same name in `namespace fonts::`. Candidates are offered according to the target library (§9), the same way board assignment works.
+- **The set can differ per library, but at the pinned versions (LovyanGFX 1.2.21 / M5GFX 0.2.22) it is identical** (186 each, no name-set difference; both include the efont-family Japanese/Chinese/Korean). So **LovyanGFX is the representative single catalog**: parsing and host introspection are done **once on LovyanGFX** and reused for M5GFX/M5Unified (which also avoids the question of whether M5GFX builds on host). The generator **continuously diff-checks the name set against M5GFX** so a future bump that diverges is detected (ignore the extras if uncommon, or add them if needed). Shared fonts are declared under the same name in `namespace fonts::`.
 - **Attributes obtainable mechanically from the name** are classified first: type (`font_type_t` = glcd / bmp / rle / gfx / bdf / vlw / u8g2 …), family stem (FreeMono / FreeSans / FreeSerif / DejaVu / Orbitron / efont …), style (Bold / Oblique / Italic), nominal size, and script tendency (efont family = CJK).
 - **Attributes not obtainable from the name alone are introspected on the host** (Arduino host environment): actual pixel height, baseline, advance (`getDefaultMetric(FontMetrics*)`), data/flash size, and available character coverage (GFXfont has `first/last` + `range[]` in source, but U8g2/efont are binary, so coverage is determined by probing codepoints). Metrics, coverage, and size are obtained together in a single introspection harness and baked into the catalog JSON.
 - **The same host harness renders an actual-drawing sample of each font to PNG and ships it with the catalog** (draw a representative string at the real font size via `setFont`→`drawString`→`createPng`; include a Japanese sample for CJK-capable fonts, judged from coverage). This lets the adoption UI preview the **same glyphs as the device** (not an approximation). Because there are many, they are packed into a sprite atlas or similar to keep size down.
-- Catalog generation (parse + host introspection + sample PNGs) runs in CI/by hand, and the resulting JSON (+ preview images) is kept as an artifact, regenerated when a library is updated.
+- **The version to parse is taken from the sketch.yaml pin as the source of truth.** `~/.arduino15/internal` may hold several versions of a library, and a freshly bumped version is only downloaded on the first build, so the pinned version is resolved exactly as `<Name>_<version>_<hash>` and, if absent, **fails loudly rather than silently parsing an old copy** (prompting a rebuild). A dedicated font-catalog sketch.yaml (pinning both LovyanGFX and M5GFX) is the single source of versions, shared by the host introspection harness.
+- Catalog generation (parse + host introspection + sample PNGs) runs in CI/by hand, and the resulting JSON (+ preview images) is kept as an artifact, regenerated when a library is updated. The generated output records the versions it referenced.
 
 #### 8.7.3 Font adoption (project assets) and selection UX
 
@@ -475,7 +476,7 @@ Preview fidelity: **the preview at font adoption (selection) time shows the host
 
 - The generated code outputs `setFont(&fonts::<Name>)` + `setTextSize(<multiplier>)` when drawing Text (reference only; no font payload is emitted).
 - Only the fonts used by each included profile are referenced (the flash policy of §8.7.4).
-- Fonts not present in the target library's `fonts::` (e.g., an M5GFX-only font when targeting LovyanGFX) are **omitted + warned** (handled the same as board assignment, §8.9.5).
+- Fonts not present in the target library's `fonts::` are **omitted + warned** (handled the same as board assignment, §8.9.5). This does not normally happen with the single representative catalog (LovyanGFX), but is kept as insurance against version skew.
 
 ### 8.8 Animation
 

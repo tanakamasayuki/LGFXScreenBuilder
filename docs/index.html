@@ -13,6 +13,7 @@
       <button class="mode active" data-mode="design" data-i18n="mode.design">Design</button>
       <button class="mode" data-mode="profiles" data-i18n="mode.profiles">Profiles</button>
       <button class="mode" data-mode="assets" data-i18n="mode.assets">Assets</button>
+      <button class="mode" data-mode="fonts" data-i18n="mode.fonts">Fonts</button>
       <button class="mode" data-mode="export" data-i18n="mode.export">Export</button>
     </nav>
     <span class="toolsep"></span>
@@ -217,6 +218,32 @@
       </aside>
     </div>
   </div><!-- /view-assets -->
+
+  <div id="view-fonts" class="view" hidden>
+    <div class="cols">
+      <aside class="left">
+        <div class="section">
+          <h2 data-i18n="fonts.filters">Filters</h2>
+          <div class="field"><label data-i18n="fonts.search">Search</label><input id="font-q" type="text"></div>
+          <div class="field"><label data-i18n="field.category">Category</label><select id="font-cat"></select></div>
+          <div class="field"><label data-i18n="field.script">Script</label><select id="font-script"></select></div>
+          <div class="field"><label data-i18n="field.style">Style</label><select id="font-style"></select></div>
+          <div class="field"><label data-i18n="field.family">Family</label><select id="font-family"></select></div>
+        </div>
+      </aside>
+      <main class="center" style="grid-template-rows:auto 1fr">
+        <div class="bar"><span class="sub" id="font-count"></span><span class="grow"></span><span class="sub" data-i18n="fonts.previewNote"></span></div>
+        <div class="fontgrid-wrap"><div class="fontgrid" id="font-grid"></div></div>
+      </main>
+      <aside class="right">
+        <div class="section">
+          <h2 id="font-adopted-title" data-i18n="fonts.adopted">Adopted fonts</h2>
+          <div id="font-adopted"></div>
+          <p class="sub" data-i18n="fonts.note"></p>
+        </div>
+      </aside>
+    </div>
+  </div><!-- /view-fonts -->
 
   <div id="newproj-overlay" class="overlay" hidden>
     <div class="dialog">
