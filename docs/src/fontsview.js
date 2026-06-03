@@ -4,7 +4,7 @@
 // slice). Codegen `setFont` and the exact host-rendered preview come later.
 import { store, mutate } from './store.js';
 import { adoptFont, removeFont, toggleProfileFont, profileFonts, isFontAdopted } from './model.js';
-import { filterCatalog, facets, approxCss, sampleFor, describe, loadMetrics, sampleImage, flashFor, fmtBytes } from './fonts.js';
+import { filterCatalog, facets, approxCss, sampleFor, describe, loadMetrics, sampleImage, flashFor, fmtBytes, monoFor } from './fonts.js';
 import { t } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
@@ -41,10 +41,13 @@ function renderGrid() {
       const size = Math.max(11, Math.min(f.size || 16, 26));
       prev = `<div class="fprev" style="font-family:${approxCss(f)};font-size:${size}px;${f.bold ? 'font-weight:700;' : ''}${f.italic ? 'font-style:italic;' : ''}">${sampleFor(f)}</div>`;
     }
+    const mono = monoFor(f.name);
+    const wbadge = mono == null ? ''
+      : `<span class="wbadge ${mono ? 'fixed' : 'prop'}">${t(mono ? 'font.mono' : 'font.prop')}</span>`;
     tile.innerHTML =
       prev +
       `<div class="fn">${adopted ? '✓ ' : ''}${f.name}</div>` +
-      `<div class="fd">${describe(f)}</div>`;
+      `<div class="fd">${describe(f)}${wbadge}</div>`;
     tile.onclick = () => mutate((st) => {
       if (isFontAdopted(st.project, f.name)) removeFont(st.project, f.name);
       else adoptFont(st.project, f.name);

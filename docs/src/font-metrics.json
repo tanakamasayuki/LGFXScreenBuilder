@@ -11,11 +11,12 @@
 "yAdvance": 8,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 0,
-56,
+68,
 10
 ],
 "flash": 1315
@@ -27,11 +28,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 10,
-71,
+75,
 18
 ],
 "flash": 896
@@ -43,11 +45,12 @@
 "yAdvance": 26,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 28,
-140,
+128,
 28
 ],
 "flash": 896
@@ -59,11 +62,12 @@
 "yAdvance": 48,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 56,
-170,
+179,
 50
 ],
 "flash": 896
@@ -75,11 +79,12 @@
 "yAdvance": 48,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 106,
-170,
+174,
 50
 ],
 "flash": 896
@@ -91,11 +96,12 @@
 "yAdvance": 75,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 156,
-341,
+373,
 77
 ],
 "flash": 896
@@ -107,11 +113,12 @@
 "yAdvance": 8,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 233,
-74,
+90,
 10
 ],
 "flash": 931
@@ -123,11 +130,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 243,
-74,
+90,
 18
 ],
 "flash": 4131
@@ -139,11 +147,12 @@
 "yAdvance": 48,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 261,
-218,
+266,
 50
 ],
 "flash": 13715
@@ -155,11 +164,12 @@
 "yAdvance": 6,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 311,
-41,
+43,
 8
 ],
 "flash": 1598
@@ -171,11 +181,12 @@
 "yAdvance": 18,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 319,
-101,
+123,
 17
 ],
 "flash": 2024
@@ -187,11 +198,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 336,
-128,
+156,
 22
 ],
 "flash": 2640
@@ -203,11 +215,12 @@
 "yAdvance": 35,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 358,
-191,
+233,
 32
 ],
 "flash": 4269
@@ -219,11 +232,12 @@
 "yAdvance": 47,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 390,
-254,
+310,
 42
 ],
 "flash": 6838
@@ -235,11 +249,12 @@
 "yAdvance": 18,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 432,
-101,
+123,
 19
 ],
 "flash": 2180
@@ -251,11 +266,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 451,
-129,
+156,
 24
 ],
 "flash": 2910
@@ -267,11 +283,12 @@
 "yAdvance": 35,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 475,
-192,
+233,
 33
 ],
 "flash": 4993
@@ -283,11 +300,12 @@
 "yAdvance": 47,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 508,
-255,
+310,
 44
 ],
 "flash": 7977
@@ -299,11 +317,12 @@
 "yAdvance": 18,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 552,
-101,
+123,
 17
 ],
 "flash": 2162
@@ -315,11 +334,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 569,
-128,
+156,
 22
 ],
 "flash": 2887
@@ -331,11 +351,12 @@
 "yAdvance": 35,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 591,
-191,
+233,
 32
 ],
 "flash": 4694
@@ -347,11 +368,12 @@
 "yAdvance": 47,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 623,
-254,
+310,
 42
 ],
 "flash": 7632
@@ -363,11 +385,12 @@
 "yAdvance": 18,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 665,
-101,
+123,
 19
 ],
 "flash": 2347
@@ -379,11 +402,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 684,
-128,
+156,
 24
 ],
 "flash": 3146
@@ -395,11 +419,12 @@
 "yAdvance": 35,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 708,
-192,
+234,
 33
 ],
 "flash": 5436
@@ -411,11 +436,12 @@
 "yAdvance": 47,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": true,
+"sample": "Wax Lily 12",
 "box": [
 0,
 741,
-255,
+311,
 44
 ],
 "flash": 8815
@@ -427,11 +453,12 @@
 "yAdvance": 22,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 785,
-100,
+95,
 20
 ],
 "flash": 2330
@@ -443,11 +470,12 @@
 "yAdvance": 29,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 805,
-130,
+121,
 25
 ],
 "flash": 3149
@@ -459,11 +487,12 @@
 "yAdvance": 42,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 830,
-190,
+179,
 37
 ],
 "flash": 5339
@@ -475,11 +504,12 @@
 "yAdvance": 56,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 867,
-256,
+238,
 47
 ],
 "flash": 8644
@@ -491,11 +521,12 @@
 "yAdvance": 22,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 914,
-104,
+100,
 20
 ],
 "flash": 2410
@@ -507,11 +538,12 @@
 "yAdvance": 29,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 934,
-138,
+134,
 25
 ],
 "flash": 3366
@@ -523,11 +555,12 @@
 "yAdvance": 42,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 959,
-198,
+193,
 35
 ],
 "flash": 5683
@@ -539,11 +572,12 @@
 "yAdvance": 56,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 994,
-267,
+259,
 49
 ],
 "flash": 9323
@@ -555,11 +589,12 @@
 "yAdvance": 22,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1043,
-102,
+97,
 20
 ],
 "flash": 2549
@@ -571,11 +606,12 @@
 "yAdvance": 29,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1063,
-133,
+125,
 26
 ],
 "flash": 3542
@@ -587,11 +623,12 @@
 "yAdvance": 42,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1089,
-193,
+184,
 37
 ],
 "flash": 6131
@@ -603,11 +640,12 @@
 "yAdvance": 56,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1126,
-260,
+245,
 48
 ],
 "flash": 9991
@@ -619,11 +657,12 @@
 "yAdvance": 22,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1174,
-106,
+102,
 23
 ],
 "flash": 2644
@@ -635,11 +674,12 @@
 "yAdvance": 29,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1197,
-140,
+136,
 30
 ],
 "flash": 3715
@@ -651,11 +691,12 @@
 "yAdvance": 42,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1227,
-200,
+194,
 37
 ],
 "flash": 6451
@@ -667,11 +708,12 @@
 "yAdvance": 56,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1264,
-273,
+261,
 48
 ],
 "flash": 10627
@@ -683,11 +725,12 @@
 "yAdvance": 22,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1312,
-91,
+93,
 19
 ],
 "flash": 2260
@@ -699,11 +742,12 @@
 "yAdvance": 29,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1331,
-120,
+122,
 24
 ],
 "flash": 3019
@@ -715,11 +759,12 @@
 "yAdvance": 42,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1355,
-175,
+176,
 35
 ],
 "flash": 5066
@@ -731,7 +776,8 @@
 "yAdvance": 56,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1390,
@@ -747,11 +793,12 @@
 "yAdvance": 22,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1436,
-90,
+91,
 19
 ],
 "flash": 2343
@@ -763,11 +810,12 @@
 "yAdvance": 29,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1455,
-119,
+118,
 25
 ],
 "flash": 3164
@@ -779,11 +827,12 @@
 "yAdvance": 42,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1480,
-170,
+171,
 35
 ],
 "flash": 5313
@@ -795,11 +844,12 @@
 "yAdvance": 56,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1515,
-229,
+231,
 46
 ],
 "flash": 8759
@@ -811,11 +861,12 @@
 "yAdvance": 22,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1561,
-96,
+97,
 19
 ],
 "flash": 2342
@@ -827,11 +878,12 @@
 "yAdvance": 29,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1580,
-127,
+128,
 25
 ],
 "flash": 3171
@@ -843,11 +895,12 @@
 "yAdvance": 42,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1605,
-184,
+185,
 35
 ],
 "flash": 5453
@@ -859,11 +912,12 @@
 "yAdvance": 56,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1640,
-246,
+247,
 46
 ],
 "flash": 9027
@@ -875,7 +929,8 @@
 "yAdvance": 22,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1686,
@@ -891,11 +946,12 @@
 "yAdvance": 29,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1705,
-123,
+122,
 25
 ],
 "flash": 3418
@@ -907,7 +963,8 @@
 "yAdvance": 42,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1730,
@@ -923,11 +980,12 @@
 "yAdvance": 56,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1765,
-237,
+239,
 46
 ],
 "flash": 9425
@@ -939,7 +997,8 @@
 "yAdvance": 24,
 "ascii": 94,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1811,
@@ -955,11 +1014,12 @@
 "yAdvance": 32,
 "ascii": 94,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1843,
-225,
+218,
 43
 ],
 "flash": 5782
@@ -971,11 +1031,12 @@
 "yAdvance": 29,
 "ascii": 94,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1886,
-133,
+130,
 28
 ],
 "flash": 3051
@@ -987,7 +1048,8 @@
 "yAdvance": 36,
 "ascii": 94,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1914,
@@ -1003,11 +1065,12 @@
 "yAdvance": 45,
 "ascii": 94,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1950,
-150,
+158,
 39
 ],
 "flash": 5870
@@ -1019,11 +1082,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 1989,
-67,
+66,
 12
 ],
 "flash": 1533
@@ -1035,11 +1099,12 @@
 "yAdvance": 13,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 2001,
-84,
+80,
 15
 ],
 "flash": 1763
@@ -1051,11 +1116,12 @@
 "yAdvance": 18,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 2016,
-114,
+118,
 20
 ],
 "flash": 2433
@@ -1067,11 +1133,12 @@
 "yAdvance": 25,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 2036,
-151,
+153,
 27
 ],
 "flash": 3329
@@ -1083,7 +1150,8 @@
 "yAdvance": 42,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 2063,
@@ -1099,11 +1167,12 @@
 "yAdvance": 58,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 2107,
-344,
+339,
 60
 ],
 "flash": 12862
@@ -1115,7 +1184,8 @@
 "yAdvance": 75,
 "ascii": 95,
 "cjk": false,
-"sample": "AaBbGg012",
+"mono": false,
+"sample": "Wax Lily 12",
 "box": [
 0,
 2167,
@@ -1131,11 +1201,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2244,
-34,
+26,
 12
 ],
 "flash": 72244
@@ -1147,11 +1218,12 @@
 "yAdvance": 13,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2256,
-50,
+38,
 15
 ],
 "flash": 115991
@@ -1163,11 +1235,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2271,
-66,
+50,
 18
 ],
 "flash": 167048
@@ -1179,11 +1252,12 @@
 "yAdvance": 21,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2289,
-82,
+62,
 23
 ],
 "flash": 224661
@@ -1195,11 +1269,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2312,
-98,
+74,
 26
 ],
 "flash": 290311
@@ -1211,11 +1286,12 @@
 "yAdvance": 28,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2338,
-114,
+86,
 30
 ],
 "flash": 345061
@@ -1227,11 +1303,12 @@
 "yAdvance": 32,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2368,
-130,
+98,
 34
 ],
 "flash": 402610
@@ -1243,11 +1320,12 @@
 "yAdvance": 36,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2402,
-146,
+110,
 38
 ],
 "flash": 470229
@@ -1259,11 +1337,12 @@
 "yAdvance": 40,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2440,
-162,
+122,
 42
 ],
 "flash": 545377
@@ -1275,11 +1354,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 2482,
-40,
+26,
 12
 ],
 "flash": 65176
@@ -1291,11 +1371,12 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 2494,
-58,
+38,
 16
 ],
 "flash": 110752
@@ -1307,11 +1388,12 @@
 "yAdvance": 20,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 2510,
-77,
+50,
 22
 ],
 "flash": 163075
@@ -1323,11 +1405,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 2532,
-94,
+62,
 26
 ],
 "flash": 222008
@@ -1339,11 +1422,12 @@
 "yAdvance": 29,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 2558,
-114,
+74,
 31
 ],
 "flash": 284632
@@ -1355,11 +1439,12 @@
 "yAdvance": 33,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 2589,
-132,
+86,
 35
 ],
 "flash": 338572
@@ -1371,11 +1456,12 @@
 "yAdvance": 37,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 2624,
-152,
+98,
 39
 ],
 "flash": 396773
@@ -1387,11 +1473,12 @@
 "yAdvance": 42,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 2663,
-170,
+110,
 44
 ],
 "flash": 460249
@@ -1403,11 +1490,12 @@
 "yAdvance": 47,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 2707,
-189,
+122,
 49
 ],
 "flash": 537589
@@ -1419,11 +1507,12 @@
 "yAdvance": 9,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2756,
-34,
+26,
 11
 ],
 "flash": 69151
@@ -1435,11 +1524,12 @@
 "yAdvance": 13,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2767,
-50,
+38,
 15
 ],
 "flash": 108993
@@ -1451,11 +1541,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2782,
-66,
+50,
 18
 ],
 "flash": 159287
@@ -1467,11 +1558,12 @@
 "yAdvance": 20,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2800,
-82,
+62,
 22
 ],
 "flash": 217440
@@ -1483,11 +1575,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2822,
-98,
+74,
 26
 ],
 "flash": 278685
@@ -1499,11 +1592,12 @@
 "yAdvance": 28,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2848,
-114,
+86,
 30
 ],
 "flash": 335371
@@ -1515,11 +1609,12 @@
 "yAdvance": 32,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2878,
-130,
+98,
 34
 ],
 "flash": 396794
@@ -1531,11 +1626,12 @@
 "yAdvance": 36,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2912,
-146,
+110,
 38
 ],
 "flash": 467009
@@ -1547,11 +1643,12 @@
 "yAdvance": 40,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 2950,
-162,
+122,
 42
 ],
 "flash": 534184
@@ -1563,11 +1660,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 2992,
-38,
+26,
 12
 ],
 "flash": 66306
@@ -1579,11 +1677,12 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 3004,
-58,
+38,
 16
 ],
 "flash": 108170
@@ -1595,11 +1694,12 @@
 "yAdvance": 19,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 3020,
-75,
+50,
 21
 ],
 "flash": 161095
@@ -1611,11 +1711,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 3041,
-94,
+62,
 26
 ],
 "flash": 219520
@@ -1627,11 +1728,12 @@
 "yAdvance": 28,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 3067,
-111,
+74,
 30
 ],
 "flash": 276949
@@ -1643,11 +1745,12 @@
 "yAdvance": 33,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 3097,
-130,
+86,
 35
 ],
 "flash": 337044
@@ -1659,11 +1762,12 @@
 "yAdvance": 38,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 3132,
-147,
+98,
 40
 ],
 "flash": 398307
@@ -1675,11 +1779,12 @@
 "yAdvance": 42,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 3172,
-167,
+110,
 44
 ],
 "flash": 465795
@@ -1691,11 +1796,12 @@
 "yAdvance": 47,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": false,
+"sample": "日本語",
 "box": [
 0,
 3216,
-183,
+122,
 49
 ],
 "flash": 535586
@@ -1707,7 +1813,8 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3265,
@@ -1723,7 +1830,8 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3277,
@@ -1739,11 +1847,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3289,
-43,
+45,
 12
 ],
 "flash": 174920
@@ -1755,11 +1864,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3301,
-42,
+44,
 12
 ],
 "flash": 170024
@@ -1771,7 +1881,8 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3313,
@@ -1787,7 +1898,8 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3327,
@@ -1803,7 +1915,8 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3341,
@@ -1819,7 +1932,8 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3355,
@@ -1835,7 +1949,8 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3369,
@@ -1851,7 +1966,8 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3385,
@@ -1867,7 +1983,8 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3401,
@@ -1883,7 +2000,8 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3417,
@@ -1899,7 +2017,8 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3433,
@@ -1915,7 +2034,8 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3451,
@@ -1931,11 +2051,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3469,
-67,
+69,
 18
 ],
 "flash": 357047
@@ -1947,11 +2068,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3487,
-66,
+68,
 18
 ],
 "flash": 346379
@@ -1963,7 +2085,8 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3505,
@@ -1979,7 +2102,8 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3531,
@@ -1995,11 +2119,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3557,
-100,
+102,
 26
 ],
 "flash": 601712
@@ -2011,11 +2136,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "简体中文",
 "box": [
 0,
 3583,
-99,
+101,
 26
 ],
 "flash": 576503
@@ -2027,11 +2153,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3609,
-42,
+32,
 12
 ],
 "flash": 225702
@@ -2043,11 +2170,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3621,
-42,
+32,
 12
 ],
 "flash": 228876
@@ -2059,11 +2187,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3633,
-43,
+34,
 12
 ],
 "flash": 252590
@@ -2075,11 +2204,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3645,
-42,
+34,
 12
 ],
 "flash": 247781
@@ -2091,11 +2221,12 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3657,
-50,
+38,
 14
 ],
 "flash": 308281
@@ -2107,11 +2238,12 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3671,
-50,
+38,
 14
 ],
 "flash": 308354
@@ -2123,11 +2255,12 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3685,
-52,
+38,
 14
 ],
 "flash": 342359
@@ -2139,11 +2272,12 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3699,
-51,
+38,
 14
 ],
 "flash": 342438
@@ -2155,11 +2289,12 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3713,
-58,
+44,
 16
 ],
 "flash": 383763
@@ -2171,11 +2306,12 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3729,
-58,
+44,
 16
 ],
 "flash": 394525
@@ -2187,11 +2323,12 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3745,
-60,
+45,
 16
 ],
 "flash": 436999
@@ -2203,11 +2340,12 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3761,
-59,
+45,
 16
 ],
 "flash": 425848
@@ -2219,11 +2357,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3777,
-66,
+50,
 18
 ],
 "flash": 467171
@@ -2235,11 +2374,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3795,
-66,
+50,
 18
 ],
 "flash": 476673
@@ -2251,11 +2391,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3813,
-67,
+52,
 18
 ],
 "flash": 530491
@@ -2267,11 +2408,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3831,
-66,
+52,
 18
 ],
 "flash": 517486
@@ -2283,11 +2425,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3849,
-98,
+74,
 26
 ],
 "flash": 743640
@@ -2299,11 +2442,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3875,
-98,
+74,
 26
 ],
 "flash": 751636
@@ -2315,11 +2459,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3901,
-100,
+77,
 26
 ],
 "flash": 812902
@@ -2331,11 +2476,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "日本語",
 "box": [
 0,
 3927,
-99,
+77,
 26
 ],
 "flash": 780779
@@ -2347,11 +2493,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 3953,
-42,
+32,
 12
 ],
 "flash": 165540
@@ -2363,11 +2510,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 3965,
-42,
+32,
 12
 ],
 "flash": 168455
@@ -2379,11 +2527,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 3977,
-43,
+32,
 12
 ],
 "flash": 184162
@@ -2395,11 +2544,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 3989,
-42,
+32,
 12
 ],
 "flash": 179559
@@ -2411,11 +2561,12 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4001,
-50,
+38,
 14
 ],
 "flash": 226303
@@ -2427,11 +2578,12 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4015,
-50,
+38,
 14
 ],
 "flash": 225389
@@ -2443,11 +2595,12 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4029,
-52,
+38,
 14
 ],
 "flash": 247821
@@ -2459,11 +2612,12 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4043,
-51,
+38,
 14
 ],
 "flash": 245067
@@ -2475,11 +2629,12 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4057,
-58,
+44,
 16
 ],
 "flash": 265720
@@ -2491,11 +2646,12 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4073,
-58,
+44,
 16
 ],
 "flash": 272729
@@ -2507,11 +2663,12 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4089,
-60,
+44,
 16
 ],
 "flash": 296027
@@ -2523,11 +2680,12 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4105,
-59,
+44,
 16
 ],
 "flash": 290629
@@ -2539,11 +2697,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4121,
-66,
+50,
 18
 ],
 "flash": 324240
@@ -2555,11 +2714,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4139,
-66,
+50,
 18
 ],
 "flash": 329932
@@ -2571,11 +2731,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4157,
-67,
+51,
 18
 ],
 "flash": 360400
@@ -2587,11 +2748,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4175,
-66,
+51,
 18
 ],
 "flash": 350975
@@ -2603,11 +2765,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4193,
-98,
+74,
 26
 ],
 "flash": 554209
@@ -2619,11 +2782,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4219,
-98,
+74,
 26
 ],
 "flash": 574920
@@ -2635,11 +2799,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4245,
-100,
+74,
 26
 ],
 "flash": 606696
@@ -2651,11 +2816,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "한국어",
 "box": [
 0,
 4271,
-99,
+74,
 26
 ],
 "flash": 581047
@@ -2667,11 +2833,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4297,
-32,
+42,
 12
 ],
 "flash": 279683
@@ -2683,7 +2850,8 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4309,
@@ -2699,11 +2867,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4321,
-49,
+44,
 12
 ],
 "flash": 308788
@@ -2715,11 +2884,12 @@
 "yAdvance": 10,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4333,
-32,
+44,
 12
 ],
 "flash": 303390
@@ -2731,11 +2901,12 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4345,
-38,
+50,
 14
 ],
 "flash": 385679
@@ -2747,11 +2918,12 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4359,
-38,
+50,
 14
 ],
 "flash": 379288
@@ -2763,11 +2935,12 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4373,
-40,
+52,
 14
 ],
 "flash": 421561
@@ -2779,11 +2952,12 @@
 "yAdvance": 12,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4387,
-39,
+51,
 14
 ],
 "flash": 422690
@@ -2795,7 +2969,8 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4401,
@@ -2811,7 +2986,8 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4417,
@@ -2827,11 +3003,12 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4433,
-68,
+60,
 16
 ],
 "flash": 539828
@@ -2843,11 +3020,12 @@
 "yAdvance": 14,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4449,
-67,
+59,
 16
 ],
 "flash": 531374
@@ -2859,11 +3037,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4465,
-50,
+66,
 18
 ],
 "flash": 592121
@@ -2875,11 +3054,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4483,
-50,
+66,
 18
 ],
 "flash": 597857
@@ -2891,11 +3071,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4501,
-51,
+70,
 18
 ],
 "flash": 666809
@@ -2907,11 +3088,12 @@
 "yAdvance": 16,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4519,
-76,
+69,
 18
 ],
 "flash": 656045
@@ -2923,7 +3105,8 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4537,
@@ -2939,7 +3122,8 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4563,
@@ -2955,11 +3139,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4589,
-114,
+104,
 26
 ],
 "flash": 1200924
@@ -2971,11 +3156,12 @@
 "yAdvance": 24,
 "ascii": 95,
 "cjk": true,
-"sample": "AあBが12",
+"mono": true,
+"sample": "繁體中文",
 "box": [
 0,
 4615,
-113,
+103,
 26
 ],
 "flash": 1154669

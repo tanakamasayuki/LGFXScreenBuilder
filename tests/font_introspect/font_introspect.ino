@@ -29,6 +29,33 @@ static const int kCanvasH = 80;
 // Codepoints that confirm CJK coverage (Hiragana, two common kanji, Hangul).
 static const uint16_t kCjkProbe[] = { 0x3042, 0x6F22, 0x4E00, 0xAC00 };
 
+// x_advance of a single codepoint for this font, or -1 if it has no such glyph.
+static int advanceOf(const IFont *font, const FontMetrics &base, uint16_t c)
+{
+  FontMetrics t = base;
+  if (!font->updateFontMetric(&t, c)) return -1;
+  return (int)t.x_advance;
+}
+
+// Fixed-pitch (monospace) vs proportional: 1 fixed, 0 proportional, -1 unknown.
+// Latin fonts compare 'i' vs 'W'; this also separates the proportional CJK "P"
+// variants (whose ASCII is proportional) from the fixed ones. CJK-only fonts
+// fall back to comparing full-width/Hangul glyphs.
+static int detectMono(const IFont *font, const FontMetrics &base)
+{
+  int ai = advanceOf(font, base, 'i'), aw = advanceOf(font, base, 'W');
+  if (ai > 0 && aw > 0) return ai == aw ? 1 : 0;
+  static const uint16_t wide[] = { 0x65E5, 0x3042, 0xD55C, 0xAC00 }; // 日 あ 한 가
+  int first = -1;
+  for (size_t k = 0; k < sizeof(wide) / sizeof(wide[0]); ++k) {
+    int a = advanceOf(font, base, wide[k]);
+    if (a <= 0) continue;
+    if (first < 0) first = a;
+    else if (a != first) return 0;
+  }
+  return first > 0 ? 1 : -1;
+}
+
 static bool savePngCrop(LGFX_Sprite &src, const char *path, int w, int h)
 {
   if (w <= 0) w = 1;
@@ -82,9 +109,10 @@ void setup()
       FontMetrics t = m;
       if (font->updateFontMetric(&t, kCjkProbe[k])) { cjk = true; break; }
     }
+    int mono = detectMono(font, m);
 
-    // Render a native-size sample, cropped to the measured text box.
-    const char *sample = cjk ? "AあBが12" : "AaBbGg012";
+    // Render the generated sample (script-appropriate), cropped to its box.
+    const char *sample = e.sample;
     canvas.fillScreen(TFT_BLACK);
     canvas.setFont(font);
     canvas.setTextColor(TFT_WHITE, TFT_BLACK);
@@ -99,12 +127,13 @@ void setup()
     bool ok = savePngCrop(canvas, path, tw, th);
     if (ok) ++pngOk;
 
+    const char *monoStr = mono == 1 ? "true" : mono == 0 ? "false" : "null";
     fprintf(meta,
             "{\"name\":\"%s\",\"height\":%d,\"baseline\":%d,\"x_advance\":%d,"
-            "\"y_advance\":%d,\"width\":%d,\"ascii\":%d,\"cjk\":%s,"
+            "\"y_advance\":%d,\"width\":%d,\"ascii\":%d,\"cjk\":%s,\"mono\":%s,"
             "\"sample\":\"%s\",\"sw\":%d,\"sh\":%d,\"png\":%s}\n",
             e.name, (int)m.height, (int)m.baseline, (int)m.x_advance,
-            (int)m.y_advance, (int)m.width, ascii, cjk ? "true" : "false",
+            (int)m.y_advance, (int)m.width, ascii, cjk ? "true" : "false", monoStr,
             sample, tw, th, ok ? "true" : "false");
 
     if ((i % 32) == 0) Serial.printf("PROGRESS %u/%u\n", (unsigned)i, (unsigned)kFontCount);

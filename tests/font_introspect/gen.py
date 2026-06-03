@@ -143,7 +143,7 @@ def write_catalog():
         "// are added by the same harness into font-metrics.json + font-atlas.png.\n"
     )
     body = (
-        f"export const FONT_CATALOG = {json.dumps(cats, ensure_ascii=False)};\n\n"
+        f"export const FONT_CATALOG = {json.dumps(cats, ensure_ascii=False, separators=(',', ':'))};\n\n"
         "// Single representative catalog. At the pinned versions LovyanGFX and M5GFX\n"
         "// share the same font set, so every target library uses this one catalog.\n"
         "export const catalogFor = (_lib) => FONT_CATALOG;\n"

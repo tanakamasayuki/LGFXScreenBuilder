@@ -10,8 +10,8 @@ Pipeline (the agreed pytest flow):
      the browser-consumable catalog: docs/src/font-metrics.json + font-atlas.png.
 
 Metrics + previews are merged onto the name-classified catalog (font-catalog.js,
-from tools/gen-fonts.mjs) by the browser at load. Per-font flash size is a
-separate follow-up (needs marginal link-diff builds, not runtime introspection).
+also produced by gen.py) by the browser at load. Per-font flash size is attributed
+from the linked harness ELF in the same run (gen.font_flash_sizes).
 """
 import json
 from pathlib import Path
@@ -89,6 +89,7 @@ def test_font_introspect(dut):
                 "yAdvance": r["y_advance"],
                 "ascii": r["ascii"],
                 "cjk": r["cjk"],
+                "mono": r.get("mono"),
                 "sample": r["sample"],
                 "box": list(boxes[r["name"]]),  # [x, y, w, h] in the atlas
                 **({"flash": flash[r["name"]]} if flash else {}),

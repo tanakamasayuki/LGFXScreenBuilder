@@ -142,6 +142,8 @@ pre.code { margin: 0; padding: 12px; border-radius: 8px; background: #10181c; co
 /* Host-rendered sample (white glyphs on black, cropped from the atlas). */
 .ftile .fprev.real { background-color: #000; border-radius: 4px; image-rendering: pixelated; max-width: 100%; }
 .font-budget { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; }
+.wbadge { margin-left: 6px; padding: 0 6px; border-radius: 8px; font-size: 10px; border: 1px solid var(--line2); }
+.wbadge.fixed { background: var(--accent-soft); border-color: var(--accent); }
 .ftile .fn { font-size: 12px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ftile .fd { font-size: 11px; color: var(--muted); }
 .ftile .badge { justify-self: start; }

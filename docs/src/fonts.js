@@ -88,6 +88,12 @@ export const flashFor = (name) => {
   return m && typeof m.flash === 'number' ? m.flash : null;
 };
 
+// Fixed-pitch (true) / proportional (false) / unknown (null) from introspection.
+export const monoFor = (name) => {
+  const m = metricsFor(name);
+  return m && typeof m.mono === 'boolean' ? m.mono : null;
+};
+
 // Short human label of a font's classification (+ flash size when introspected).
 export function describe(f) {
   if (!f) return '';
