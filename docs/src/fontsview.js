@@ -4,7 +4,7 @@
 // candidate is visible; the Height facet (rendered px) is the primary one.
 import { store, mutate } from './store.js';
 import { adoptFont, removeFont, toggleProfileFont, profileFonts, isFontAdopted } from './model.js';
-import { filterCatalog, facets, HEIGHT_BUCKETS, CONTENT_TYPES, approxCss, sampleFor, describe, loadMetrics, sampleImage, flashFor, fmtBytes, monoFor } from './fonts.js';
+import { filterCatalog, facets, HEIGHT_BUCKETS, CONTENT_TYPES, approxCss, sampleFor, describe, loadMetrics, sampleImage, flashFor, fmtBytes, monoFor, heightOf } from './fonts.js';
 import { t } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
@@ -36,6 +36,10 @@ function renderGrid() {
     const want = filters.adopted === 'yes';
     list = list.filter((f) => isFontAdopted(store.project, f.name) === want);
   }
+  // Sort by rendered px height, then family, then name (so the grid runs
+  // small→large overall; nominal size is the fallback until metrics load).
+  const hv = (f) => heightOf(f.name) ?? f.size ?? 0;
+  list.sort((a, b) => hv(a) - hv(b) || a.family.localeCompare(b.family) || a.name.localeCompare(b.name));
   $('font-count').textContent = t('fonts.count', { n: list.length });
   const grid = $('font-grid');
   grid.innerHTML = '';
