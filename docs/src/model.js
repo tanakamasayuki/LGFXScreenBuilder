@@ -284,6 +284,52 @@ export function groupParts(project, sceneId, ids) {
   return gid;
 }
 
+// Move a part to a new parent (null = scene root), preserving its absolute
+// position in every profile (§8.3.1). `anchorId` (optional) places the moved
+// part right after that sibling in draw order; otherwise it goes last among its
+// new siblings. Rejects cycles and non-Group containers. Returns true on change.
+export function reparentPart(project, sceneId, id, newParent, anchorId) {
+  newParent = newParent || null;
+  if (newParent === id) return false;
+  const scene = sceneById(project, sceneId);
+  const part = scene.parts.find((p) => p.id === id);
+  if (!part) return false;
+  const sub = new Set(subtreeIds(scene, id));
+  if (newParent && sub.has(newParent)) return false;           // no cycles
+  if (newParent) {
+    const np = scene.parts.find((p) => p.id === newParent);
+    if (!np || np.type !== 'Group') return false;              // only Group contains
+  }
+  // Recompute local coords so the absolute position is unchanged, per profile.
+  for (const pr of project.profiles) {
+    const s = pr.layout[sceneId];
+    if (!s) continue;
+    const pl = s[id];
+    if (!pl) continue;
+    const o = absOrigin(pr, sceneId, scene, part);             // ancestors of part
+    const childAbsX = o.x + (pl.x || 0), childAbsY = o.y + (pl.y || 0);
+    let baseX = 0, baseY = 0;
+    if (newParent) {
+      const np = scene.parts.find((p) => p.id === newParent);
+      const npo = absOrigin(pr, sceneId, scene, np);
+      const npl = s[newParent] || { x: 0, y: 0 };
+      baseX = npo.x + (npl.x || 0); baseY = npo.y + (npl.y || 0);
+    }
+    pl.x = childAbsX - baseX; pl.y = childAbsY - baseY;
+  }
+  part.parent = newParent;
+  // Reposition in the flat array; the subtree follows via normalize().
+  scene.parts = scene.parts.filter((p) => p.id !== id);
+  if (anchorId && anchorId !== id) {
+    const idx = scene.parts.findIndex((p) => p.id === anchorId);
+    if (idx >= 0) scene.parts.splice(idx + 1, 0, part); else scene.parts.push(part);
+  } else {
+    scene.parts.push(part);
+  }
+  scene.parts = normalize(scene);
+  return true;
+}
+
 // Dissolve a Group: promote children to the group's parent, preserving absolute
 // position in every profile, then delete the group (§8.3.1).
 export function ungroupPart(project, sceneId, groupId) {

@@ -19,9 +19,9 @@ python -m http.server 8000 --directory docs
   drag-move, arrow-key nudge/resize (§8.14), zoom, and scene-level properties on
   deselect. Scenes and parts can be added/deleted/renamed; adding or removing a
   part/scene updates every profile's layout in lockstep (§8.9.6). Layer panel is a
-  tree (front-on-top): reorder among siblings (↑/↓), group/ungroup with absolute
-  position preserved, cascade delete of groups (§8.3.1). Drag-drop reparenting is
-  the next step.
+  tree (front-on-top): reorder among siblings (↑/↓), group/ungroup, and drag-drop
+  reparenting (onto a group = nest, onto a part = sibling, empty = root) — all
+  with absolute position preserved; cascade delete of groups (§8.3.1).
 - **i18n** (SPEC §14): all UI strings go through `src/i18n.js` (`t()` + `data-i18n`),
   en/ja with an en fallback and a language switcher; default follows the browser.
 - **Project persistence** (`src/persist.js`, SPEC §9): New / Open / Save toolbar

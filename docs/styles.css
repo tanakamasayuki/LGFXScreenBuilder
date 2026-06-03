@@ -64,6 +64,7 @@ select.icon { padding: 0 4px; }
 .sitem:hover, .pitem:hover { background: var(--soft); }
 .sitem.active { border-color: var(--accent); background: var(--accent-soft); font-weight: 650; }
 .pitem.active { border-color: #8fcac5; background: #e1f2f0; }
+.pitem.dropok { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent) inset; }
 .sitem .cnt, .pitem .ty { color: var(--muted); font-size: 11px; }
 
 .field { display: grid; gap: 4px; margin-bottom: 9px; }

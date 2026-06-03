@@ -5,7 +5,7 @@ import { store, update } from './store.js';
 import {
   DATUMS, DATUM_FX, DATUM_FY, orient, pxOf, sceneById, profileById, partDef, placement,
   addPart, removePart, renamePart, addScene, removeScene, renameScene,
-  absOrigin, reorderPart, groupParts, ungroupPart,
+  absOrigin, reorderPart, groupParts, ungroupPart, reparentPart,
 } from './model.js';
 import { t } from './i18n.js';
 
@@ -17,6 +17,7 @@ const curPlacement = (partId) => placement(curProfile(), store.ui.sceneId, partI
 const orientText = (w, h) => t('orient.' + orient(w, h));
 
 let scale = 1; // canvas px per logical px (fit * zoom)
+let dragId = null; // part id being dragged in the layer tree
 
 // --- left: scene list ----------------------------------------------------
 function renderScenes() {
@@ -124,6 +125,22 @@ function renderParts() {
       const tag = def.type === 'Group' ? '▾ ' : '';
       it.innerHTML = `<span>${tag}${def.id}${hidden ? t('list.hidden') : ''}</span><span class="ty">${def.type}</span>`;
       it.onclick = () => update((st) => { st.ui.selected = def.id; });
+      // Drag-drop reparent (§8.3.1): onto a group = nest; onto a part = sibling.
+      it.draggable = true;
+      it.dataset.id = def.id;
+      it.ondragstart = (ev) => { dragId = def.id; if (ev.dataTransfer) ev.dataTransfer.effectAllowed = 'move'; };
+      it.ondragend = () => { dragId = null; el.querySelectorAll('.dropok').forEach((n) => n.classList.remove('dropok')); };
+      it.ondragover = (ev) => { if (dragId && dragId !== def.id) { ev.preventDefault(); it.classList.add('dropok'); } };
+      it.ondragleave = () => it.classList.remove('dropok');
+      it.ondrop = (ev) => {
+        ev.preventDefault(); ev.stopPropagation();
+        it.classList.remove('dropok');
+        if (!dragId || dragId === def.id) return;
+        const id = dragId; dragId = null;
+        const newParent = def.type === 'Group' ? def.id : (def.parent || null);
+        const anchor = def.type === 'Group' ? null : def.id;
+        update((st) => { reparentPart(st.project, st.ui.sceneId, id, newParent, anchor); st.ui.selected = id; });
+      };
       el.appendChild(it);
       if (def.type === 'Group') emit(def.id, depth + 1);
     }
@@ -344,4 +361,14 @@ export function initDesign() {
     if (!sel) return;
     update((st) => { ungroupPart(st.project, st.ui.sceneId, sel); st.ui.selected = null; });
   };
+
+  // Drop on the empty area of the layer list = move to scene root (§8.3.1).
+  const list = $('part-list');
+  list.addEventListener('dragover', (ev) => { if (dragId) ev.preventDefault(); });
+  list.addEventListener('drop', (ev) => {
+    ev.preventDefault();
+    if (!dragId) return;
+    const id = dragId; dragId = null;
+    update((st) => { reparentPart(st.project, st.ui.sceneId, id, null); st.ui.selected = id; });
+  });
 }
