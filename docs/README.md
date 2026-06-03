@@ -22,6 +22,12 @@ python -m http.server 8000 --directory docs
   tree (front-on-top): reorder among siblings (↑/↓), group/ungroup, and drag-drop
   reparenting (onto a group = nest, onto a part = sibling, empty = root) — all
   with absolute position preserved; cascade delete of groups (§8.3.1).
+- **Profiles** mode (SPEC §8.9): target-library bar, profile list with add
+  (by resolution / custom, cloning the current layout), size/rotation/note +
+  rename/delete, board assignment (click-to-toggle, one board per profile),
+  orientation/size preview, and a validation banner (size mismatch, boards not
+  auto-detectable on LovyanGFX). The fallback profile is chosen at export, not
+  here. (Board → `getBoard()` auto-resolve in generated code is still pending.)
 - **i18n** (SPEC §14): all UI strings go through `src/i18n.js` (`t()` + `data-i18n`),
   en/ja with an en fallback and a language switcher; default follows the browser.
 - **Project persistence** (`src/persist.js`, SPEC §9): New / Open / Save toolbar
@@ -35,7 +41,9 @@ python -m http.server 8000 --directory docs
 
 - `index.html` — app shell (mode rail + 3-pane layout)
 - `styles.css`
-- `src/model.js` — project data model + sample project + helpers
+- `src/model.js` — project data model + sample project + mutations/helpers
+- `src/boards.js` — board catalog (M5GFX board_t) + target-library helpers
+- `src/profiles.js` — Profiles mode (define profiles + board assignment)
 - `src/store.js` — reactive store (project + editor UI state) + loadProject
 - `src/i18n.js` — translations (en/ja) + `t()` + static-markup applier
 - `src/persist.js` — save/open `.lgfxsb.json` + localStorage autosave

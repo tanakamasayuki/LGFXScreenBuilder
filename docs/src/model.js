@@ -130,6 +130,53 @@ export function sampleProject() {
   };
 }
 
+// --- profile mutations (§8.9) --------------------------------------------
+// Deep-copy a profile's per-scene/per-part layout so clones stay independent.
+function cloneLayout(layout) {
+  const out = {};
+  for (const sid in layout) { out[sid] = {}; for (const pid in layout[sid]) out[sid][pid] = { ...layout[sid][pid] }; }
+  return out;
+}
+
+// Add a profile. With cloneFromId, start from a copy of that profile's layout
+// (§8.9.6 "copy to start"); otherwise start empty. Returns the new id.
+export function addProfile(project, { w, h, rotation }, cloneFromId) {
+  const id = uniqueId('Profile', new Set(project.profiles.map((p) => p.id)));
+  const src = cloneFromId ? profileById(project, cloneFromId) : null;
+  const layout = src ? cloneLayout(src.layout) : {};
+  for (const sc of project.scenes) if (!layout[sc.id]) layout[sc.id] = {};
+  project.profiles.push({ id, w, h, rotation: rotation == null ? (w > h ? 1 : 0) : rotation, boards: [], layout });
+  return id;
+}
+
+// Remove a profile (never the last one). Fixes defaultProfile if it pointed here.
+export function removeProfile(project, id) {
+  if (project.profiles.length <= 1) return false;
+  project.profiles = project.profiles.filter((p) => p.id !== id);
+  if (project.defaultProfile === id) project.defaultProfile = project.profiles[0] ? project.profiles[0].id : null;
+  return true;
+}
+
+// Rename a profile (C identifier; becomes Profile::<Id>). No-op on dup/invalid.
+export function renameProfile(project, oldId, newId) {
+  newId = (newId || '').trim();
+  if (!newId || newId === oldId || !isValidId(newId)) return oldId;
+  if (project.profiles.some((p) => p.id === newId)) return oldId;
+  profileById(project, oldId).id = newId;
+  if (project.defaultProfile === oldId) project.defaultProfile = newId;
+  return newId;
+}
+
+// Toggle a board on a profile. Auto-detect is one board per profile, so
+// assigning moves it off any other profile (§8.9.2).
+export function toggleBoard(project, profileId, boardId) {
+  const p = profileById(project, profileId);
+  if (!p) return;
+  if (p.boards.includes(boardId)) { p.boards = p.boards.filter((b) => b !== boardId); return; }
+  for (const x of project.profiles) if (x !== p) x.boards = x.boards.filter((b) => b !== boardId);
+  p.boards.push(boardId);
+}
+
 // --- lookups -------------------------------------------------------------
 export const sceneById = (project, id) => project.scenes.find((s) => s.id === id);
 export const profileById = (project, id) => project.profiles.find((p) => p.id === id);

@@ -1,17 +1,31 @@
 // Bootstrap: i18n, project persistence, and wiring the store to the active
 // mode's renderer. MVP foundation ships the Design mode; other modes are
 // placeholders for now.
-import { store, subscribe, loadProject } from './store.js';
+import { store, subscribe, loadProject, update } from './store.js';
 import { sampleProject } from './model.js';
 import { renderDesign, initDesign } from './design.js';
+import { renderProfiles, initProfiles } from './profiles.js';
 import { generateHeader } from './codegen.js';
 import { detectLanguage, setLang, getLang, applyStatic, t } from './i18n.js';
 import { saveProjectFile, openProjectFile, downloadText, autosave, loadAutosave } from './persist.js';
 
+const $ = (id) => document.getElementById(id);
+
 function render() {
   applyStatic(document); // static [data-i18n] labels
-  if (store.ui.mode === 'design') renderDesign();
+  const mode = store.ui.mode;
+  document.querySelectorAll('.mode[data-mode]').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
+  const dv = $('view-design'), pv = $('view-profiles');
+  if (dv) dv.hidden = mode !== 'design';
+  if (pv) pv.hidden = mode !== 'profiles';
+  if (mode === 'design') renderDesign();
+  else if (mode === 'profiles') renderProfiles();
 }
+
+// --- top mode switching --------------------------------------------------
+document.querySelectorAll('.mode[data-mode]').forEach((btn) => {
+  btn.addEventListener('click', () => { if (!btn.disabled) update((st) => { st.ui.mode = btn.dataset.mode; }); });
+});
 
 // Initial language: browser preference (ja/en), default en.
 setLang(detectLanguage());
@@ -46,6 +60,7 @@ if (typeof window !== 'undefined') {
 }
 
 initDesign();
+initProfiles();
 subscribe(render);
 
 // Restore the last autosaved project if present; otherwise keep the sample.

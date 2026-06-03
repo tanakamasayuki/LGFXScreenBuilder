@@ -11,7 +11,7 @@
     <h1>LGFXScreenBuilder</h1>
     <nav class="modes" id="modes">
       <button class="mode active" data-mode="design" data-i18n="mode.design">Design</button>
-      <button class="mode" data-mode="profiles" data-i18n="mode.profiles" disabled>Profiles</button>
+      <button class="mode" data-mode="profiles" data-i18n="mode.profiles">Profiles</button>
       <button class="mode" data-mode="assets" data-i18n="mode.assets" disabled>Assets</button>
       <button class="mode" data-mode="export" data-i18n="mode.export" disabled>Export</button>
     </nav>
@@ -32,6 +32,7 @@
     </label>
   </header>
 
+  <div id="view-design" class="view">
   <div class="cols">
     <aside class="left">
       <div class="section">
@@ -91,6 +92,63 @@
       </div>
     </aside>
   </div>
+  </div><!-- /view-design -->
+
+  <div id="view-profiles" class="view" hidden>
+    <div class="libbar">
+      <label class="libbar-label" for="lib-target" data-i18n="libbar.label">Target library</label>
+      <select id="lib-target">
+        <option value="M5Unified">M5Unified</option>
+        <option value="M5GFX">M5GFX</option>
+        <option value="LovyanGFX">LovyanGFX</option>
+      </select>
+      <span class="libbar-note" id="lib-note"></span>
+    </div>
+    <div class="banner" id="prof-banner"></div>
+    <div class="cols">
+      <aside class="left">
+        <div class="section">
+          <div class="sechead">
+            <h2 data-i18n="pane.profiles">Profiles</h2>
+            <span class="menu-wrap">
+              <button class="icon" id="profile-add" data-i18n="profiles.add">+ Add ▾</button>
+              <div class="menu" id="profile-add-menu"></div>
+            </span>
+          </div>
+          <div class="list" id="profile-list"></div>
+        </div>
+      </aside>
+      <main class="center">
+        <div class="section" style="background:var(--panel)">
+          <div class="sechead"><h2 data-i18n="section.orientSize">Orientation &amp; size</h2><span class="sub" id="profile-title"></span></div>
+        </div>
+        <div class="stage">
+          <div class="preview">
+            <div class="device" id="prof-device"><div class="screen prof-screen" id="prof-screen"></div></div>
+            <div class="sizelabel" id="prof-size"></div>
+            <div><span class="badge" id="prof-rot"></span> <span class="sub" id="prof-orient"></span></div>
+            <div style="margin-top:6px;width:100%">
+              <h2 style="margin-bottom:6px" data-i18n="section.assigned">Assigned boards</h2>
+              <div class="chips" id="prof-chips"></div>
+            </div>
+          </div>
+        </div>
+        <div class="section" style="background:var(--panel)">
+          <div class="sechead">
+            <h2 data-i18n="section.assignBoards">Assign boards (click to toggle)</h2>
+            <label class="sub" style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="hide-mismatch" checked style="width:auto;min-height:auto"> <span data-i18n="profiles.hideMismatch">Hide size-mismatched boards</span></label>
+          </div>
+          <div class="catalog" id="board-catalog"></div>
+        </div>
+      </main>
+      <aside class="right">
+        <div class="section">
+          <h2 data-i18n="inspector.title">Properties</h2>
+          <div id="prof-props"></div>
+        </div>
+      </aside>
+    </div>
+  </div><!-- /view-profiles -->
 
   <script type="module" src="./src/main.js"></script>
 </body>

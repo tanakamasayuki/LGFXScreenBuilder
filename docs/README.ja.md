@@ -21,6 +21,11 @@ python -m http.server 8000 --directory docs
   ツリー表示（前面が上）＝兄弟内の並べ替え（↑/↓）、グループ化／解除、ドラッグ＆ドロップ
   での親変更（グループ行→入れ子／パーツ行→兄弟／空き→ルート）。いずれも絶対位置を保持、
   グループはカスケード削除（§8.3.1）。
+- **Profiles** モード（SPEC §8.9）: 対象ライブラリバー、プロファイル一覧＋追加（解像度／
+  カスタム、現レイアウトをクローン）、サイズ／回転／備考＋リネーム・削除、ボード割り当て
+  （クリックでトグル、自動判定は1ボード=1プロファイル）、向き・サイズプレビュー、検証バナー
+  （寸法不一致・LovyanGFX で自動判定不可）。フォールバックは Export 時に選択。
+  （ボード→`getBoard()` 自動解決の生成コード配線は未実装。）
 - **多言語化**（SPEC §14）: UI 文字列はすべて `src/i18n.js`（`t()` ＋ `data-i18n`）経由。en/ja・
   en フォールバック・言語切替を実装。初期言語はブラウザ設定に追従。
 - **プロジェクト永続化**（`src/persist.js`、SPEC §9）: New / Open / Save ツールバー
@@ -34,7 +39,9 @@ python -m http.server 8000 --directory docs
 
 - `index.html` — アプリの外枠（モードレール＋3ペイン）
 - `styles.css`
-- `src/model.js` — プロジェクトデータモデル＋サンプル＋ヘルパ
+- `src/model.js` — プロジェクトデータモデル＋サンプル＋変異/ヘルパ
+- `src/boards.js` — ボードカタログ（M5GFX board_t）＋対象ライブラリ補助
+- `src/profiles.js` — Profiles モード（プロファイル定義＋ボード割り当て）
 - `src/store.js` — リアクティブストア（プロジェクト＋UI状態）＋ loadProject
 - `src/i18n.js` — 翻訳（en/ja）＋ `t()` ＋静的マークアップ適用
 - `src/persist.js` — `.lgfxsb.json` 保存/読込 ＋ localStorage 自動保存
