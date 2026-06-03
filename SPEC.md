@@ -437,6 +437,46 @@ For Arduino output, a font-reference scheme that is easy to handle with LovyanGF
 
 If matching the actual-device display becomes necessary in the future, a scheme will be considered that extracts the characters used and outputs them as a glyph atlas or bitmap font, using the same glyph data in the browser preview and the Arduino runtime.
 
+#### 8.7.1 Font policy (presets first)
+
+The MVP handles only the **preset fonts built into LovyanGFX / M5GFX**. The runtime does not output any font payload; it merely references a font with `setFont(&fonts::<Name>)`. **Custom fonts** that generate glyph data for only the used characters from a PC font (TTF/OTF) are deferred (§15). Even when custom fonts are added, the intended scheme — like image assets — is to extract the used characters into data and use the same glyphs in the browser and on the device (consistent with the future direction at the end of this section).
+
+#### 8.7.2 Font catalog (how it is generated)
+
+The list (catalog) of available preset fonts is **generated offline and shipped as JSON**, and the browser tool only reads it (the same standing as the board list; no C++ is parsed at runtime).
+
+- **The set differs per library.** LovyanGFX and M5GFX each have their own `lgfx_fonts.hpp` (~186 in 1.2.21, ~187 in M5GFX 0.2.22, including efont-family Japanese/Chinese/Korean), with shared fonts declared under the same name in `namespace fonts::`. Candidates are offered according to the target library (§9), the same way board assignment works.
+- **Attributes obtainable mechanically from the name** are classified first: type (`font_type_t` = glcd / bmp / rle / gfx / bdf / vlw / u8g2 …), family stem (FreeMono / FreeSans / FreeSerif / DejaVu / Orbitron / efont …), style (Bold / Oblique / Italic), nominal size, and script tendency (efont family = CJK).
+- **Attributes not obtainable from the name alone are introspected on the host** (Arduino host environment): actual pixel height, baseline, advance (`getDefaultMetric(FontMetrics*)`), data/flash size, and available character coverage (GFXfont has `first/last` + `range[]` in source, but U8g2/efont are binary, so coverage is determined by probing codepoints). Metrics, coverage, and size are obtained together in a single introspection harness and baked into the catalog JSON.
+- **The same host harness renders an actual-drawing sample of each font to PNG and ships it with the catalog** (draw a representative string at the real font size via `setFont`→`drawString`→`createPng`; include a Japanese sample for CJK-capable fonts, judged from coverage). This lets the adoption UI preview the **same glyphs as the device** (not an approximation). Because there are many, they are packed into a sprite atlas or similar to keep size down.
+- Catalog generation (parse + host introspection + sample PNGs) runs in CI/by hand, and the resulting JSON (+ preview images) is kept as an artifact, regenerated when a library is updated.
+
+#### 8.7.3 Font adoption (project assets) and selection UX
+
+There are ~200 presets, too many to list all in the Text dropdown. So **fonts are treated as "project assets" like images.**
+
+- The project holds an **adopted-font set** `project.fonts` (a small set chosen from the catalog).
+- Adding (adopting) a font is done in a dedicated dialog that **filters the catalog by type / family / style / size / script** and confirms the look with an **approximate preview** before adopting.
+- **Adoption picks "use it" per profile** (§8.7.4). The Text inspector's font dropdown shows **only the fonts enabled for that profile** (keeps it small and prevents misuse of fonts unsuited to the device).
+
+Preview fidelity: **the preview at font adoption (selection) time shows the host-rendered sample PNG (§8.7.2) = the same glyphs as the device** (not an approximation). The live display of **arbitrary text + an arbitrary multiplier on the Design canvas remains approximate** (preset glyph data is not in the browser; the look is matched with a web/system font close to the family type — mono/sans/serif — plus the measured pixel height from the catalog). When a live exact match for arbitrary strings is required, proceed to custom fonts that extract the used characters (glyph atlas output) (§15).
+
+#### 8.7.4 Data model and flash (per-profile font usage)
+
+- A Text part **has a font reference**. If unset, the default (equivalent to `Font0`) is used.
+- The font reference is a **per-profile layout value** (paired with "font size is per profile" in §8.9.6). The same Text can be assigned a different font and multiplier per device.
+- Each profile holds a **set of "fonts to use"** (a per-profile usage flag over the adopted fonts). A small screen can enable only small fonts and not use large ones. A Text's font is chosen from the set enabled for that profile.
+- The existing **size multiplier (`setTextSize`) is unchanged**; the font + multiplier pair determines the final look.
+- The adopted fonts `project.fonts` reference catalog presets by id (C identifier), and layouts reference that id (the same indirection as image-asset references).
+
+**Flash-usage model (why the per-profile flag):** preset fonts are part of the library, but **only those referenced via `&fonts::X` are linked into the actual binary**. The generated code references with `setFont` only the fonts actually used by the Text of the profiles included in that build (the export targets of §10). Therefore **building only the small screen does not link the large fonts**. The per-profile "fonts to use" flag makes this explicit and lets the user see the font count = flash usage per device (avoiding unknowingly carrying many fonts and bloating flash).
+
+#### 8.7.5 Output (codegen / runtime)
+
+- The generated code outputs `setFont(&fonts::<Name>)` + `setTextSize(<multiplier>)` when drawing Text (reference only; no font payload is emitted).
+- Only the fonts used by each included profile are referenced (the flash policy of §8.7.4).
+- Fonts not present in the target library's `fonts::` (e.g., an M5GFX-only font when targeting LovyanGFX) are **omitted + warned** (handled the same as board assignment, §8.9.5).
+
 ### 8.8 Animation
 
 The following animations are candidates for support.
