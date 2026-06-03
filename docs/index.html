@@ -13,7 +13,7 @@
       <button class="mode active" data-mode="design" data-i18n="mode.design">Design</button>
       <button class="mode" data-mode="profiles" data-i18n="mode.profiles">Profiles</button>
       <button class="mode" data-mode="assets" data-i18n="mode.assets" disabled>Assets</button>
-      <button class="mode" data-mode="export" data-i18n="mode.export" disabled>Export</button>
+      <button class="mode" data-mode="export" data-i18n="mode.export">Export</button>
     </nav>
     <span class="toolsep"></span>
     <nav class="tools">
@@ -149,6 +149,47 @@
       </aside>
     </div>
   </div><!-- /view-profiles -->
+
+  <div id="view-export" class="view" hidden>
+    <div class="cols">
+      <aside class="left">
+        <div class="section">
+          <h2 data-i18n="export.files">Files</h2>
+          <div class="list" id="export-files"></div>
+        </div>
+        <div class="section">
+          <h2 data-i18n="export.summary">Summary</h2>
+          <p class="sub" id="export-summary"></p>
+        </div>
+      </aside>
+      <main class="center" style="grid-template-rows:auto 1fr auto">
+        <div class="bar">
+          <strong id="export-curfile" style="font-size:13px"></strong>
+          <span class="grow"></span>
+          <button class="mini" id="export-download" data-i18n="export.download">Download</button>
+        </div>
+        <div class="codewrap"><pre class="code"><code id="export-code"></code></pre></div>
+        <div class="statusbar"><span id="export-st-l"></span><span id="export-st-r"></span></div>
+      </main>
+      <aside class="right">
+        <div class="section">
+          <h2 data-i18n="export.settings">Output settings</h2>
+          <div class="field"><label data-i18n="export.framework">Target framework</label>
+            <select id="export-fw">
+              <option value="M5Unified">M5Unified</option>
+              <option value="M5GFX">M5GFX</option>
+              <option value="LovyanGFX">LovyanGFX</option>
+            </select>
+          </div>
+          <div class="field"><label data-i18n="export.profiles">Target profiles</label><div id="export-profsel"></div></div>
+        </div>
+        <div class="section">
+          <h2 data-i18n="export.checks">Checks</h2>
+          <div id="export-checks"></div>
+        </div>
+      </aside>
+    </div>
+  </div><!-- /view-export -->
 
   <script type="module" src="./src/main.js"></script>
 </body>

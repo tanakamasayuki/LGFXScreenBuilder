@@ -41,28 +41,34 @@ function pathOf(scene, part) {
 }
 
 // Build the typed scene struct body (nested by Group; Text -> const char* field).
-function structBody(project, scene, parentId, indent) {
+function structBody(scene, parentId, indent, defProfile) {
   const pad = '  '.repeat(indent);
   let out = '';
   for (const p of scene.parts) {
     if ((p.parent || null) !== (parentId || null)) continue;
     if (p.type === 'Group') {
       out += `${pad}struct ${cap(p.id)} {\n`;
-      out += structBody(project, scene, p.id, indent + 1);
+      out += structBody(scene, p.id, indent + 1, defProfile);
       out += `${pad}} ${p.id};\n`;
     } else if (p.type === 'Text') {
-      const lo = placement(project.profiles.find((pr) => pr.id === project.defaultProfile) || project.profiles[0], scene.id, p.id);
+      const lo = placement(defProfile, scene.id, p.id);
       out += `${pad}const char* ${p.id} = ${cstr(lo ? lo.text : '')};\n`;
     }
   }
   return out;
 }
 
-export function generateHeader(project) {
+// opts (all optional): { profiles: [ids to include], defaultProfile: id }. When a
+// subset is given, the enum and all descriptor tables are restricted to it and
+// the fallback index is relative to that subset (§10).
+export function generateHeader(project, opts = {}) {
   const name = project.name;
   const { flat, sceneRange } = flatten(project);
-  const defProfile = project.profiles.find((p) => p.id === project.defaultProfile) || project.profiles[0];
-  const defIndex = Math.max(0, project.profiles.indexOf(defProfile));
+  const profiles = (opts.profiles && opts.profiles.length)
+    ? project.profiles.filter((p) => opts.profiles.includes(p.id))
+    : project.profiles;
+  const defProfile = profiles.find((p) => p.id === (opts.defaultProfile || project.defaultProfile)) || profiles[0];
+  const defIndex = Math.max(0, profiles.indexOf(defProfile));
 
   let s = '';
   s += `#pragma once\n\n`;
@@ -71,13 +77,13 @@ export function generateHeader(project) {
   s += `namespace ${name} {\n\n`;
 
   // Profile enum
-  s += `enum class Profile : uint8_t { Auto = 0, ${project.profiles.map((p) => p.id).join(', ')} };\n\n`;
+  s += `enum class Profile : uint8_t { Auto = 0, ${profiles.map((p) => p.id).join(', ')} };\n\n`;
 
   // Scene structs
   s += `namespace Scene {\n`;
   project.scenes.forEach((sc, i) => {
     s += `  struct ${sc.id} {\n    static constexpr lgfxsb::SceneId id = ${i};\n`;
-    s += structBody(project, sc, null, 2);
+    s += structBody(sc, null, 2, defProfile);
     s += `  };\n`;
   });
   s += `}\n\n`;
@@ -104,7 +110,7 @@ export function generateHeader(project) {
   // layouts [profile][part]
   s += `// {x, y, w, h, datum, size, color, visible}\n`;
   s += `static const lgfxsb::PartLayout kLayouts[] = {\n`;
-  project.profiles.forEach((pr) => {
+  profiles.forEach((pr) => {
     s += `  // ---- Profile: ${pr.id} ${pr.w}x${pr.h} rot${pr.rotation} ----\n`;
     flat.forEach((f) => {
       const e = placement(pr, f.sceneId, f.part.id) || {};
@@ -124,14 +130,14 @@ export function generateHeader(project) {
   // compilable on the target library are omitted (§8.9.5).
   const lib = project.targetLibrary || 'M5Unified';
   const boardNames = (pr) => (pr.boards || []).map((b) => boardEnum(lib, b)).filter(Boolean);
-  project.profiles.forEach((pr) => {
+  profiles.forEach((pr) => {
     const names = boardNames(pr);
     if (names.length) s += `static const int16_t kBoards_${pr.id}[] = { ${names.map((n) => `(int16_t)lgfx::board_t::${n}`).join(', ')} };\n`;
   });
   s += `\n`;
 
   s += `static const lgfxsb::ProfileDesc kProfiles[] = {\n`;
-  project.profiles.forEach((pr) => {
+  profiles.forEach((pr) => {
     const names = boardNames(pr);
     const ref = names.length ? `kBoards_${pr.id}, ${names.length}` : 'nullptr, 0';
     s += `  {${pr.w}, ${pr.h}, ${pr.rotation}, ${ref}},\n`;
@@ -140,7 +146,7 @@ export function generateHeader(project) {
 
   // Project descriptor
   s += `static const lgfxsb::Project project = {\n`;
-  s += `  detail::kProfiles, ${project.profiles.length}, /*defaultProfile*/ ${defIndex},\n`;
+  s += `  detail::kProfiles, ${profiles.length}, /*defaultProfile*/ ${defIndex},\n`;
   s += `  detail::kScenes, ${project.scenes.length},\n`;
   s += `  detail::kParts, detail::kPartCount,\n`;
   s += `  detail::kLayouts,\n`;
@@ -172,4 +178,61 @@ export function generateHeader(project) {
 function fmtFloat(n) {
   const v = Number(n);
   return Number.isInteger(v) ? v.toFixed(1) + 'f' : v + 'f';
+}
+
+// Generate the example sketch `<Project>_example.ino` for the target framework
+// (§10). Includes/init differ per framework; the draw API is identical. The demo
+// scene is the first one with a Text part; its preview strings seed the values.
+export function generateSketch(project, framework, opts = {}) {
+  const name = project.name;
+  framework = framework || project.targetLibrary || 'M5Unified';
+  const profs = (opts.profiles && opts.profiles.length)
+    ? project.profiles.filter((p) => opts.profiles.includes(p.id)) : project.profiles;
+  const defProfile = profs.find((p) => p.id === (opts.defaultProfile || project.defaultProfile)) || profs[0];
+
+  let inc, decl, init, loopPre = '';
+  if (framework === 'M5GFX') {
+    inc = '#include <M5GFX.h>';
+    decl = 'static M5GFX display;\nstatic Screen screen(display);';
+    init = 'display.begin();';
+  } else if (framework === 'LovyanGFX') {
+    inc = '#include <LovyanGFX.hpp>\n#include <LGFX_AUTODETECT.hpp>';
+    decl = 'static LGFX display;\nstatic Screen screen(display);';
+    init = 'display.init();';
+  } else { // M5Unified
+    inc = '#include <M5Unified.h>';
+    decl = 'static Screen screen(M5.Display);';
+    init = 'M5.begin();';
+    loopPre = '  M5.update();\n';
+  }
+
+  const first = project.scenes[0];
+  // Demo scene = the one with the most Text parts (richest example of value-setting).
+  let demo = null, demoN = 0;
+  for (const sc of project.scenes) {
+    const n = sc.parts.filter((p) => p.type === 'Text').length;
+    if (n > demoN) { demo = sc; demoN = n; }
+  }
+  const varOf = (sc) => sc.id.charAt(0).toLowerCase() + sc.id.slice(1);
+  const preview = (sc, p) => cstr((placement(defProfile, sc.id, p.id) || {}).text || '');
+
+  let setupBody = '';
+  if (first) setupBody += `  screen.show(Scene::${first.id}{});\n`;
+  let loopBody = '  delay(1000);\n';
+  if (demo) {
+    const v = varOf(demo);
+    setupBody += `\n  Scene::${demo.id} ${v};\n`;
+    for (const p of demo.parts.filter((x) => x.type === 'Text')) setupBody += `  ${v}.${pathOf(demo, p)} = ${preview(demo, p)};\n`;
+    setupBody += `  screen.show(${v});\n`;
+    const t0 = demo.parts.find((p) => p.type === 'Text');
+    loopBody = `  static Scene::${demo.id} ${v};\n  ${v}.${pathOf(demo, t0)} = ${preview(demo, t0)};\n  screen.update(${v});  // values only; layout is fixed\n  delay(1000);\n`;
+  }
+
+  let s = '';
+  s += `// Generated by LGFXScreenBuilder. Example sketch (${framework}).\n`;
+  s += `${inc}\n#include <LGFXScreenBuilder.h>\n#include "${name}.h"\n\n`;
+  s += `using namespace ${name};\n\n${decl}\n\n`;
+  s += `void setup() {\n  ${init}\n  screen.begin();  // Profile::Auto resolves via getBoard()\n\n${setupBody}}\n\n`;
+  s += `void loop() {\n${loopPre}${loopBody}}\n`;
+  return s;
 }

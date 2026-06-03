@@ -34,10 +34,15 @@ python -m http.server 8000 --directory docs
   en/ja with an en fallback and a language switcher; default follows the browser.
 - **Project persistence** (`src/persist.js`, SPEC §9): New / Open / Save toolbar
   (`.lgfxsb.json`) plus localStorage autosave + restore-on-start.
-- **Code generation** (`src/codegen.js`): "Export .h" downloads `<Project>.h` (the
-  §11 facade + descriptor); verified end-to-end by `tests/codegen_roundtrip`.
-- Profiles / Assets / Export *screens* (a full Export view, asset import, etc.) are
-  not built yet — header export is currently a toolbar button.
+- **Export** mode (SPEC §10): file list (`<Project>.h`, `<Project>_example.ino`)
+  with code preview, target-framework choice (M5Unified / M5GFX / LovyanGFX),
+  per-profile output subset + fallback choice (the enum/tables are restricted to
+  the selected profiles; the fallback is remembered as `defaultProfile`), validation
+  checks, and per-file download. Asset output and zip packaging are post-MVP.
+- **Code generation** (`src/codegen.js`): `generateHeader(project, opts)` (the §11
+  facade + descriptor, with optional profile subset/fallback) and
+  `generateSketch(project, framework)` (the example `.ino`); verified end-to-end by
+  `tests/codegen_roundtrip`. The toolbar "Export .h" remains a one-click shortcut.
 
 ## Layout
 
@@ -46,6 +51,7 @@ python -m http.server 8000 --directory docs
 - `src/model.js` — project data model + sample project + mutations/helpers
 - `src/boards.js` — board catalog (M5GFX board_t) + target-library helpers
 - `src/profiles.js` — Profiles mode (define profiles + board assignment)
+- `src/exporter.js` — Export mode (preview + output subset/fallback + download)
 - `src/store.js` — reactive store (project + editor UI state) + loadProject
 - `src/i18n.js` — translations (en/ja) + `t()` + static-markup applier
 - `src/persist.js` — save/open `.lgfxsb.json` + localStorage autosave

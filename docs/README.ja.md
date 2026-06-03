@@ -31,10 +31,13 @@ python -m http.server 8000 --directory docs
   en フォールバック・言語切替を実装。初期言語はブラウザ設定に追従。
 - **プロジェクト永続化**（`src/persist.js`、SPEC §9）: New / Open / Save ツールバー
   （`.lgfxsb.json`）＋ localStorage 自動保存・起動時復元。
-- **コード生成**（`src/codegen.js`）: 「.h 出力」で `<Project>.h`（§11 ファサード＋記述子）を
-  ダウンロード。`tests/codegen_roundtrip` で end-to-end 検証済み。
-- Profiles / Assets / Export の*画面*（本格的な Export ビュー、アセット取り込み等）は未実装
-  — ヘッダ出力は現状ツールバーのボタン。
+- **Export** モード（SPEC §10）: ファイル一覧（`<Project>.h` / `<Project>_example.ino`）＋
+  コードプレビュー、対象フレームワーク選択（M5Unified / M5GFX / LovyanGFX）、プロファイル別
+  出力サブセット＋fallback 選択（enum/テーブルを選択分に限定、fallback は `defaultProfile` に記憶）、
+  検証チェック、ファイル単位ダウンロード。アセット出力・zip パッケージは post-MVP。
+- **コード生成**（`src/codegen.js`）: `generateHeader(project, opts)`（§11 ファサード＋記述子、
+  プロファイル絞り込み/fallback 任意）＋ `generateSketch(project, framework)`（サンプル `.ino`）。
+  `tests/codegen_roundtrip` で end-to-end 検証済み。ツールバー「.h 出力」はワンクリックの近道として残置。
 
 ## 構成
 
@@ -43,6 +46,7 @@ python -m http.server 8000 --directory docs
 - `src/model.js` — プロジェクトデータモデル＋サンプル＋変異/ヘルパ
 - `src/boards.js` — ボードカタログ（M5GFX board_t）＋対象ライブラリ補助
 - `src/profiles.js` — Profiles モード（プロファイル定義＋ボード割り当て）
+- `src/exporter.js` — Export モード（プレビュー＋出力サブセット/fallback＋ダウンロード）
 - `src/store.js` — リアクティブストア（プロジェクト＋UI状態）＋ loadProject
 - `src/i18n.js` — 翻訳（en/ja）＋ `t()` ＋静的マークアップ適用
 - `src/persist.js` — `.lgfxsb.json` 保存/読込 ＋ localStorage 自動保存

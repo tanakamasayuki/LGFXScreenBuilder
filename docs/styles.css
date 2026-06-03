@@ -110,3 +110,16 @@ select.icon { padding: 0 4px; }
 .menu-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 0; border-radius: 6px; padding: 7px 8px; text-align: left; background: transparent; width: 100%; cursor: pointer; min-height: auto; }
 .menu-item:hover { background: var(--soft); }
 .menu-item .res { font-size: 13px; }
+
+/* --- Export view ------------------------------------------------------- */
+.bar { display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.codewrap { padding: 14px; overflow: auto; min-height: 0; }
+pre.code { margin: 0; padding: 12px; border-radius: 8px; background: #10181c; color: #d9f3f1; font-size: 12px; line-height: 1.5; overflow: auto; white-space: pre; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; padding: 4px 0; }
+.check .i { width: 16px; text-align: center; }
+.check.ok .i { color: var(--accent); }
+.check.warn { color: var(--warn); }
+.check.warn .i { color: var(--warn); }
+.profsel-row { display: flex; gap: 10px; align-items: center; font-size: 13px; margin: 3px 0; }
+.profsel-row label { display: flex; gap: 6px; align-items: center; }
+.profsel-row .fb { color: var(--muted); }
