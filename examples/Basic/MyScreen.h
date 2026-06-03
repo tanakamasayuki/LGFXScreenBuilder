@@ -104,6 +104,7 @@ namespace MyScreen
       detail::kParts, detail::kPartCount,
       detail::kLayouts,
       /*background*/ 0x000000,
+      /*assets*/ nullptr, 0,
   };
 
   // en: Project-specific facade (binds the descriptor to the shared engine. §11.1)

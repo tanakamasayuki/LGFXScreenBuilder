@@ -52,6 +52,14 @@ namespace lgfxsb
     uint8_t boardCount;
   };
 
+  // Image asset: RGB565 pixels (row-major), referenced by PartDesc::assetIndex
+  // (§8.4, MVP Header/PROGMEM + RAW RGB565).
+  struct AssetDesc
+  {
+    const uint16_t *data;
+    int16_t w, h;
+  };
+
   struct Project
   {
     const ProfileDesc *profiles;
@@ -67,6 +75,11 @@ namespace lgfxsb
     const PartLayout *layouts; // [profileCount][partCount]
 
     uint32_t background;       // full-screen fill color 0xRRGGBB (§7.4)
+
+    // Appended after background so older generated headers (which omit these)
+    // still aggregate-initialize them to {nullptr, 0}.
+    const AssetDesc *assets;   // image assets (RGB565); referenced by PartDesc::assetIndex
+    uint16_t assetCount;
   };
 
 } // namespace lgfxsb

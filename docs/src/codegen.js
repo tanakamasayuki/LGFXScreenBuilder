@@ -91,12 +91,14 @@ export function generateHeader(project, opts = {}) {
   // detail: parts / scenes / layouts / profiles
   s += `namespace detail {\n\n`;
   s += `static const lgfxsb::PartDesc kParts[] = {\n`;
+  const assetIndexOf = (id) => (project.assets || []).findIndex((a) => a.id === id);
   flat.forEach((f) => {
     const p = f.part;
     const text = p.type === 'Text'
       ? cstr((placement(defProfile, f.sceneId, p.id) || {}).text || '')
       : 'nullptr';
-    s += `  {${cstr(p.id)}, lgfxsb::PartType::${PART_ENUM[p.type]}, ${f.parentGi}, ${text}, -1},  // ${f.gi} ${f.sceneId}.${p.id}\n`;
+    const ai = (p.type === 'Image' && p.asset) ? assetIndexOf(p.asset) : -1;
+    s += `  {${cstr(p.id)}, lgfxsb::PartType::${PART_ENUM[p.type]}, ${f.parentGi}, ${text}, ${ai}},  // ${f.gi} ${f.sceneId}.${p.id}\n`;
   });
   s += `};\nstatic constexpr uint16_t kPartCount = ${flat.length};\n\n`;
 
@@ -142,7 +144,21 @@ export function generateHeader(project, opts = {}) {
     const ref = names.length ? `kBoards_${pr.id}, ${names.length}` : 'nullptr, 0';
     s += `  {${pr.w}, ${pr.h}, ${pr.rotation}, ${ref}},\n`;
   });
-  s += `};\n\n} // namespace detail\n\n`;
+  s += `};\n\n`;
+
+  // Image assets: RGB565 pixel arrays + descriptor table (§8.4). const goes to
+  // flash on ESP32, so PROGMEM is not required.
+  const assets = project.assets || [];
+  assets.forEach((a) => {
+    const px = (a.rgb565 || []).map((v) => '0x' + (v & 0xFFFF).toString(16).padStart(4, '0')).join(', ');
+    s += `static const uint16_t kAsset_${a.id}[] = { ${px} };  // ${a.w}x${a.h}\n`;
+  });
+  if (assets.length) {
+    s += `static const lgfxsb::AssetDesc kAssets[] = {\n`;
+    assets.forEach((a) => { s += `  { kAsset_${a.id}, ${a.w}, ${a.h} },\n`; });
+    s += `};\n`;
+  }
+  s += `\n} // namespace detail\n\n`;
 
   // Project descriptor
   s += `static const lgfxsb::Project project = {\n`;
@@ -150,7 +166,8 @@ export function generateHeader(project, opts = {}) {
   s += `  detail::kScenes, ${project.scenes.length},\n`;
   s += `  detail::kParts, detail::kPartCount,\n`;
   s += `  detail::kLayouts,\n`;
-  s += `  /*background*/ ${hex(project.background)},\n};\n\n`;
+  s += `  /*background*/ ${hex(project.background)},\n`;
+  s += assets.length ? `  detail::kAssets, ${assets.length},\n};\n\n` : `  nullptr, 0,\n};\n\n`;
 
   // Facade
   s += `class Screen : public lgfxsb::Renderer {\n public:\n`;

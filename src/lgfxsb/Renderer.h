@@ -138,7 +138,17 @@ namespace lgfxsb
       }
 
       case PartType::Image:
-        // Phase 1 MVP: asset data not yet supported, so draw a placeholder frame.
+        // Draw the referenced RGB565 asset at its native size (§8.4); if none is
+        // bound, fall back to a placeholder frame.
+        if (pd.assetIndex >= 0 && pd.assetIndex < static_cast<int16_t>(_project.assetCount) && _project.assets)
+        {
+          const AssetDesc &a = _project.assets[pd.assetIndex];
+          if (a.data)
+          {
+            _gfx->pushImage(ox, oy, a.w, a.h, a.data);
+            break;
+          }
+        }
         _gfx->drawRect(ox, oy, lo.w, lo.h, color565(0x6f8a92));
         break;
 

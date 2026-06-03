@@ -29,7 +29,8 @@ python -m http.server 8000 --directory docs
   実機 `getBoard()` で解決する（対象ライブラリの `board_t` に無いボードは省略、§8.9.5）。
 - **Assets** モード（SPEC §8.4）: PNG/JPEG 取り込み（取り込み時に MVP 出力形式の RGB565 へ
   デコード）、サムネイル一覧・プレビュー・リネーム/削除（使用箇所表示）。Image パーツはアセットを
-  参照し、Design キャンバスでプレビュー表示。RGB565 データの codegen と実機 `pushImage` は次スライス。
+  参照し、Design キャンバスでプレビュー表示。codegen が RGB565 データ＋`AssetDesc` テーブルを
+  出力し、ランタイムが `pushImage` で描画（host backend で end-to-end 検証済み）。
   スライス・スプライトシート・フォントは post-MVP。
 - **多言語化**（SPEC §14）: UI 文字列はすべて `src/i18n.js`（`t()` ＋ `data-i18n`）経由。en/ja・
   en フォールバック・言語切替を実装。初期言語はブラウザ設定に追従。

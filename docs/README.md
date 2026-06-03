@@ -33,8 +33,9 @@ python -m http.server 8000 --directory docs
 - **Assets** mode (SPEC §8.4): import PNG/JPEG (decoded to RGB565 on import for the
   MVP Header/PROGMEM export format), thumbnail list, preview, rename/delete with
   usage tracking; Image parts reference an asset and the Design canvas previews it.
-  Codegen of the RGB565 data + on-device `pushImage` is the next slice; slices,
-  spritesheets, and fonts are post-MVP.
+  Codegen emits the RGB565 data + an `AssetDesc` table and the runtime draws it
+  with `pushImage` (verified end-to-end on the host backend). Slices, spritesheets,
+  and fonts are post-MVP.
 - **i18n** (SPEC §14): all UI strings go through `src/i18n.js` (`t()` + `data-i18n`),
   en/ja with an en fallback and a language switcher; default follows the browser.
 - **Project persistence** (`src/persist.js`, SPEC §9): New / Open / Save toolbar
