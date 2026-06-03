@@ -1184,6 +1184,30 @@ The following are considered in the future.
 - Automatic Pages deployment via GitHub Actions
 - Editor completion using TypeScript type definitions
 - Multi-language documentation
+- Frame group (animation / state management; §16.1)
+- Static text designation (fixed text not exposed as a value; §16.2)
+
+### 16.1 Frame group (animation / state management)
+
+A Group extension that bundles several display states into one part and switches between them by frame number. The same mechanism serves both animation cels and widget states (normal / pressed / disabled, …).
+
+- **Structure (independent per-frame compositions)**: a frame group has N frames, and each frame is an **independent, complete layout** (Image / Rect / Text / nested groups placed at arbitrary coordinates). Only the active frame's subtree is shown. There is no linkage or interpolation between frames; each frame is free to use a different set of objects and different coordinates (it feels like "switching to a different group"). **There is no override/inheritance concept.** Elements common to all frames are placed in each frame (no shared layer). Coordinates remain per-profile as before.
+- **Frame number and state names**: frames are numbered 0..N-1 and may optionally carry state names (e.g. normal / pressed / disabled). State names are emitted as an enum in the generated code.
+- **Two ways to use it (same mechanism = the frame number)**:
+  - **State (manual)**: the app selects the frame number (or a state enum). This rides on the same value-setting mechanism as text-value updates.
+  - **Animation (auto-play)**: each frame has a display duration (Wait, ms) and a loop on/off flag, playing back automatically like a GIF.
+- **Rendering model (pull-based)**: the runtime does not own a redraw loop. When the app draws (show / update) at whatever cadence it likes, the frame is **advanced by the time elapsed since the previous draw**. If a lot of time elapsed it advances several frames to stay wall-clock accurate, handling loop wrap-around. The engine keeps, per instance, the "current frame" and the "last timestamp (or accumulated elapsed)". Animation smoothness depends on the app's draw cadence.
+- **Reuse (template style)**: a frame group can be reused as a template. This is not a symbol/instance with references, propagation, or overrides — inserting it **deep-copies it so it is fully independent thereafter** (editing the copy does not affect others). Both built-in stock templates and user-defined templates are envisioned.
+- **Relation to sprites**: image slices (sub-rectangles of an asset; a separate post-MVP feature) are **placed by hand** into each frame. There is no automatic "frame number = slice number" mapping.
+- **Implementation scope**: manual state switching can be implemented first and auto-play (Wait + loop) later; how far to implement is decided at implementation time.
+
+### 16.2 Static text (fixed-text designation)
+
+Add a flag to a Text part to choose between fixed text (a literal) and a settable value.
+
+- The current generated code emits every Text as a settable field, but fixed labels whose content is determined by ID should not be exposed as values — they should be embedded as literals in the generated code.
+- Add a `static` (fixed / not exposed — descriptor preview string only, not a struct field) vs `dynamic` (settable value) distinction on Text.
+- This is a tool-wide Text feature rather than frame-group-specific, and may be implemented independently, before frame groups.
 
 ## 17. Success Criteria
 
