@@ -1,7 +1,7 @@
 // Preset-font catalog queries + preview (SPEC §8.7.2/§8.7.3). The catalog
 // (docs/src/font-catalog.js) is generated offline; host metrics + a sample
 // atlas (font-metrics.json / font-atlas.png) are produced by the introspection
-// harness (tests/font_introspect, phase 1b). When the metrics are present the
+// harness (tests/manual/font_introspect, phase 1b). When the metrics are present the
 // preview shows the exact host-rendered glyphs (atlas crop); otherwise it falls
 // back to an approximate CSS font.
 import { FONT_CATALOG, catalogFor } from './font-catalog.js';

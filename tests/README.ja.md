@@ -10,12 +10,21 @@
 
 ランタイムとジェネレータが育ったら、`LGFXVirtualCanvas` と同じ形でスナップショット比較やピクセル差分テストを追加します。
 
-`font_introspect/` は合否チェックというより生成ステップです。`gen.py` が
+`manual/` には**デフォルトスイートに含めない**生成器を置きます。コミット済みの成果物を
+作るもので host ビルドを要するため、ディレクトリ走査の対象外（ファイル名に `test_`
+接頭辞を付けない）とし、パスを明示したときだけ実行します。
+
+`manual/font_introspect/` はプリセットフォントカタログを再生成します。`gen.py` が
 ピン版 LovyanGFX（`../tools/fontgen/sketch.yaml`）を解決して全プリセットフォントの
 C++ テーブルを出力し、ハーネスが host 上で各フォントを内省します（メトリクス＋
-ASCII/CJK カバレッジ＋実サイズのサンプル）。テストはサンプルを 1 枚のアトラスに詰め、
-ブラウザが消費するカタログ（`../docs/src/font-metrics.json`＋`font-atlas.png`）を書き出します。
-フォントライブラリを bump したら再実行します（SPEC §8.7.2）。
+ASCII/CJK カバレッジ＋等幅フラグ＋実サイズのサンプル＋正確なフラッシュサイズ）。サンプルを
+1 枚のアトラスに詰め、ブラウザが消費するカタログ（`../docs/src/font-catalog.js`・
+`font-metrics.json`・`font-atlas.png`）を書き出します。フォントライブラリを bump したら
+手動で実行します（SPEC §8.7.2）:
+
+```sh
+uv run pytest manual/font_introspect/font_introspect.py
+```
 
 ## 必要なもの
 

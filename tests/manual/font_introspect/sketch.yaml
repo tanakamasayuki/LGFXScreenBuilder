@@ -12,6 +12,6 @@ profiles:
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - LovyanGFX (1.2.21)
-      - dir: ../../
+      - dir: ../../../   # repo root (this sketch lives under tests/manual/font_introspect/)
 
 default_profile: host
