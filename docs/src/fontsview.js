@@ -8,7 +8,9 @@ import { filterCatalog, facets, HEIGHT_BUCKETS, CONTENT_TYPES, approxCss, sample
 import { t } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
-const filters = { query: '', height: '', content: '', style: '', mono: '', family: '' };
+// Style defaults to 'regular': bold/italic variants roughly double the list and
+// are rarely the first pick, so the grid opens on regular only (click All to see all).
+const filters = { query: '', adopted: '', height: '', content: '', style: 'regular', mono: '', family: '' };
 
 // Render one facet as a row of selectable chips ([All] + each option). Single-
 // select (radio semantics): clicking the active chip's value is what stays set.
@@ -19,6 +21,7 @@ function fillFilterControls() {
   const f = facets();
   const group = (id, key, opts) =>
     ($(id).innerHTML = chip(key, '', t('opt.all')) + opts.map(([v, l]) => chip(key, v, l)).join(''));
+  group('font-adopt', 'adopted', [['yes', t('adopt.yes')], ['no', t('adopt.no')]]);
   group('font-height', 'height', HEIGHT_BUCKETS.map((b) => [b.key, `${b.label}px`]));
   group('font-content', 'content', CONTENT_TYPES.map((c) => [c, t('content.' + c)]));
   group('font-style', 'style', ['regular', 'bold', 'italic'].map((s) => [s, t('style.' + s)]));
@@ -27,7 +30,12 @@ function fillFilterControls() {
 }
 
 function renderGrid() {
-  const list = filterCatalog(filters);
+  let list = filterCatalog(filters);
+  // Adoption is project state (not catalog), so filter it here where we have the store.
+  if (filters.adopted) {
+    const want = filters.adopted === 'yes';
+    list = list.filter((f) => isFontAdopted(store.project, f.name) === want);
+  }
   $('font-count').textContent = t('fonts.count', { n: list.length });
   const grid = $('font-grid');
   grid.innerHTML = '';
@@ -126,7 +134,7 @@ export function initFonts() {
   $('font-q').addEventListener('input', () => { filters.query = $('font-q').value; renderGrid(); });
   // One delegated handler for every chip group: set the facet (toggle off if the
   // active chip is clicked again), restyle the chips, and re-filter the grid.
-  for (const id of ['font-height', 'font-content', 'font-style', 'font-mono', 'font-family']) {
+  for (const id of ['font-adopt', 'font-height', 'font-content', 'font-style', 'font-mono', 'font-family']) {
     $(id).addEventListener('click', (ev) => {
       const b = ev.target.closest('.fchip');
       if (!b) return;
