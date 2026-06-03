@@ -42,8 +42,10 @@ python -m http.server 8000 --directory docs
   Ctrl/Cmd+Shift+Z). Discrete edits checkpoint via `store.mutate`; drags, nudges,
   and inspector field edits checkpoint once per gesture. UI-only changes
   (selection, zoom, mode) are not in history.
-- **Project persistence** (`src/persist.js`, SPEC §9): New / Open / Save toolbar
-  (`.lgfxsb.json`) plus localStorage autosave + restore-on-start.
+- **Project persistence** (`src/persist.js`, SPEC §9): Open / Save toolbar
+  (`.lgfxsb.json`) plus localStorage autosave + restore-on-start. **New** opens a
+  dialog (`src/newproject.js`, §9.1) to set project name, target library, the first
+  profile (device/size/rotation), and the first scene.
 - **Export** mode (SPEC §10): file list (`<Project>.h`, `<Project>_example.ino`)
   with code preview, target-framework choice (M5Unified / M5GFX / LovyanGFX),
   per-profile output subset + fallback choice (the enum/tables are restricted to
@@ -63,6 +65,7 @@ python -m http.server 8000 --directory docs
 - `src/profiles.js` — Profiles mode (define profiles + board assignment)
 - `src/exporter.js` — Export mode (preview + output subset/fallback + download)
 - `src/assets.js` — Assets mode (import/decode PNG → RGB565, preview, usage)
+- `src/newproject.js` — New-project dialog (§9.1)
 - `src/store.js` — reactive store (project + editor UI state) + loadProject
 - `src/i18n.js` — translations (en/ja) + `t()` + static-markup applier
 - `src/persist.js` — save/open `.lgfxsb.json` + localStorage autosave

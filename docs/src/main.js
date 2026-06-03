@@ -1,14 +1,13 @@
-// Bootstrap: i18n, project persistence, and wiring the store to the active
-// mode's renderer. MVP foundation ships the Design mode; other modes are
-// placeholders for now.
+// Bootstrap: i18n, undo/redo, project persistence, mode switching, and wiring
+// the store to the active mode's renderer.
 import { store, subscribe, loadProject, update, undo, redo, canUndo, canRedo } from './store.js';
-import { sampleProject } from './model.js';
 import { renderDesign, initDesign } from './design.js';
 import { renderProfiles, initProfiles } from './profiles.js';
 import { renderExport, initExport } from './exporter.js';
 import { renderAssets, initAssets } from './assets.js';
+import { initNewProject } from './newproject.js';
 import { generateHeader } from './codegen.js';
-import { detectLanguage, setLang, getLang, applyStatic, t } from './i18n.js';
+import { detectLanguage, setLang, getLang, applyStatic } from './i18n.js';
 import { saveProjectFile, openProjectFile, downloadText, autosave, loadAutosave } from './persist.js';
 
 const $ = (id) => document.getElementById(id);
@@ -62,9 +61,8 @@ document.addEventListener('keydown', (ev) => {
   else undo();
 });
 
-onClick('btn-new', () => {
-  if (confirm(t('confirm.new'))) loadProject(sampleProject());
-});
+// New project opens a dialog (§9.1) to choose name/library/profile/scene.
+initNewProject('btn-new');
 onClick('btn-open', async () => {
   try {
     const project = await openProjectFile();

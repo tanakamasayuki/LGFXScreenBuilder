@@ -218,6 +218,37 @@
     </div>
   </div><!-- /view-assets -->
 
+  <div id="newproj-overlay" class="overlay" hidden>
+    <div class="dialog">
+      <h2 data-i18n="newproj.title">New project</h2>
+      <div class="field"><label data-i18n="newproj.name">Project name</label><input id="np-name" value="MyScreen"></div>
+      <div class="field"><label data-i18n="export.framework">Target library</label>
+        <select id="np-lib">
+          <option value="M5Unified">M5Unified</option>
+          <option value="M5GFX">M5GFX</option>
+          <option value="LovyanGFX">LovyanGFX</option>
+        </select>
+      </div>
+      <div class="field"><label data-i18n="newproj.device">First profile — device / size</label>
+        <select id="np-device"></select></div>
+      <div class="two">
+        <div class="field"><label data-i18n="field.profileId">Profile ID</label><input id="np-prof" value="Core"></div>
+        <div class="field"><label data-i18n="field.rotation">Rotation</label>
+          <select id="np-rot"><option>0</option><option>1</option><option>2</option><option>3</option></select></div>
+      </div>
+      <div class="two">
+        <div class="field"><label data-i18n="field.widthPx">Width (px)</label><input id="np-w" type="number" value="320"></div>
+        <div class="field"><label data-i18n="field.heightPx">Height (px)</label><input id="np-h" type="number" value="240"></div>
+      </div>
+      <div class="field"><label data-i18n="newproj.scene">First scene</label><input id="np-scene" value="Main"></div>
+      <p class="sub np-err" id="np-err"></p>
+      <div class="dialog-actions">
+        <button class="mini" id="np-cancel" data-i18n="newproj.cancel">Cancel</button>
+        <button class="mini" id="np-create" data-i18n="newproj.create">Create</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>

@@ -37,8 +37,10 @@ python -m http.server 8000 --directory docs
 - **Undo / Redo**: スナップショット式のプロジェクト履歴（ツールバー ↶/↷、Ctrl/⌘+Z、
   Ctrl/⌘+Shift+Z）。離散操作は `store.mutate` で checkpoint、ドラッグ・矢印・インスペクタ編集は
   ジェスチャ単位で 1 回 checkpoint。UI のみの変更（選択・ズーム・モード）は履歴に含めない。
-- **プロジェクト永続化**（`src/persist.js`、SPEC §9）: New / Open / Save ツールバー
-  （`.lgfxsb.json`）＋ localStorage 自動保存・起動時復元。
+- **プロジェクト永続化**（`src/persist.js`、SPEC §9）: Open / Save ツールバー
+  （`.lgfxsb.json`）＋ localStorage 自動保存・起動時復元。**New** はダイアログ
+  （`src/newproject.js`、§9.1）でプロジェクト名・対象ライブラリ・最初のプロファイル
+  （デバイス/サイズ/回転）・最初のシーンを指定。
 - **Export** モード（SPEC §10）: ファイル一覧（`<Project>.h` / `<Project>_example.ino`）＋
   コードプレビュー、対象フレームワーク選択（M5Unified / M5GFX / LovyanGFX）、プロファイル別
   出力サブセット＋fallback 選択（enum/テーブルを選択分に限定、fallback は `defaultProfile` に記憶）、
@@ -56,6 +58,7 @@ python -m http.server 8000 --directory docs
 - `src/profiles.js` — Profiles モード（プロファイル定義＋ボード割り当て）
 - `src/exporter.js` — Export モード（プレビュー＋出力サブセット/fallback＋ダウンロード）
 - `src/assets.js` — Assets モード（PNG 取り込み/RGB565 デコード・プレビュー・使用箇所）
+- `src/newproject.js` — 新規プロジェクトダイアログ（§9.1）
 - `src/store.js` — リアクティブストア（プロジェクト＋UI状態）＋ loadProject
 - `src/i18n.js` — 翻訳（en/ja）＋ `t()` ＋静的マークアップ適用
 - `src/persist.js` — `.lgfxsb.json` 保存/読込 ＋ localStorage 自動保存

@@ -168,6 +168,21 @@ export function assetUsage(project, id) {
   return out;
 }
 
+// Build a fresh project from the New-project dialog inputs (§9.1): one profile
+// and one empty scene. Ids are assumed pre-validated as C identifiers (§8.12).
+export function newProject({ name, targetLibrary, profileId, w, h, rotation, boards, sceneName }) {
+  const profile = { id: profileId, w, h, rotation, boards: boards ? [...boards] : [], layout: { [sceneName]: {} } };
+  return {
+    name,
+    targetLibrary: targetLibrary || 'M5Unified',
+    background: '#000000',
+    defaultProfile: profileId,
+    profiles: [profile],
+    scenes: [{ id: sceneName, desc: '', parts: [] }],
+    assets: [],
+  };
+}
+
 // --- profile mutations (§8.9) --------------------------------------------
 // Deep-copy a profile's per-scene/per-part layout so clones stay independent.
 function cloneLayout(layout) {
