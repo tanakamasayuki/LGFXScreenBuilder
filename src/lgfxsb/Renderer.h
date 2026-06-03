@@ -130,6 +130,11 @@ namespace lgfxsb
           snprintf(buf, sizeof(buf), "%ld", v.i);
           content = buf;
         }
+        // Preset font (§8.7.5): the descriptor stores &lgfx::v1::fonts::X as a
+        // void* (null = default). Set it on every Text so the previous Text's
+        // font does not leak into this one.
+        _gfx->setFont(lo.font ? static_cast<const lgfx::v1::IFont *>(lo.font)
+                              : &lgfx::v1::fonts::Font0);
         _gfx->setTextColor(color565(lo.color));
         _gfx->setTextSize(lo.size);
         _gfx->setTextDatum(static_cast<lgfx::textdatum_t>(lo.datum));

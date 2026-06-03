@@ -32,6 +32,10 @@ namespace lgfxsb
     float size;           // Text size multiplier (equivalent to setTextSize)
     uint32_t color;       // 0xRRGGBB (Rect fill / Text color)
     bool visible;
+    const void *font;     // Text preset font: &lgfx::v1::fonts::X, or null = default.
+                          // void* keeps this header framework-agnostic (the Renderer
+                          // casts to const lgfx::v1::IFont*). Trailing field so older
+                          // generated headers value-initialize it to null.
   };
 
   struct SceneDesc

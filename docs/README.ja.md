@@ -46,7 +46,9 @@ python -m http.server 8000 --directory docs
   フォント毎＋プロファイル毎の合計として表示する＝プロファイル毎にフォントを有効化する理由。
   Text インスペクタにはプロファイル毎の font ドロップダウン（そのプロファイルで有効なフォントのみ）があり、
   Design キャンバスは選択フォントを「native 高さ × 倍率」＋近似ファミリでプレビューする。
-  codegen での `setFont` 出力が残りのスライス。
+  codegen は Text 毎に `setFont(&lgfx::v1::fonts::X)` を出力（各出力プロファイルで有効なフォントだけ＝
+  プロファイル毎フラッシュ方針）、ランタイムが描画前に適用する。host backend で end-to-end 検証済み
+  （`tests/codegen_roundtrip` がプリセット GFX フォントの Text を描画）。
 - **多言語化**（SPEC §14）: UI 文字列はすべて `src/i18n.js`（`t()` ＋ `data-i18n`）経由。en/ja・
   en フォールバック・言語切替を実装。初期言語はブラウザ設定に追従。
 - **Undo / Redo**: スナップショット式のプロジェクト履歴（ツールバー ↶/↷、Ctrl/⌘+Z、

@@ -4,7 +4,7 @@
 //
 // Output shape matches examples/Basic/MyScreen.h. Generated-code comments are
 // English-only per SPEC §10/§13.
-import { sceneById, placement, DATUMS } from './model.js';
+import { sceneById, placement, DATUMS, profileFonts } from './model.js';
 import { boardEnum } from './boards.js';
 
 const PART_ENUM = { Group: 'Group', Rect: 'Rect', Text: 'Text', Image: 'Image' };
@@ -110,9 +110,12 @@ export function generateHeader(project, opts = {}) {
   s += `};\n\n`;
 
   // layouts [profile][part]
-  s += `// {x, y, w, h, datum, size, color, visible}\n`;
+  s += `// {x, y, w, h, datum, size, color, visible, font}\n`;
   s += `static const lgfxsb::PartLayout kLayouts[] = {\n`;
   profiles.forEach((pr) => {
+    // Only fonts enabled for this profile may be referenced — that is the
+    // per-profile flash policy (§8.7.4): a font links only where it is used.
+    const enabled = new Set(profileFonts(project, pr.id));
     s += `  // ---- Profile: ${pr.id} ${pr.w}x${pr.h} rot${pr.rotation} ----\n`;
     flat.forEach((f) => {
       const e = placement(pr, f.sceneId, f.part.id) || {};
@@ -123,7 +126,8 @@ export function generateHeader(project, opts = {}) {
       const size = isText ? (e.size || 1) : 0;
       const color = (f.part.type === 'Rect') ? hex(e.color) : (isText ? hex(e.color) : '0');
       const vis = (e.visible === false) ? 'false' : 'true';
-      s += `  {${x}, ${y}, ${w}, ${h}, ${datum}, ${fmtFloat(size)}, ${color}, ${vis}},  // ${f.sceneId}.${f.part.id}\n`;
+      const font = (isText && e.font && enabled.has(e.font)) ? `&lgfx::v1::fonts::${e.font}` : 'nullptr';
+      s += `  {${x}, ${y}, ${w}, ${h}, ${datum}, ${fmtFloat(size)}, ${color}, ${vis}, ${font}},  // ${f.sceneId}.${f.part.id}\n`;
     });
   });
   s += `};\n\n`;

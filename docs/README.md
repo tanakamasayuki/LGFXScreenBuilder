@@ -55,7 +55,10 @@ python -m http.server 8000 --directory docs
   budget — the rationale for enabling fonts per profile. The Text inspector has a
   per-profile font dropdown (only the fonts enabled for that profile) and the
   Design canvas previews the chosen font at its native height × multiplier with
-  an approximate family. Emitting `setFont` in codegen is the remaining slice.
+  an approximate family. Codegen emits `setFont(&lgfx::v1::fonts::X)` per Text —
+  only for fonts enabled on each included profile (the per-profile flash policy)
+  — and the runtime applies it before drawing; verified end-to-end on the host
+  backend (`tests/codegen_roundtrip` renders a Text in a preset GFX font).
 - **i18n** (SPEC §14): all UI strings go through `src/i18n.js` (`t()` + `data-i18n`),
   en/ja with an en fallback and a language switcher; default follows the browser.
 - **Undo / Redo**: snapshot-based project history (toolbar ↶/↷ and Ctrl/Cmd+Z,

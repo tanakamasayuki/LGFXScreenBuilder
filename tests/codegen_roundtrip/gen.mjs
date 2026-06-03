@@ -3,7 +3,7 @@
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { sampleProject, groupParts, addAsset, addPart } from '../../docs/src/model.js';
+import { sampleProject, groupParts, addAsset, addPart, adoptFont, placement } from '../../docs/src/model.js';
 import { generateHeader } from '../../docs/src/codegen.js';
 
 const dir = dirname(fileURLToPath(import.meta.url));
@@ -25,5 +25,14 @@ const aid = addAsset(project, { name: 'tile', w: W, h: H, rgb565 });
 const imgId = addPart(project, 'Boot', 'Image');
 project.scenes.find((s) => s.id === 'Boot').parts.find((p) => p.id === imgId).asset = aid;
 
+// Exercise the preset-font path (§8.7.5): adopt a font (enabled on every profile)
+// and reference it from Main.title, so codegen emits &lgfx::v1::fonts::FreeSans12pt7b
+// and the runtime setFont()s it before drawing — verified by the rendered PNG.
+adoptFont(project, 'FreeSans12pt7b');
+for (const pr of project.profiles) {
+  const pl = placement(pr, 'Main', 'title');
+  if (pl) pl.font = 'FreeSans12pt7b';
+}
+
 writeFileSync(join(dir, 'MyScreen.h'), generateHeader(project));
-console.log('generated MyScreen.h (Group, LovyanGFX board tables, RGB565 asset)');
+console.log('generated MyScreen.h (Group, LovyanGFX board tables, RGB565 asset, preset font)');
