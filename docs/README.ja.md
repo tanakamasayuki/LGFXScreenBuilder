@@ -27,6 +27,10 @@ python -m http.server 8000 --directory docs
   （寸法不一致・LovyanGFX で自動判定不可）。フォールバックは Export 時に選択。
   ボード割り当てはプロファイル別 `board_t` テーブルとして出力され、`Profile::Auto` が
   実機 `getBoard()` で解決する（対象ライブラリの `board_t` に無いボードは省略、§8.9.5）。
+- **Assets** モード（SPEC §8.4）: PNG/JPEG 取り込み（取り込み時に MVP 出力形式の RGB565 へ
+  デコード）、サムネイル一覧・プレビュー・リネーム/削除（使用箇所表示）。Image パーツはアセットを
+  参照し、Design キャンバスでプレビュー表示。RGB565 データの codegen と実機 `pushImage` は次スライス。
+  スライス・スプライトシート・フォントは post-MVP。
 - **多言語化**（SPEC §14）: UI 文字列はすべて `src/i18n.js`（`t()` ＋ `data-i18n`）経由。en/ja・
   en フォールバック・言語切替を実装。初期言語はブラウザ設定に追従。
 - **プロジェクト永続化**（`src/persist.js`、SPEC §9）: New / Open / Save ツールバー
@@ -47,6 +51,7 @@ python -m http.server 8000 --directory docs
 - `src/boards.js` — ボードカタログ（M5GFX board_t）＋対象ライブラリ補助
 - `src/profiles.js` — Profiles モード（プロファイル定義＋ボード割り当て）
 - `src/exporter.js` — Export モード（プレビュー＋出力サブセット/fallback＋ダウンロード）
+- `src/assets.js` — Assets モード（PNG 取り込み/RGB565 デコード・プレビュー・使用箇所）
 - `src/store.js` — リアクティブストア（プロジェクト＋UI状態）＋ loadProject
 - `src/i18n.js` — 翻訳（en/ja）＋ `t()` ＋静的マークアップ適用
 - `src/persist.js` — `.lgfxsb.json` 保存/読込 ＋ localStorage 自動保存

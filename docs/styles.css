@@ -123,3 +123,11 @@ pre.code { margin: 0; padding: 12px; border-radius: 8px; background: #10181c; co
 .profsel-row { display: flex; gap: 10px; align-items: center; font-size: 13px; margin: 3px 0; }
 .profsel-row label { display: flex; gap: 6px; align-items: center; }
 .profsel-row .fb { color: var(--muted); }
+
+/* --- Assets view ------------------------------------------------------- */
+.asset-item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; border: 1px solid transparent; border-radius: 6px; padding: 6px 8px; cursor: pointer; font-size: 13px; }
+.asset-item:hover { background: var(--soft); }
+.asset-item.active { border-color: var(--accent); background: var(--accent-soft); }
+.asset-item .thumb { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 4px; background-size: contain; background-repeat: no-repeat; background-position: center; background-color: #fff; }
+.asset-item .meta { color: var(--muted); font-size: 11px; }
+.asset-preview { border: 1px solid var(--line); image-rendering: pixelated; background-repeat: no-repeat; background-position: center; background-size: 100% 100%; background-color: #fff; box-shadow: 0 10px 30px rgba(15, 31, 36, .18); }

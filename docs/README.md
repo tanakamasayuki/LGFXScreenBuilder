@@ -30,6 +30,11 @@ python -m http.server 8000 --directory docs
   here. Board assignments are emitted as per-profile `board_t` tables so
   `Profile::Auto` resolves via `getBoard()` at runtime (boards not present in the
   target library's `board_t` are omitted; §8.9.5).
+- **Assets** mode (SPEC §8.4): import PNG/JPEG (decoded to RGB565 on import for the
+  MVP Header/PROGMEM export format), thumbnail list, preview, rename/delete with
+  usage tracking; Image parts reference an asset and the Design canvas previews it.
+  Codegen of the RGB565 data + on-device `pushImage` is the next slice; slices,
+  spritesheets, and fonts are post-MVP.
 - **i18n** (SPEC §14): all UI strings go through `src/i18n.js` (`t()` + `data-i18n`),
   en/ja with an en fallback and a language switcher; default follows the browser.
 - **Project persistence** (`src/persist.js`, SPEC §9): New / Open / Save toolbar
@@ -52,6 +57,7 @@ python -m http.server 8000 --directory docs
 - `src/boards.js` — board catalog (M5GFX board_t) + target-library helpers
 - `src/profiles.js` — Profiles mode (define profiles + board assignment)
 - `src/exporter.js` — Export mode (preview + output subset/fallback + download)
+- `src/assets.js` — Assets mode (import/decode PNG → RGB565, preview, usage)
 - `src/store.js` — reactive store (project + editor UI state) + loadProject
 - `src/i18n.js` — translations (en/ja) + `t()` + static-markup applier
 - `src/persist.js` — save/open `.lgfxsb.json` + localStorage autosave

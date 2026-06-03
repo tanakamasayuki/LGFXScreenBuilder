@@ -5,7 +5,7 @@ import { store, update } from './store.js';
 import {
   DATUMS, DATUM_FX, DATUM_FY, orient, pxOf, sceneById, profileById, partDef, placement,
   addPart, removePart, renamePart, addScene, removeScene, renameScene,
-  absOrigin, reorderPart, groupParts, ungroupPart, reparentPart,
+  absOrigin, reorderPart, groupParts, ungroupPart, reparentPart, assetById,
 } from './model.js';
 import { t } from './i18n.js';
 
@@ -92,6 +92,10 @@ function renderCanvas() {
       d.style.width = e.w * scale + 'px';
       d.style.height = e.h * scale + 'px';
       if (def.type === 'Rect') d.style.background = e.color;
+      if (def.type === 'Image' && def.asset) {
+        const a = assetById(store.project, def.asset);
+        if (a) { d.style.backgroundImage = `url("${a.dataUrl}")`; d.style.backgroundSize = '100% 100%'; d.classList.remove('image'); }
+      }
       scr.appendChild(d);
     }
   }
@@ -194,6 +198,13 @@ function renderInspector() {
     h += `<div class="two">${row('x', t('field.x'), 'number', e.x)}${row('y', t('field.y'), 'number', e.y)}</div>`;
     h += `<div class="two">${row('w', t('field.width'), 'number', e.w)}${row('h', t('field.height'), 'number', e.h)}</div>`;
     if (def.type === 'Rect') h += `<div class="field"><label>${t('field.color')}</label><input type="color" data-k="color" value="${e.color}"></div>`;
+    if (def.type === 'Image') {
+      const assets = store.project.assets || [];
+      h += `<div class="field"><label>${t('field.asset')}</label><select id="p-asset">` +
+        `<option value="">${t('field.assetNone')}</option>` +
+        assets.map((a) => `<option value="${a.id}" ${def.asset === a.id ? 'selected' : ''}>${a.id} (${a.w}×${a.h})</option>`).join('') +
+        `</select></div>`;
+    }
   }
   if (def.type !== 'Group') h += row('visible', t('field.visible'), 'checkbox', e.visible);
   h += `<div class="field"><label>${t('field.descPart')}</label><textarea id="p-desc" rows="2">${def.desc || ''}</textarea></div>`;
@@ -218,6 +229,8 @@ function renderInspector() {
     const nid = renamePart(store.project, store.ui.sceneId, sel, idInp.value);
     update((st) => { st.ui.selected = nid; });
   });
+  const assetSel = el.querySelector('#p-asset');
+  if (assetSel) assetSel.addEventListener('change', () => { def.asset = assetSel.value || null; renderCanvas(); renderParts(); });
 }
 
 // Part deselected -> edit the scene's own properties (§8.13).

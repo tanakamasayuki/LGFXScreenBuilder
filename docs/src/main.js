@@ -6,6 +6,7 @@ import { sampleProject } from './model.js';
 import { renderDesign, initDesign } from './design.js';
 import { renderProfiles, initProfiles } from './profiles.js';
 import { renderExport, initExport } from './exporter.js';
+import { renderAssets, initAssets } from './assets.js';
 import { generateHeader } from './codegen.js';
 import { detectLanguage, setLang, getLang, applyStatic, t } from './i18n.js';
 import { saveProjectFile, openProjectFile, downloadText, autosave, loadAutosave } from './persist.js';
@@ -16,13 +17,15 @@ function render() {
   applyStatic(document); // static [data-i18n] labels
   const mode = store.ui.mode;
   document.querySelectorAll('.mode[data-mode]').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
-  const dv = $('view-design'), pv = $('view-profiles'), ev = $('view-export');
+  const dv = $('view-design'), pv = $('view-profiles'), ev = $('view-export'), av = $('view-assets');
   if (dv) dv.hidden = mode !== 'design';
   if (pv) pv.hidden = mode !== 'profiles';
   if (ev) ev.hidden = mode !== 'export';
+  if (av) av.hidden = mode !== 'assets';
   if (mode === 'design') renderDesign();
   else if (mode === 'profiles') renderProfiles();
   else if (mode === 'export') renderExport();
+  else if (mode === 'assets') renderAssets();
 }
 
 // --- top mode switching --------------------------------------------------
@@ -65,6 +68,7 @@ if (typeof window !== 'undefined') {
 initDesign();
 initProfiles();
 initExport();
+initAssets();
 subscribe(render);
 
 // Restore the last autosaved project if present; otherwise keep the sample.

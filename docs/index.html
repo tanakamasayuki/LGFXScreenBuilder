@@ -12,7 +12,7 @@
     <nav class="modes" id="modes">
       <button class="mode active" data-mode="design" data-i18n="mode.design">Design</button>
       <button class="mode" data-mode="profiles" data-i18n="mode.profiles">Profiles</button>
-      <button class="mode" data-mode="assets" data-i18n="mode.assets" disabled>Assets</button>
+      <button class="mode" data-mode="assets" data-i18n="mode.assets">Assets</button>
       <button class="mode" data-mode="export" data-i18n="mode.export">Export</button>
     </nav>
     <span class="toolsep"></span>
@@ -190,6 +190,30 @@
       </aside>
     </div>
   </div><!-- /view-export -->
+
+  <div id="view-assets" class="view" hidden>
+    <div class="cols">
+      <aside class="left">
+        <div class="section">
+          <div class="sechead">
+            <h2 data-i18n="pane.images">Images</h2>
+            <button class="icon" id="asset-import" data-i18n="assets.import">Import…</button>
+          </div>
+          <input type="file" id="asset-file" accept="image/png,image/jpeg,image/*" multiple hidden>
+          <div class="list" id="asset-list"></div>
+        </div>
+        <div class="section"><h2 data-i18n="export.settings">Output</h2><p class="sub" data-i18n="assets.output">Header/PROGMEM + RAW RGB565</p></div>
+      </aside>
+      <main class="center" style="grid-template-rows:auto 1fr auto">
+        <div class="bar"><span class="sub" id="asset-name"></span></div>
+        <div class="stage"><div class="asset-preview" id="asset-preview"></div></div>
+        <div class="statusbar"><span id="asset-st-l"></span><span id="asset-st-r"></span></div>
+      </main>
+      <aside class="right">
+        <div class="section"><h2 data-i18n="inspector.title">Properties</h2><div id="asset-props"></div></div>
+      </aside>
+    </div>
+  </div><!-- /view-assets -->
 
   <script type="module" src="./src/main.js"></script>
 </body>

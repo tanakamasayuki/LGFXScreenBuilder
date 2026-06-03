@@ -127,7 +127,45 @@ export function sampleProject() {
     defaultProfile: 'Core',
     profiles,
     scenes,
+    assets: [], // image assets: { id, w, h, dataUrl (preview), rgb565: [] (export) }
   };
+}
+
+// --- asset mutations (§8.4) ----------------------------------------------
+export const assetById = (project, id) => (project.assets || []).find((a) => a.id === id);
+
+// Add an image asset (already decoded to w/h + dataUrl + rgb565). Returns its id.
+export function addAsset(project, { name, w, h, dataUrl, rgb565 }) {
+  if (!project.assets) project.assets = [];
+  const base = (name || 'image').replace(/\.[^.]+$/, '').replace(/[^A-Za-z0-9_]/g, '_') || 'image';
+  const id = uniqueId(/^[A-Za-z_]/.test(base) ? base : 'img_' + base, new Set(project.assets.map((a) => a.id)));
+  project.assets.push({ id, w, h, dataUrl, rgb565 });
+  return id;
+}
+
+// Remove an asset and clear any Image part that referenced it.
+export function removeAsset(project, id) {
+  project.assets = (project.assets || []).filter((a) => a.id !== id);
+  for (const sc of project.scenes) for (const p of sc.parts) if (p.asset === id) p.asset = null;
+}
+
+// Rename an asset (C identifier; becomes a PROGMEM symbol). No-op on dup/invalid.
+export function renameAsset(project, oldId, newId) {
+  newId = (newId || '').trim();
+  if (!newId || newId === oldId || !isValidId(newId)) return oldId;
+  if ((project.assets || []).some((a) => a.id === newId)) return oldId;
+  const a = assetById(project, oldId);
+  if (!a) return oldId;
+  a.id = newId;
+  for (const sc of project.scenes) for (const p of sc.parts) if (p.asset === oldId) p.asset = newId;
+  return newId;
+}
+
+// Where an asset is used: list of "scene.part" labels.
+export function assetUsage(project, id) {
+  const out = [];
+  for (const sc of project.scenes) for (const p of sc.parts) if (p.asset === id) out.push(`${sc.id}.${p.id}`);
+  return out;
 }
 
 // --- profile mutations (§8.9) --------------------------------------------
