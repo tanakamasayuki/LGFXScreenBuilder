@@ -1,7 +1,7 @@
 // Bootstrap: i18n, project persistence, and wiring the store to the active
 // mode's renderer. MVP foundation ships the Design mode; other modes are
 // placeholders for now.
-import { store, subscribe, loadProject, update } from './store.js';
+import { store, subscribe, loadProject, update, undo, redo, canUndo, canRedo } from './store.js';
 import { sampleProject } from './model.js';
 import { renderDesign, initDesign } from './design.js';
 import { renderProfiles, initProfiles } from './profiles.js';
@@ -26,6 +26,9 @@ function render() {
   else if (mode === 'profiles') renderProfiles();
   else if (mode === 'export') renderExport();
   else if (mode === 'assets') renderAssets();
+  const ub = $('btn-undo'), rb = $('btn-redo');
+  if (ub) ub.disabled = !canUndo();
+  if (rb) rb.disabled = !canRedo();
 }
 
 // --- top mode switching --------------------------------------------------
@@ -44,6 +47,20 @@ if (langSel) {
 
 // --- toolbar: project new / open / save / export header ------------------
 const onClick = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+
+onClick('btn-undo', undo);
+onClick('btn-redo', redo);
+
+// Undo/redo shortcuts. Skip while typing in a field so native text undo works.
+document.addEventListener('keydown', (ev) => {
+  if (!(ev.ctrlKey || ev.metaKey) || ev.key.toLowerCase() !== 'z' && ev.key.toLowerCase() !== 'y') return;
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  ev.preventDefault();
+  const k = ev.key.toLowerCase();
+  if (k === 'y' || (k === 'z' && ev.shiftKey)) redo();
+  else undo();
+});
 
 onClick('btn-new', () => {
   if (confirm(t('confirm.new'))) loadProject(sampleProject());

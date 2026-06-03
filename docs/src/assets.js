@@ -2,7 +2,7 @@
 // ids/usage (§8.4). On import an image is decoded to RGB565 (the MVP export
 // format, Header/PROGMEM) and kept alongside its data URL for preview; codegen
 // emits the RGB565 data (Slice 2). Slices, spritesheets, and fonts are post-MVP.
-import { store, update } from './store.js';
+import { store, update, mutate, checkpoint } from './store.js';
 import { assetById, addAsset, removeAsset, renameAsset, assetUsage } from './model.js';
 import { t } from './i18n.js';
 
@@ -78,7 +78,7 @@ function renderProps() {
   $('a-id').addEventListener('change', () => { selAsset = renameAsset(store.project, a.id, $('a-id').value); update(() => {}); });
   $('a-del').onclick = () => {
     if (!confirm(t('confirm.delAsset', { id: a.id }))) return;
-    update((st) => { removeAsset(st.project, a.id); });
+    mutate((st) => { removeAsset(st.project, a.id); });
     selAsset = null;
   };
 }
@@ -97,13 +97,21 @@ export function initAssets() {
   $('asset-file').addEventListener('change', async (ev) => {
     const files = [...ev.target.files];
     ev.target.value = '';
+    if (!files.length) return;
+    checkpoint(); // one undo step for the whole import batch
     for (const f of files) {
       try {
         const decoded = await decodeImage(f);
-        const id = addAsset(store.project, decoded);
-        selAsset = id;
+        selAsset = addAsset(store.project, decoded);
       } catch (e) { alert('Import failed: ' + e.message); }
     }
     update(() => {}); // re-render (and autosave picks it up)
   });
+  // Inspector inline edits (asset id rename): one checkpoint per edit session.
+  const props = $('asset-props');
+  let armed = false;
+  props.addEventListener('focusin', () => { armed = true; });
+  const armFire = () => { if (armed) { checkpoint(); armed = false; } };
+  props.addEventListener('input', armFire, true);
+  props.addEventListener('change', armFire, true);
 }

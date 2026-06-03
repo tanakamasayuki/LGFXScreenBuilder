@@ -1,7 +1,7 @@
 // Design mode: two-axis editor (scenes in the left pane x profiles as top tabs).
 // Each profile holds an independent layout per scene; switching either axis
 // re-renders the canvas. Ported from the validated design probe.
-import { store, update } from './store.js';
+import { store, update, mutate, checkpoint } from './store.js';
 import {
   DATUMS, DATUM_FX, DATUM_FY, orient, pxOf, sceneById, profileById, partDef, placement,
   addPart, removePart, renamePart, addScene, removeScene, renameScene,
@@ -143,7 +143,7 @@ function renderParts() {
         const id = dragId; dragId = null;
         const newParent = def.type === 'Group' ? def.id : (def.parent || null);
         const anchor = def.type === 'Group' ? null : def.id;
-        update((st) => { reparentPart(st.project, st.ui.sceneId, id, newParent, anchor); st.ui.selected = id; });
+        mutate((st) => { reparentPart(st.project, st.ui.sceneId, id, newParent, anchor); st.ui.selected = id; });
       };
       el.appendChild(it);
       if (def.type === 'Group') emit(def.id, depth + 1);
@@ -288,6 +288,7 @@ export function initDesign() {
   });
   scr.addEventListener('pointermove', (ev) => {
     if (!drag) return;
+    if (!drag.moved) { checkpoint(); drag.moved = true; } // one undo step per drag
     const e = curPlacement(drag.id);
     e.x = drag.ox + Math.round((ev.clientX - drag.sx) / scale);
     e.y = drag.oy + Math.round((ev.clientY - drag.sy) / scale);
@@ -313,6 +314,7 @@ export function initDesign() {
     ev.preventDefault();
     const step = (ev.ctrlKey || ev.metaKey) ? 10 : 1;
     const e = curPlacement(store.ui.selected);
+    checkpoint(); // one undo step per nudge
     if (ev.shiftKey) {
       if (!('w' in e)) return; // Text has no box
       e.w = Math.max(2, e.w + dir[0] * step);
@@ -332,14 +334,14 @@ export function initDesign() {
   scr.addEventListener('wheel', (ev) => { ev.preventDefault(); setZoom(store.ui.zoom * (ev.deltaY < 0 ? 1.1 : 1 / 1.1)); }, { passive: false });
 
   // Scene add / delete (delete is disabled when only one scene remains).
-  $('scene-add').onclick = () => update((st) => {
+  $('scene-add').onclick = () => mutate((st) => {
     st.ui.sceneId = addScene(st.project);
     st.ui.selected = null;
   });
   $('scene-del').onclick = () => {
     if (store.project.scenes.length <= 1) return;
     if (!confirm(t('confirm.delScene', { id: store.ui.sceneId }))) return;
-    update((st) => {
+    mutate((st) => {
       removeScene(st.project, st.ui.sceneId);
       st.ui.sceneId = st.project.scenes[0].id;
       st.ui.selected = null;
@@ -347,32 +349,32 @@ export function initDesign() {
   };
 
   // Part add (of the picked type) / delete (the selected part).
-  $('part-add').onclick = () => update((st) => {
+  $('part-add').onclick = () => mutate((st) => {
     st.ui.selected = addPart(st.project, st.ui.sceneId, $('part-type').value);
   });
   $('part-del').onclick = () => {
     const sel = store.ui.selected;
     if (!sel) return;
     if (!confirm(t('confirm.delPart', { id: sel }))) return;
-    update((st) => {
+    mutate((st) => {
       removePart(st.project, st.ui.sceneId, sel);
       st.ui.selected = null;
     });
   };
 
   // Reorder among siblings (↑ = toward front, ↓ = toward back; §8.3).
-  $('part-front').onclick = () => { if (store.ui.selected) update((st) => reorderPart(st.project, st.ui.sceneId, st.ui.selected, +1)); };
-  $('part-back').onclick = () => { if (store.ui.selected) update((st) => reorderPart(st.project, st.ui.sceneId, st.ui.selected, -1)); };
+  $('part-front').onclick = () => { if (store.ui.selected) mutate((st) => reorderPart(st.project, st.ui.sceneId, st.ui.selected, +1)); };
+  $('part-back').onclick = () => { if (store.ui.selected) mutate((st) => reorderPart(st.project, st.ui.sceneId, st.ui.selected, -1)); };
 
   // Group the selection / ungroup the selected group (§8.3.1, absolute position kept).
   $('part-group').onclick = () => {
     if (!store.ui.selected) return;
-    update((st) => { const g = groupParts(st.project, st.ui.sceneId, [st.ui.selected]); if (g) st.ui.selected = g; });
+    mutate((st) => { const g = groupParts(st.project, st.ui.sceneId, [st.ui.selected]); if (g) st.ui.selected = g; });
   };
   $('part-ungroup').onclick = () => {
     const sel = store.ui.selected;
     if (!sel) return;
-    update((st) => { ungroupPart(st.project, st.ui.sceneId, sel); st.ui.selected = null; });
+    mutate((st) => { ungroupPart(st.project, st.ui.sceneId, sel); st.ui.selected = null; });
   };
 
   // Drop on the empty area of the layer list = move to scene root (§8.3.1).
@@ -382,6 +384,15 @@ export function initDesign() {
     ev.preventDefault();
     if (!dragId) return;
     const id = dragId; dragId = null;
-    update((st) => { reparentPart(st.project, st.ui.sceneId, id, null); st.ui.selected = id; });
+    mutate((st) => { reparentPart(st.project, st.ui.sceneId, id, null); st.ui.selected = id; });
   });
+
+  // Inspector inline edits: checkpoint once per focused-field edit session, in
+  // capture phase so the snapshot is taken before the field's own handler mutates.
+  const insp = $('props');
+  let armed = false;
+  insp.addEventListener('focusin', () => { armed = true; });
+  const armFire = () => { if (armed) { checkpoint(); armed = false; } };
+  insp.addEventListener('input', armFire, true);
+  insp.addEventListener('change', armFire, true);
 }

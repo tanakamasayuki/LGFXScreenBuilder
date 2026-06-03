@@ -34,6 +34,9 @@ python -m http.server 8000 --directory docs
   スライス・スプライトシート・フォントは post-MVP。
 - **多言語化**（SPEC §14）: UI 文字列はすべて `src/i18n.js`（`t()` ＋ `data-i18n`）経由。en/ja・
   en フォールバック・言語切替を実装。初期言語はブラウザ設定に追従。
+- **Undo / Redo**: スナップショット式のプロジェクト履歴（ツールバー ↶/↷、Ctrl/⌘+Z、
+  Ctrl/⌘+Shift+Z）。離散操作は `store.mutate` で checkpoint、ドラッグ・矢印・インスペクタ編集は
+  ジェスチャ単位で 1 回 checkpoint。UI のみの変更（選択・ズーム・モード）は履歴に含めない。
 - **プロジェクト永続化**（`src/persist.js`、SPEC §9）: New / Open / Save ツールバー
   （`.lgfxsb.json`）＋ localStorage 自動保存・起動時復元。
 - **Export** モード（SPEC §10）: ファイル一覧（`<Project>.h` / `<Project>_example.ino`）＋

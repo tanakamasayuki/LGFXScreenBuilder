@@ -2,7 +2,7 @@
 // and the project's target library (§8.9). Each profile holds an independent
 // layout per scene; the fallback ("default") is chosen at export, not here.
 // Ported from the validated profiles probe.
-import { store, update } from './store.js';
+import { store, update, mutate, checkpoint } from './store.js';
 import {
   orient, profileById, addProfile, removeProfile, renameProfile, toggleBoard,
 } from './model.js';
@@ -53,7 +53,7 @@ function renderProfCenter() {
     const c = document.createElement('span');
     c.className = 'chip';
     c.innerHTML = `<span${warn ? ' style="color:var(--warn)"' : ''}>${bid}${warn ? ' ⚠' : ''}</span><button title="×">×</button>`;
-    c.querySelector('button').onclick = () => update((st) => toggleBoard(st.project, p.id, bid));
+    c.querySelector('button').onclick = () => mutate((st) => toggleBoard(st.project, p.id, bid));
     chips.appendChild(c);
   }
 
@@ -77,7 +77,7 @@ function renderProfCenter() {
     btn.innerHTML = `<div class="bn">${assigned ? '✓ ' : ''}${b.id}</div>` +
       `<div class="bd">${b.w}×${b.h}${mism ? t('board.mismatch') : ''}</div>` +
       (owner && !assigned ? `<div class="taken">${t('board.assignedTo', { owner: owner.id })}</div>` : '');
-    btn.onclick = () => update((st) => toggleBoard(st.project, p.id, b.id));
+    btn.onclick = () => mutate((st) => toggleBoard(st.project, p.id, b.id));
     cat.appendChild(btn);
   }
   if (hidden) {
@@ -116,7 +116,7 @@ function renderProfProps() {
   $('pf-desc').oninput = (e) => { p.desc = e.target.value; };
   $('pf-del').onclick = () => {
     if (!confirm(t('confirm.delProfile', { id: p.id }))) return;
-    update((st) => {
+    mutate((st) => {
       const gone = p.id;
       removeProfile(st.project, gone);
       if (st.ui.profileId === gone) st.ui.profileId = st.project.profiles[0] ? st.project.profiles[0].id : null;
@@ -153,7 +153,7 @@ export function renderProfiles() {
 // --- interactions (attached once) ----------------------------------------
 function renderAddMenu(menu, close) {
   menu.innerHTML = '';
-  const pick = (w, h) => () => { close(); update((st) => { st.ui.profileId = addProfile(st.project, { w, h }, st.ui.profileId); }); };
+  const pick = (w, h) => () => { close(); mutate((st) => { st.ui.profileId = addProfile(st.project, { w, h }, st.ui.profileId); }); };
   for (const r of commonResolutions()) {
     const it = document.createElement('button');
     it.className = 'menu-item';
@@ -169,7 +169,14 @@ function renderAddMenu(menu, close) {
 }
 
 export function initProfiles() {
-  $('lib-target').addEventListener('change', () => update((st) => { st.project.targetLibrary = $('lib-target').value; }));
+  $('lib-target').addEventListener('change', () => mutate((st) => { st.project.targetLibrary = $('lib-target').value; }));
+  // Inspector inline edits (size/rotation/note/id): one checkpoint per edit session.
+  const props = $('prof-props');
+  let armed = false;
+  props.addEventListener('focusin', () => { armed = true; });
+  const armFire = () => { if (armed) { checkpoint(); armed = false; } };
+  props.addEventListener('input', armFire, true);
+  props.addEventListener('change', armFire, true);
   $('hide-mismatch').addEventListener('change', () => renderProfCenter());
   const menu = $('profile-add-menu');
   const close = () => menu.classList.remove('open');

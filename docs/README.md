@@ -38,6 +38,10 @@ python -m http.server 8000 --directory docs
   and fonts are post-MVP.
 - **i18n** (SPEC §14): all UI strings go through `src/i18n.js` (`t()` + `data-i18n`),
   en/ja with an en fallback and a language switcher; default follows the browser.
+- **Undo / Redo**: snapshot-based project history (toolbar ↶/↷ and Ctrl/Cmd+Z,
+  Ctrl/Cmd+Shift+Z). Discrete edits checkpoint via `store.mutate`; drags, nudges,
+  and inspector field edits checkpoint once per gesture. UI-only changes
+  (selection, zoom, mode) are not in history.
 - **Project persistence** (`src/persist.js`, SPEC §9): New / Open / Save toolbar
   (`.lgfxsb.json`) plus localStorage autosave + restore-on-start.
 - **Export** mode (SPEC §10): file list (`<Project>.h`, `<Project>_example.ino`)
