@@ -33,7 +33,8 @@ python -m http.server 8000 --directory docs
   出力し、ランタイムが `pushImage` で描画（host backend で end-to-end 検証済み）。
   スライス・スプライトシート・フォントは post-MVP。
 - **Fonts** モード（SPEC §8.7）: プリセットカタログ（`src/font-catalog.js`、`tests/manual/font_introspect/gen.py`
-  がピン版 LovyanGFX から生成）を種別/ファミリ/スタイル/スクリプト/検索で絞り込み、少数を
+  がピン版 LovyanGFX から生成）を**実描画 px 高さ（最重要）**・種別・ファミリ・スタイル・スクリプト・
+  検索で絞り込み（候補が全部見えるよう開いたチップ群で表示）、少数を
   プロジェクトに採用し、各フォントをプロファイル毎に有効化（小画面は小フォントだけに）。
   タイルは **host 実描画のグリフ**を表示する — ラテンは等幅/可変幅が見分けられ（バッジでも明示）、
   CJK はその言語自身でプレビュー（日本語 / 简体中文 / 繁體中文 / 한국어）。`tests/manual/font_introspect`

@@ -133,11 +133,20 @@ pre.code { margin: 0; padding: 12px; border-radius: 8px; background: #10181c; co
 .asset-preview { border: 1px solid var(--line); image-rendering: pixelated; background-repeat: no-repeat; background-position: center; background-size: 100% 100%; background-color: #fff; box-shadow: 0 10px 30px rgba(15, 31, 36, .18); }
 
 /* --- Fonts view -------------------------------------------------------- */
+/* Filter facets as open chip groups (every candidate visible, not a dropdown). */
+.ffacet { margin-bottom: 12px; }
+.ffacet > label { display: block; color: var(--muted); font-size: 12px; margin-bottom: 5px; }
+.fchips { display: flex; flex-wrap: wrap; gap: 5px; }
+.fchip { min-height: auto; padding: 3px 9px; font-size: 12px; border: 1px solid var(--line); border-radius: 13px; background: var(--panel); color: var(--text); cursor: pointer; }
+.fchip:hover { border-color: var(--line2); background: var(--soft); }
+.fchip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 600; }
 .fontgrid-wrap { overflow: auto; min-height: 0; padding: 12px; }
 .fontgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
 .ftile { display: grid; gap: 6px; text-align: left; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); cursor: pointer; min-height: auto; }
 .ftile:hover { border-color: var(--line2); background: var(--soft); }
-.ftile.adopted { border-color: var(--accent); background: var(--accent-soft); }
+.ftile.adopted { border-color: var(--accent); background: var(--accent-soft); cursor: default; position: relative; }
+.ftile-rm { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 14px; color: var(--muted); background: var(--panel); border: 1px solid var(--line); cursor: pointer; }
+.ftile-rm:hover { color: var(--text); border-color: var(--line2); }
 .ftile .fprev { color: var(--text); line-height: 1.1; min-height: 32px; overflow: hidden; white-space: nowrap; }
 /* Host-rendered sample (white glyphs on black, cropped from the atlas). */
 .ftile .fprev.real { background-color: #000; border-radius: 4px; image-rendering: pixelated; max-width: 100%; }

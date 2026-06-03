@@ -1,23 +1,29 @@
 // Fonts mode: browse the preset catalog (filter + approximate preview), adopt a
 // curated subset into the project, and enable each adopted font per profile
-// (§8.7.3/§8.7.4). Adopted+enabled fonts feed the Text font dropdown (later
-// slice). Codegen `setFont` and the exact host-rendered preview come later.
+// (§8.7.3/§8.7.4). Filters are shown as open chip groups (not dropdowns) so every
+// candidate is visible; the Height facet (rendered px) is the primary one.
 import { store, mutate } from './store.js';
 import { adoptFont, removeFont, toggleProfileFont, profileFonts, isFontAdopted } from './model.js';
-import { filterCatalog, facets, approxCss, sampleFor, describe, loadMetrics, sampleImage, flashFor, fmtBytes, monoFor } from './fonts.js';
+import { filterCatalog, facets, HEIGHT_BUCKETS, approxCss, sampleFor, describe, loadMetrics, sampleImage, flashFor, fmtBytes, monoFor } from './fonts.js';
 import { t } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
-const filters = { query: '', category: '', script: '', style: '', family: '' };
+const filters = { query: '', height: '', category: '', script: '', style: '', family: '' };
 
-const opt = (value, label, sel) => `<option value="${value}"${sel ? ' selected' : ''}>${label}</option>`;
+// Render one facet as a row of selectable chips ([All] + each option). Single-
+// select (radio semantics): clicking the active chip's value is what stays set.
+const chip = (key, value, label) =>
+  `<button class="fchip${filters[key] === value ? ' on' : ''}" data-key="${key}" data-val="${value}">${label}</button>`;
 
 function fillFilterControls() {
   const f = facets();
-  $('font-cat').innerHTML = opt('', t('opt.all')) + f.categories.map((c) => opt(c, c)).join('');
-  $('font-script').innerHTML = opt('', t('opt.all')) + f.scripts.map((s) => opt(s, t('script.' + s))).join('');
-  $('font-style').innerHTML = opt('', t('opt.all')) + ['regular', 'bold', 'italic'].map((s) => opt(s, t('style.' + s))).join('');
-  $('font-family').innerHTML = opt('', t('opt.all')) + f.families.map((x) => opt(x, x)).join('');
+  const group = (id, key, opts) =>
+    ($(id).innerHTML = chip(key, '', t('opt.all')) + opts.map(([v, l]) => chip(key, v, l)).join(''));
+  group('font-height', 'height', HEIGHT_BUCKETS.map((b) => [b.key, `${b.label}px`]));
+  group('font-cat', 'category', f.categories.map((c) => [c, c]));
+  group('font-script', 'script', f.scripts.map((s) => [s, t('script.' + s)]));
+  group('font-style', 'style', ['regular', 'bold', 'italic'].map((s) => [s, t('style.' + s)]));
+  group('font-family', 'family', f.families.map((x) => [x, x]));
 }
 
 function renderGrid() {
@@ -47,11 +53,21 @@ function renderGrid() {
     tile.innerHTML =
       prev +
       `<div class="fn">${adopted ? '✓ ' : ''}${f.name}</div>` +
-      `<div class="fd">${describe(f)}${wbadge}</div>`;
-    tile.onclick = () => mutate((st) => {
-      if (isFontAdopted(st.project, f.name)) removeFont(st.project, f.name);
-      else adoptFont(st.project, f.name);
-    });
+      `<div class="fd">${describe(f)}${wbadge}</div>` +
+      (adopted ? `<span class="ftile-rm" title="${t('fonts.remove')}">×</span>` : '');
+    // Clicking a tile ADOPTS (add-only, non-destructive) — never removes, so a
+    // stray click can't drop an adopted font (which would clear its per-profile
+    // enables + Text refs). Removal is deliberate: the tile's × or the right panel.
+    if (adopted) {
+      // No body handler → clicking an adopted tile does nothing (non-destructive);
+      // only the × removes (stopPropagation so it doesn't bubble to the tile).
+      tile.querySelector('.ftile-rm').onclick = (ev) => {
+        ev.stopPropagation();
+        mutate((st) => removeFont(st.project, f.name));
+      };
+    } else {
+      tile.onclick = () => mutate((st) => adoptFont(st.project, f.name));
+    }
     grid.appendChild(tile);
   }
 }
@@ -102,13 +118,20 @@ export function renderFonts() {
 
 export function initFonts() {
   fillFilterControls();
-  const bind = (id, key, ev) => $(id).addEventListener(ev, () => { filters[key] = $(id).value; renderGrid(); });
-  bind('font-q', 'query', 'input');
-  bind('font-cat', 'category', 'change');
-  bind('font-script', 'script', 'change');
-  bind('font-style', 'style', 'change');
-  bind('font-family', 'family', 'change');
-  // Load host-rendered samples lazily; re-render the grid once available so the
-  // tiles switch from the approximate preview to the exact glyphs.
+  $('font-q').addEventListener('input', () => { filters.query = $('font-q').value; renderGrid(); });
+  // One delegated handler for every chip group: set the facet (toggle off if the
+  // active chip is clicked again), restyle the chips, and re-filter the grid.
+  for (const id of ['font-height', 'font-cat', 'font-script', 'font-style', 'font-family']) {
+    $(id).addEventListener('click', (ev) => {
+      const b = ev.target.closest('.fchip');
+      if (!b) return;
+      const key = b.dataset.key, val = b.dataset.val;
+      filters[key] = filters[key] === val ? '' : val;
+      $(id).querySelectorAll('.fchip').forEach((c) => c.classList.toggle('on', c.dataset.val === filters[key]));
+      renderGrid();
+    });
+  }
+  // Load host-rendered samples lazily; re-render once available so tiles switch
+  // to the exact glyphs and the Height filter (needs metrics) takes effect.
   loadMetrics().then((m) => { if (m) renderGrid(); });
 }

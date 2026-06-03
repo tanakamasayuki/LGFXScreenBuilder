@@ -33,6 +33,20 @@ export function sampleImage(name) {
   return { atlas: new URL('./' + METRICS.atlas, import.meta.url).href, x, y, w, h };
 }
 
+// Height buckets (rendered px height, the most useful filter for fitting a font
+// to a screen). Matched against the host-introspected height; ignored until the
+// metrics are loaded. min/max inclusive.
+export const HEIGHT_BUCKETS = [
+  { key: 'xs', label: '≤10', max: 10 },
+  { key: 's', label: '11–16', min: 11, max: 16 },
+  { key: 'm', label: '17–24', min: 17, max: 24 },
+  { key: 'l', label: '25–36', min: 25, max: 36 },
+  { key: 'xl', label: '37+', min: 37 },
+];
+
+// Rendered px height of a font from the host metrics, or null if not loaded.
+export const heightOf = (name) => { const m = metricsFor(name); return m ? m.height : null; };
+
 // Distinct values for the filter controls.
 export function facets() {
   const c = FONT_CATALOG;
@@ -43,9 +57,11 @@ export function facets() {
   };
 }
 
-// Filter the catalog. style ∈ 'regular'|'bold'|'italic' (optional).
-export function filterCatalog({ category, family, script, style, query } = {}) {
+// Filter the catalog. style ∈ 'regular'|'bold'|'italic'; height = a bucket key
+// (see HEIGHT_BUCKETS). All optional.
+export function filterCatalog({ category, family, script, style, query, height } = {}) {
   const q = (query || '').toLowerCase();
+  const bucket = height && HEIGHT_BUCKETS.find((b) => b.key === height);
   return FONT_CATALOG.filter((f) => {
     if (category && f.category !== category) return false;
     if (family && f.family !== family) return false;
@@ -54,6 +70,10 @@ export function filterCatalog({ category, family, script, style, query } = {}) {
     if (style === 'italic' && !f.italic) return false;
     if (style === 'regular' && (f.bold || f.italic)) return false;
     if (q && !f.name.toLowerCase().includes(q)) return false;
+    if (bucket) {
+      const h = heightOf(f.name); // null until metrics load → don't filter yet
+      if (h != null && ((bucket.min && h < bucket.min) || (bucket.max && h > bucket.max))) return false;
+    }
     return true;
   });
 }
@@ -95,10 +115,14 @@ export const monoFor = (name) => {
 };
 
 // Short human label of a font's classification (+ flash size when introspected).
+// Prefers the host-rendered px height (what the Height filter matches) over the
+// name-derived nominal size; falls back to the nominal size until metrics load.
 export function describe(f) {
   if (!f) return '';
   const bits = [f.category];
-  if (f.size) bits.push(`${f.size}${f.unit || ''}`);
+  const h = heightOf(f.name);
+  if (h != null) bits.push(`${h}px`);
+  else if (f.size) bits.push(`${f.size}${f.unit || ''}`);
   if (f.bold) bits.push('Bold');
   if (f.italic) bits.push('Italic');
   if (f.script === 'cjk') bits.push('CJK');
