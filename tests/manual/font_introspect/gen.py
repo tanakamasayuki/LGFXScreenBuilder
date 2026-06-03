@@ -83,13 +83,27 @@ def parse_fonts(header_path):
     return re.findall(r"extern\s+const\s+lgfx::(\w*[Ff]ont)\s+(\w+)\s*;", block)
 
 
+def script_of(name):
+    """Language/script of a font from its name: latin, or one of the CJK locales
+    ja / cn / tw / ko (more useful as a filter than a single 'cjk', §8.7.2)."""
+    if re.match(r"efontCN", name):
+        return "cn"
+    if re.match(r"efontTW", name):
+        return "tw"
+    if re.match(r"efontKR", name):
+        return "ko"
+    if re.search(r"efontJA|lgfxJapan|Mincho|Gothic|Japan|Kanji", name):
+        return "ja"
+    return "latin"
+
+
 def classify(type_sym, name):
     """Classify a font from its type symbol + name into filterable attributes."""
     category = CATEGORY.get(type_sym, "other")
     bold = bool(re.search(r"Bold|_bi?$", name))
     italic = bool(re.search(r"Oblique|Italic|_b?i$", name))
-    cjk = bool(re.search(r"Japan|efont|lgfxJapan|Gothic|Mincho|CN|JA|KR|TW|Kanji", name))
-    family, size, unit, script = name, None, None, ("cjk" if cjk else "latin")
+    script = script_of(name)
+    family, size, unit = name, None, None
 
     if m := re.match(r"^(.*?)(\d+)pt7b$", name):            # GFX: FreeSansBold12pt7b
         family = re.sub(r"(Bold|Oblique|Italic)+$", "", m.group(1))
@@ -115,16 +129,16 @@ def sample_for(cls):
     ili narrow, so a fixed-pitch font visibly aligns); CJK uses the self-naming
     script word so the language is obvious and every glyph is a high-frequency
     char present in that family's font (SPEC §8.7.2)."""
-    if cls["script"] != "cjk":
+    s = cls["script"]
+    if s == "latin":
         return "Wax Lily 12"
-    fam = cls["family"]
-    if fam.startswith("efontCN"):
+    if s == "cn":
         return "简体中文"   # Simplified Chinese
-    if fam.startswith("efontTW"):
+    if s == "tw":
         return "繁體中文"   # Traditional Chinese
-    if fam.startswith("efontKR"):
+    if s == "ko":
         return "한국어"     # Korean
-    return "日本語"          # Japanese: lgfxJapan*, efontJA
+    return "日本語"          # ja: lgfxJapan*, efontJA
 
 
 def classified(version):

@@ -103,6 +103,9 @@ def test_font_introspect(generated, dut):
                 "ascii": r["ascii"],
                 "cjk": r["cjk"],
                 "mono": r.get("mono"),
+                "letters": r.get("letters"),
+                "digits": r.get("digits"),
+                "latinExt": r.get("latinExt"),
                 "sample": r["sample"],
                 "box": list(boxes[r["name"]]),  # [x, y, w, h] in the atlas
                 **({"flash": flash[r["name"]]} if flash else {}),

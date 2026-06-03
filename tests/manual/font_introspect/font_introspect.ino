@@ -37,6 +37,28 @@ static int advanceOf(const IFont *font, const FontMetrics &base, uint16_t c)
   return (int)t.x_advance;
 }
 
+// Whether the font actually draws a glyph for a sample string. updateFontMetric
+// reports a metric even for blank/absent glyphs (e.g. Font7 the 7-segment font
+// claims to "cover" letters it cannot draw), so coverage is decided by rendering
+// and scanning for a lit pixel — the only reliable signal.
+static bool drawsGlyph(LGFX_Sprite &cv, const IFont *font, const char *s)
+{
+  cv.fillScreen(TFT_BLACK);
+  cv.setFont(font);
+  cv.setTextColor(TFT_WHITE);
+  cv.setTextSize(1);
+  cv.setCursor(0, 0);
+  cv.print(s);
+  int w = cv.textWidth(s), h = cv.fontHeight();
+  if (w <= 0) w = 8;
+  if (w > kCanvasW) w = kCanvasW;
+  if (h <= 0 || h > kCanvasH) h = kCanvasH;
+  for (int y = 0; y < h; ++y)
+    for (int x = 0; x < w; ++x)
+      if (cv.readPixel(x, y)) return true;
+  return false;
+}
+
 // Fixed-pitch (monospace) vs proportional: 1 fixed, 0 proportional, -1 unknown.
 // Latin fonts compare 'i' vs 'W'; this also separates the proportional CJK "P"
 // variants (whose ASCII is proportional) from the fixed ones. CJK-only fonts
@@ -111,6 +133,12 @@ void setup()
     }
     int mono = detectMono(font, m);
 
+    // Actual character coverage (rendered, not metric-claimed). Done before the
+    // sample render below since these reuse the same canvas.
+    bool letters = drawsGlyph(canvas, font, "Aa");
+    bool digits = drawsGlyph(canvas, font, "0123456789");
+    bool latinExt = drawsGlyph(canvas, font, "éÑ"); // Latin-1 accented
+
     // Render the generated sample (script-appropriate), cropped to its box.
     const char *sample = e.sample;
     canvas.fillScreen(TFT_BLACK);
@@ -131,9 +159,11 @@ void setup()
     fprintf(meta,
             "{\"name\":\"%s\",\"height\":%d,\"baseline\":%d,\"x_advance\":%d,"
             "\"y_advance\":%d,\"width\":%d,\"ascii\":%d,\"cjk\":%s,\"mono\":%s,"
+            "\"letters\":%s,\"digits\":%s,\"latinExt\":%s,"
             "\"sample\":\"%s\",\"sw\":%d,\"sh\":%d,\"png\":%s}\n",
             e.name, (int)m.height, (int)m.baseline, (int)m.x_advance,
             (int)m.y_advance, (int)m.width, ascii, cjk ? "true" : "false", monoStr,
+            letters ? "true" : "false", digits ? "true" : "false", latinExt ? "true" : "false",
             sample, tw, th, ok ? "true" : "false");
 
     if ((i % 32) == 0) Serial.printf("PROGRESS %u/%u\n", (unsigned)i, (unsigned)kFontCount);

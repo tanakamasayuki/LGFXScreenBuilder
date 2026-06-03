@@ -4,11 +4,11 @@
 // candidate is visible; the Height facet (rendered px) is the primary one.
 import { store, mutate } from './store.js';
 import { adoptFont, removeFont, toggleProfileFont, profileFonts, isFontAdopted } from './model.js';
-import { filterCatalog, facets, HEIGHT_BUCKETS, approxCss, sampleFor, describe, loadMetrics, sampleImage, flashFor, fmtBytes, monoFor } from './fonts.js';
+import { filterCatalog, facets, HEIGHT_BUCKETS, CONTENT_TYPES, approxCss, sampleFor, describe, loadMetrics, sampleImage, flashFor, fmtBytes, monoFor } from './fonts.js';
 import { t } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
-const filters = { query: '', height: '', category: '', script: '', style: '', family: '' };
+const filters = { query: '', height: '', content: '', style: '', mono: '', family: '' };
 
 // Render one facet as a row of selectable chips ([All] + each option). Single-
 // select (radio semantics): clicking the active chip's value is what stays set.
@@ -20,9 +20,9 @@ function fillFilterControls() {
   const group = (id, key, opts) =>
     ($(id).innerHTML = chip(key, '', t('opt.all')) + opts.map(([v, l]) => chip(key, v, l)).join(''));
   group('font-height', 'height', HEIGHT_BUCKETS.map((b) => [b.key, `${b.label}px`]));
-  group('font-cat', 'category', f.categories.map((c) => [c, c]));
-  group('font-script', 'script', f.scripts.map((s) => [s, t('script.' + s)]));
+  group('font-content', 'content', CONTENT_TYPES.map((c) => [c, t('content.' + c)]));
   group('font-style', 'style', ['regular', 'bold', 'italic'].map((s) => [s, t('style.' + s)]));
+  group('font-mono', 'mono', [['fixed', t('font.mono')], ['prop', t('font.prop')]]);
   group('font-family', 'family', f.families.map((x) => [x, x]));
 }
 
@@ -37,14 +37,19 @@ function renderGrid() {
     tile.className = 'ftile' + (adopted ? ' adopted' : '');
     tile.dataset.name = f.name;
     // Prefer the exact host-rendered sample (atlas crop); fall back to approx.
+    // The crop is native px (up to ~420 wide) — scale it down to the tile width
+    // so it never overflows, keeping aspect (and never upscaling past 1×).
     const img = sampleImage(f.name);
     let prev;
     if (img) {
-      prev = `<div class="fprev real" style="width:${img.w}px;height:${img.h}px;` +
+      const budget = 224; // ~tile content width; wrapper clips any remainder
+      const s = Math.min(1, budget / img.w);
+      prev = `<div class="fprev real" style="height:${Math.round(img.h * s)}px">` +
+        `<div class="fcrop" style="width:${img.w}px;height:${img.h}px;` +
         `background-image:url('${img.atlas}');background-position:-${img.x}px -${img.y}px;` +
-        `background-repeat:no-repeat" role="img" aria-label="${sampleFor(f)}"></div>`;
+        `transform:scale(${s.toFixed(3)})" role="img" aria-label="${sampleFor(f)}"></div></div>`;
     } else {
-      const size = Math.max(11, Math.min(f.size || 16, 26));
+      const size = Math.max(14, Math.min(f.size || 16, 34));
       prev = `<div class="fprev" style="font-family:${approxCss(f)};font-size:${size}px;${f.bold ? 'font-weight:700;' : ''}${f.italic ? 'font-style:italic;' : ''}">${sampleFor(f)}</div>`;
     }
     const mono = monoFor(f.name);
@@ -121,7 +126,7 @@ export function initFonts() {
   $('font-q').addEventListener('input', () => { filters.query = $('font-q').value; renderGrid(); });
   // One delegated handler for every chip group: set the facet (toggle off if the
   // active chip is clicked again), restyle the chips, and re-filter the grid.
-  for (const id of ['font-height', 'font-cat', 'font-script', 'font-style', 'font-family']) {
+  for (const id of ['font-height', 'font-content', 'font-style', 'font-mono', 'font-family']) {
     $(id).addEventListener('click', (ev) => {
       const b = ev.target.closest('.fchip');
       if (!b) return;
