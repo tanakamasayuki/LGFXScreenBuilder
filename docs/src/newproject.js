@@ -32,7 +32,7 @@ function applyPreset() {
   if (!r) return;
   $('np-w').value = r.w;
   $('np-h').value = r.h;
-  $('np-rot').value = String(r.w > r.h ? 1 : 0);
+  $('np-rot').value = '0'; // preset dims are the panel's native (rotation-0) orientation
 }
 
 function open() {

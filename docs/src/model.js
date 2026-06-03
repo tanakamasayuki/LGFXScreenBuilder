@@ -56,7 +56,7 @@ export function sampleProject() {
 
   const profiles = [
     {
-      id: 'Core', w: 320, h: 240, rotation: 1, boards: ['M5Stack', 'Core2', 'CoreS3'],
+      id: 'Core', w: 320, h: 240, rotation: 0, boards: ['M5Stack', 'Core2', 'CoreS3'],
       layout: {
         Boot: {
           logo: rect(110, 80, 100, 60, '#1e2a30'),
@@ -98,7 +98,7 @@ export function sampleProject() {
       },
     },
     {
-      id: 'Cardputer', w: 240, h: 135, rotation: 1, boards: ['Cardputer', 'DinMeter'],
+      id: 'Cardputer', w: 240, h: 135, rotation: 0, boards: ['Cardputer', 'DinMeter'],
       layout: {
         Boot: {
           logo: rect(80, 30, 80, 40, '#1e2a30'),
@@ -257,7 +257,7 @@ export function addProfile(project, { w, h, rotation }, cloneFromId) {
   const src = cloneFromId ? profileById(project, cloneFromId) : null;
   const layout = src ? cloneLayout(src.layout) : {};
   for (const sc of project.scenes) if (!layout[sc.id]) layout[sc.id] = {};
-  project.profiles.push({ id, w, h, rotation: rotation == null ? (w > h ? 1 : 0) : rotation, boards: [], layout });
+  project.profiles.push({ id, w, h, rotation: rotation == null ? 0 : rotation, boards: [], layout });
   return id;
 }
 

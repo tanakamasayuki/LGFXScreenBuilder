@@ -750,8 +750,8 @@ The official save format of a project is `.lgfxsb.json`. The user explicitly sav
 
 Basic startup flow:
 
-- If there is a previous auto-save, you can choose to restore, create new, or open a project.
-- If there is no previous auto-save, you can choose to create new or open a project.
+- **MVP behavior (decided)**: no startup chooser is shown — if a previous auto-save exists it is **restored automatically**, otherwise the sample project opens. Switching between continue / new / open is done explicitly via the toolbar New / Open (the startup chooser screen is intentionally not implemented).
+- (For reference / possible future) a startup screen offering restore / create-new / open (or create-new / open when there is no auto-save) is conceivable but is not adopted for the MVP.
 - When creating new, specify the target library (LovyanGFX / M5GFX / M5Unified, default M5Unified), the first profile (target device / screen size / rotation), the project name, and the first scene. Because the target library affects the board assignment candidates, the auto-detection behavior, and the generated samples, it is chosen first. Changes after creation are made on the Devices (Profiles) screen. M5GFX and M5Unified have the same board detection and candidates (all M5 boards), differing only in the initialization of the generated sample (`display.begin()` / `M5.begin()`). Only bare LovyanGFX has a subset of candidates.
 - When an existing project is opened, the profile settings in the project file are used.
 
