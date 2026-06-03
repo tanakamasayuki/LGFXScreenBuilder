@@ -70,6 +70,12 @@ def test_font_introspect(dut):
     DOCS_SRC.mkdir(parents=True, exist_ok=True)
     atlas.save(DOCS_SRC / "font-atlas.png")
 
+    # Exact per-font flash size from the linked harness ELF (single build).
+    elfs = sorted(SKETCH_DIR.glob("build/**/*.out"))
+    flash = gen.font_flash_sizes(elfs[0], FONT_NAMES, LGFX_VERSION) if elfs else {}
+    if flash:
+        assert all(flash.get(n, 0) > 0 for n in FONT_NAMES), "some fonts got zero flash size"
+
     catalog = {
         "source": f"LovyanGFX {LGFX_VERSION}",
         "atlas": "font-atlas.png",
@@ -85,9 +91,11 @@ def test_font_introspect(dut):
                 "cjk": r["cjk"],
                 "sample": r["sample"],
                 "box": list(boxes[r["name"]]),  # [x, y, w, h] in the atlas
+                **({"flash": flash[r["name"]]} if flash else {}),
             }
             for r in rows
         },
     }
     (DOCS_SRC / "font-metrics.json").write_text(json.dumps(catalog, ensure_ascii=False, indent=0))
-    print(f"wrote font-metrics.json ({len(rows)} fonts) + font-atlas.png ({atlas_w}x{atlas_h})")
+    print(f"wrote font-metrics.json ({len(rows)} fonts, flash={'yes' if flash else 'no'}) "
+          f"+ font-atlas.png ({atlas_w}x{atlas_h})")

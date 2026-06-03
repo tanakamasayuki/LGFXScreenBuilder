@@ -4,7 +4,7 @@
 // slice). Codegen `setFont` and the exact host-rendered preview come later.
 import { store, mutate } from './store.js';
 import { adoptFont, removeFont, toggleProfileFont, profileFonts, isFontAdopted } from './model.js';
-import { filterCatalog, facets, approxCss, sampleFor, describe, loadMetrics, sampleImage } from './fonts.js';
+import { filterCatalog, facets, approxCss, sampleFor, describe, loadMetrics, sampleImage, flashFor, fmtBytes } from './fonts.js';
 import { t } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
@@ -59,14 +59,28 @@ function renderAdopted() {
   const fonts = store.project.fonts || [];
   $('font-adopted-title').textContent = `${t('fonts.adopted')} · ${t('fonts.adoptedCount', { n: fonts.length })}`;
   if (!fonts.length) { el.innerHTML = `<p class="sub">${t('fonts.none')}</p>`; return; }
+
+  // Per-profile flash budget: sum the flash cost of the fonts enabled on each
+  // profile (only the referenced fonts link — this is why the per-profile flag
+  // matters; §8.7.4). Shown when host introspection (font-metrics.json) is loaded.
+  if (flashFor(fonts[0].name) != null) {
+    const totals = store.project.profiles.map((p) => {
+      const sum = profileFonts(store.project, p.id).reduce((a, n) => a + (flashFor(n) || 0), 0);
+      return `<span class="chip">${p.id}: ${fmtBytes(sum)}</span>`;
+    }).join('');
+    el.innerHTML = `<div class="font-budget"><span class="sub">${t('fonts.flashBudget')}:</span>${totals}</div>`;
+  }
+
   for (const f of fonts) {
     const row = document.createElement('div');
     row.className = 'fontrow';
+    const flash = flashFor(f.name);
+    const flashTag = flash != null ? ` <span class="sub">· ${fmtBytes(flash)}</span>` : '';
     const profs = store.project.profiles
       .map((p) => `<label><input type="checkbox" data-prof="${p.id}" data-name="${f.name}" ${profileFonts(store.project, p.id).includes(f.name) ? 'checked' : ''} style="width:auto;min-height:auto"> ${p.id}</label>`)
       .join('');
     row.innerHTML =
-      `<div><div class="fn">${f.name}</div><div class="profs"><span class="sub">${t('fonts.enabledOn')}:</span>${profs}</div></div>` +
+      `<div><div class="fn">${f.name}${flashTag}</div><div class="profs"><span class="sub">${t('fonts.enabledOn')}:</span>${profs}</div></div>` +
       `<button class="rm" title="${t('fonts.remove')}" data-rm="${f.name}">×</button>`;
     el.appendChild(row);
   }

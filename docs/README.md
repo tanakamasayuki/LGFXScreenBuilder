@@ -44,8 +44,11 @@ python -m http.server 8000 --directory docs
   harness builds on the lang-ship host and introspects every preset font (metrics +
   ASCII/CJK coverage + a native-size sample), and the test packs the samples into
   one atlas (`src/font-atlas.png` + `src/font-metrics.json`) that the grid crops
-  per font (approximate CSS preview as a fallback). Text wiring (`setFont`) and
-  per-font flash size are later slices.
+  per font (approximate CSS preview as a fallback). The same harness also reports
+  each font's **exact flash size** (attributed from the linked ELF in a single
+  build, no per-font compiles), shown per font and summed as a per-profile flash
+  budget — the rationale for enabling fonts per profile. Text wiring (`setFont`)
+  is a later slice.
 - **i18n** (SPEC §14): all UI strings go through `src/i18n.js` (`t()` + `data-i18n`),
   en/ja with an en fallback and a language switcher; default follows the browser.
 - **Undo / Redo**: snapshot-based project history (toolbar ↶/↷ and Ctrl/Cmd+Z,

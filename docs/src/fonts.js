@@ -74,7 +74,21 @@ export function approxCss(f) {
 // A representative sample string for a font (Japanese for CJK fonts).
 export const sampleFor = (f) => (f && f.script === 'cjk' ? 'あいう 漢字 12' : 'AaBbGg 0123');
 
-// Short human label of a font's classification.
+// Human-readable byte size (e.g. 159287 -> "156 KB").
+export function fmtBytes(n) {
+  if (!n && n !== 0) return '';
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
+// Per-font flash cost in bytes from the host introspection (or null).
+export const flashFor = (name) => {
+  const m = metricsFor(name);
+  return m && typeof m.flash === 'number' ? m.flash : null;
+};
+
+// Short human label of a font's classification (+ flash size when introspected).
 export function describe(f) {
   if (!f) return '';
   const bits = [f.category];
@@ -82,5 +96,7 @@ export function describe(f) {
   if (f.bold) bits.push('Bold');
   if (f.italic) bits.push('Italic');
   if (f.script === 'cjk') bits.push('CJK');
+  const flash = flashFor(f.name);
+  if (flash != null) bits.push(fmtBytes(flash));
   return bits.join(' · ');
 }
