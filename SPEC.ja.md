@@ -1070,9 +1070,12 @@ LGFXScreenBuilder/
       Project.h                     #   生成データ記述子（データ契約）
       Renderer.h                    #   共有描画エンジン
   examples/
-    Basic/
-      Basic.ino
+    BasicLovyanGFX/                 # LovyanGFX 版（実機 ESP32 ＋ Native/SDL プレビュー）
+      BasicLovyanGFX.ino
       MyScreen.h                    #   生成ヘッダの見本
+    BasicM5Unified/                 # M5Unified 版（include と初期化のみ違う・MyScreen.h は共通）
+      BasicM5Unified.ino
+      MyScreen.h
   docs/                             # GitHub Pages サイト＝オーサリングツール本体（静的 ES モジュール・ビルド不要）
     index.html
     styles.css

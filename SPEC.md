@@ -1079,9 +1079,12 @@ LGFXScreenBuilder/
       Project.h                     #   generated-data descriptor (data contract)
       Renderer.h                    #   shared rendering engine
   examples/
-    Basic/
-      Basic.ino
+    BasicLovyanGFX/                 # LovyanGFX variant (real ESP32 + Native/SDL preview)
+      BasicLovyanGFX.ino
       MyScreen.h                    #   sample generated header
+    BasicM5Unified/                 # M5Unified variant (differs only in include + init; MyScreen.h shared)
+      BasicM5Unified.ino
+      MyScreen.h
   docs/                             # GitHub Pages site = the authoring tool (static ES modules, no build)
     index.html
     styles.css

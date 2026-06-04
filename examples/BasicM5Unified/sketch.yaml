@@ -1,0 +1,103 @@
+# en: M5Unified build profiles (same generated MyScreen.h as BasicLovyanGFX; the
+#     sketch only differs in include + display init). M5Unified resolves the board
+#     via M5GFX board_t, so every current M5 board works here, including the
+#     M5GFX/M5Unified-only ones (Dial, Tab5). The Native (SDL) profiles render on a
+#     PC with no hardware. M5Unified depends on M5GFX, so both libraries are listed.
+# ja: M5Unified 用ビルドプロファイル（生成物 MyScreen.h は BasicLovyanGFX と共通、
+#     スケッチは include と初期化のみ違う）。M5Unified は M5GFX の board_t で機種を
+#     判定するので、Dial・Tab5 など M5GFX/M5Unified 専用ボードも含め全 M5 機種が使える。
+#     Native(SDL) は実機なしで PC 上に描画。M5Unified は M5GFX 依存なので両方を列挙。
+profiles:
+  # Real hardware (ESP32, M5Unified autodetect via M5.begin()).
+  esp32:
+    fqbn: esp32:esp32:esp32:DebugLevel=debug
+    platforms:
+      - platform: esp32:esp32 (3.3.8)
+        platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    libraries:
+      - dir: ../../
+      - M5Unified (0.2.17)
+      - M5GFX (0.2.22)
+
+  # Native (SDL) preview — all current M5 boards.
+  sld2_m5stack:
+    fqbn: lang-ship:native:SLD2_M5Stack
+    platforms:
+      - platform: lang-ship:native (1.1.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - M5Unified (0.2.17)
+      - M5GFX (0.2.22)
+
+  sld2_m5stackcore2:
+    fqbn: lang-ship:native:SLD2_M5StackCore2
+    platforms:
+      - platform: lang-ship:native (1.1.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - M5Unified (0.2.17)
+      - M5GFX (0.2.22)
+
+  sld2_m5stackcores3:
+    fqbn: lang-ship:native:SLD2_M5StackCoreS3
+    platforms:
+      - platform: lang-ship:native (1.1.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - M5Unified (0.2.17)
+      - M5GFX (0.2.22)
+
+  sld2_m5stickcplus:
+    fqbn: lang-ship:native:SLD2_M5StickCPlus
+    platforms:
+      - platform: lang-ship:native (1.1.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - M5Unified (0.2.17)
+      - M5GFX (0.2.22)
+
+  sld2_m5stickcplus2:
+    fqbn: lang-ship:native:SLD2_M5StickCPlus2
+    platforms:
+      - platform: lang-ship:native (1.1.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - M5Unified (0.2.17)
+      - M5GFX (0.2.22)
+
+  sld2_m5tab5:
+    fqbn: lang-ship:native:SLD2_M5Tab5
+    platforms:
+      - platform: lang-ship:native (1.1.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - M5Unified (0.2.17)
+      - M5GFX (0.2.22)
+
+  sld2_m5stackcoreink:
+    fqbn: lang-ship:native:SLD2_M5StackCoreInk
+    platforms:
+      - platform: lang-ship:native (1.1.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - M5Unified (0.2.17)
+      - M5GFX (0.2.22)
+
+  sld2_m5dial:
+    fqbn: lang-ship:native:SLD2_M5Dial
+    platforms:
+      - platform: lang-ship:native (1.1.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - M5Unified (0.2.17)
+      - M5GFX (0.2.22)
+
+default_profile: esp32
