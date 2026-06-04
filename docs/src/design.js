@@ -7,7 +7,7 @@ import {
   addPart, removePart, renamePart, addScene, removeScene, renameScene,
   absOrigin, reorderPart, groupParts, ungroupPart, reparentPart, assetById, profileFonts,
 } from './model.js';
-import { loadMetrics, metricsFor, approxCss, fontByName } from './fonts.js';
+import { loadMetrics, metricsFor, approxCss, fontByName, fontDetailUrl } from './fonts.js';
 import { t } from './i18n.js';
 
 // Approximate on-canvas height (px) of a Text part's font at multiplier 1.
@@ -214,6 +214,10 @@ function renderInspector() {
       enabled.map((n) => `<option value="${n}" ${e.font === n ? 'selected' : ''}>${n}</option>`).join('') +
       `</select>` +
       (enabled.length ? '' : `<span class="sub">${t('font.noneEnabled')}</span>`) +
+      // Link to the selected font's catalog page (characters/metrics); only when a
+      // non-default font is chosen and a catalog base URL is configured.
+      (e.font && fontDetailUrl(e.font)
+        ? ` <a class="font-detail" href="${fontDetailUrl(e.font)}" target="_blank" rel="noopener" title="${t('font.detailTitle')}">${t('font.detail')} ↗</a>` : '') +
       `</div>`;
   } else if (def.type === 'Group') {
     h += `<div class="two">${row('x', t('field.x'), 'number', e.x)}${row('y', t('field.y'), 'number', e.y)}</div>`;

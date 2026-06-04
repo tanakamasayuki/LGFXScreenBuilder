@@ -4,7 +4,7 @@
 // candidate is visible; the Height facet (rendered px) is the primary one.
 import { store, mutate } from './store.js';
 import { adoptFont, removeFont, toggleProfileFont, profileFonts, isFontAdopted } from './model.js';
-import { filterCatalog, facets, HEIGHT_BUCKETS, CONTENT_TYPES, approxCss, sampleFor, describe, loadMetrics, sampleImage, flashFor, fmtBytes, monoFor, heightOf } from './fonts.js';
+import { filterCatalog, facets, HEIGHT_BUCKETS, CONTENT_TYPES, approxCss, sampleFor, describe, loadMetrics, sampleImage, flashFor, fmtBytes, monoFor, heightOf, fontDetailUrl } from './fonts.js';
 import { t } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
@@ -67,11 +67,21 @@ function renderGrid() {
     const mono = monoFor(f.name);
     const wbadge = mono == null ? ''
       : `<span class="wbadge ${mono ? 'fixed' : 'prop'}">${t(mono ? 'font.mono' : 'font.prop')}</span>`;
+    const detailUrl = fontDetailUrl(f.name);
     tile.innerHTML =
       prev +
       `<div class="fn">${adopted ? '✓ ' : ''}${f.name}</div>` +
       `<div class="fd">${describe(f)}${wbadge}</div>` +
+      // Nested <a> is invalid inside <button>, so use a span that opens the catalog
+      // page itself (stopPropagation so it doesn't adopt/remove the tile).
+      (detailUrl ? `<span class="ftile-info" title="${t('font.detailTitle')}">↗</span>` : '') +
       (adopted ? `<span class="ftile-rm" title="${t('fonts.remove')}">×</span>` : '');
+    if (detailUrl) {
+      tile.querySelector('.ftile-info').onclick = (ev) => {
+        ev.stopPropagation();
+        window.open(detailUrl, '_blank', 'noopener');
+      };
+    }
     // Clicking a tile ADOPTS (add-only, non-destructive) — never removes, so a
     // stray click can't drop an adopted font (which would clear its per-profile
     // enables + Text refs). Removal is deliberate: the tile's × or the right panel.
@@ -112,11 +122,15 @@ function renderAdopted() {
     row.className = 'fontrow';
     const flash = flashFor(f.name);
     const flashTag = flash != null ? ` <span class="sub">· ${fmtBytes(flash)}</span>` : '';
+    const durl = fontDetailUrl(f.name);
+    const detailTag = durl
+      ? ` <a class="font-detail" href="${durl}" target="_blank" rel="noopener" title="${t('font.detailTitle')}">${t('font.detail')} ↗</a>`
+      : '';
     const profs = store.project.profiles
       .map((p) => `<label><input type="checkbox" data-prof="${p.id}" data-name="${f.name}" ${profileFonts(store.project, p.id).includes(f.name) ? 'checked' : ''} style="width:auto;min-height:auto"> ${p.id}</label>`)
       .join('');
     row.innerHTML =
-      `<div><div class="fn">${f.name}${flashTag}</div><div class="profs"><span class="sub">${t('fonts.enabledOn')}:</span>${profs}</div></div>` +
+      `<div><div class="fn">${f.name}${flashTag}${detailTag}</div><div class="profs"><span class="sub">${t('fonts.enabledOn')}:</span>${profs}</div></div>` +
       `<button class="rm" title="${t('fonts.remove')}" data-rm="${f.name}">×</button>`;
     el.appendChild(row);
   }

@@ -478,6 +478,25 @@ Preview fidelity: **the preview at font adoption (selection) time shows the host
 - Only the fonts used by each included profile are referenced (the flash policy of §8.7.4).
 - Fonts not present in the target library's `fonts::` are **omitted + warned** (handled the same as board assignment, §8.9.5). This does not normally happen with the single representative catalog (LovyanGFX), but is kept as insurance against version skew.
 
+#### 8.7.6 Link to the external font catalog
+
+Per-font detail (**the full list of covered characters — checkable via the browser's
+in-page find**, metrics, flash, fixed/proportional, glyph count, specimen preview) is
+provided by a separate static site, **LGFXFontCatalog** (GitHub Pages; self-contained,
+rarely updated). This tool only **links** to it.
+
+- **Link URL** = `<BASE>/fonts/<name>.html`, where `<name>` is the font symbol name.
+  **Name only, latest fixed** (no version in the URL — the site always shows its own
+  latest version).
+- `BASE` is a **single constant** in this tool (`FONT_SITE_BASE` in `docs/src/fonts.js`).
+  Set it to empty to hide every link.
+- Link placement: **the Fonts-mode grid tiles** (a hover "↗"), **each adopted-font row**
+  ("Detail ↗"), and the **Text inspector font picker** ("Detail ↗" when a non-default font
+  is selected). All open in a **new tab** (`target=_blank rel=noopener`).
+- **Version skew tolerance**: if this tool later updates LovyanGFX while the site lags,
+  names are stable enough to still match; an absent name falls back to the index / a 404.
+- The catalog site's own spec lives in the LGFXFontCatalog repo (`SPEC.ja.md` / `SPEC.md`).
+
 ### 8.8 Animation
 
 The following animations are candidates for support.

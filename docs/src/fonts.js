@@ -97,6 +97,13 @@ export function filterCatalog({ family, style, query, height, content, mono } = 
 
 export const fontByName = (name) => FONT_CATALOG.find((f) => f.name === name) || null;
 
+// External font-catalog site (LGFXFontCatalog, GitHub Pages). Per-font detail page
+// is `${FONT_SITE_BASE}/fonts/<name>.html` — name only, latest fixed (SPEC §8.7 link
+// contract). Set to '' to hide the "detail" links everywhere.
+export const FONT_SITE_BASE = 'https://tanakamasayuki.github.io/LGFXFontCatalog';
+export const fontDetailUrl = (name) =>
+  FONT_SITE_BASE && name ? `${FONT_SITE_BASE}/fonts/${encodeURIComponent(name)}.html` : null;
+
 // Approximate CSS font-family that resembles the preset's family/category.
 export function approxCss(f) {
   if (!f) return 'system-ui,sans-serif';
