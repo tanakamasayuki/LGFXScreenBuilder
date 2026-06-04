@@ -18,7 +18,8 @@ namespace lgfxsb
     const Project &_project;
     uint8_t _profile = 0; // 0 = Auto (actual resolution deferred to draw time; 1+ = enum Profile value = index + 1)
 
-    // Resolve the selected profile to a concrete index (§8.9.4).
+    // Resolve the selected profile to a concrete index (§8.9.4). Auto order:
+    // 1) explicit board match, 2) orientation-sensitive size match, 3) default.
     uint8_t resolveProfileIndex() const
     {
       if (_profile != 0)
@@ -26,7 +27,9 @@ namespace lgfxsb
         uint8_t idx = _profile - 1;
         return (idx < _project.profileCount) ? idx : _project.defaultProfile;
       }
-      // Auto: resolve getBoard() against the assignment table; fall back if not found.
+
+      // 1) Explicit board match (highest priority): lets a specific device get a
+      // dedicated layout even when devices share a size.
       const int board = static_cast<int>(_gfx->getBoard());
       for (uint8_t pi = 0; pi < _project.profileCount; ++pi)
       {
@@ -35,6 +38,32 @@ namespace lgfxsb
           if (pr.boards[bi] == board)
             return pi;
       }
+
+      // 2) Size match against the panel's native (rotation-0) resolution, compared
+      // orientation-sensitively (135x240 != 240x135). Profile w/h are native dims;
+      // a profile's own rotation is applied later at draw time, so we normalize the
+      // current physical size back to native using the current rotation parity.
+      const uint8_t rot = _gfx->getRotation();
+      const int pw = _gfx->width(), ph = _gfx->height();
+      const int16_t nativeW = static_cast<int16_t>((rot & 1) ? ph : pw);
+      const int16_t nativeH = static_cast<int16_t>((rot & 1) ? pw : ph);
+      int firstSize = -1;
+      bool defaultMatches = false;
+      for (uint8_t pi = 0; pi < _project.profileCount; ++pi)
+      {
+        const ProfileDesc &pr = _project.profiles[pi];
+        if (pr.w == nativeW && pr.h == nativeH)
+        {
+          if (firstSize < 0)
+            firstSize = pi;
+          if (pi == _project.defaultProfile)
+            defaultMatches = true;
+        }
+      }
+      if (firstSize >= 0) // prefer default when it shares the size, else first declared
+        return defaultMatches ? _project.defaultProfile : static_cast<uint8_t>(firstSize);
+
+      // 3) No size match either: fall back so something always renders.
       return _project.defaultProfile;
     }
 
