@@ -55,13 +55,28 @@ export const boardEnum = (lib, id) => (boardDetectable(lib, id) ? (BOARD_T[id] |
 // Boards offered as assignment candidates for the target library.
 export const boardCatalog = (lib) => (lib === 'LovyanGFX' ? BOARDS.filter((b) => LGFX_KNOWN.has(b.id)) : BOARDS);
 
-// Distinct resolutions (for the "add profile" menu), each with its boards.
+// Common panel sizes that aren't tied to a board in the catalog. Design rule:
+// behavior is driven by SIZE alone, so these need no board_t — you only pick a
+// board when same-size devices need different treatment (and that path is M5-only).
+// Famous sizes are offered as presets without a board (e.g. small I2C OLEDs).
+export const EXTRA_RESOLUTIONS = [
+  { w: 128, h: 64, note: 'OLED' },      // SSD1306/SH1107 — M5 Unit OLED / GLASS / GLASS2
+  { w: 72, h: 40, note: 'Mini OLED' },  // M5 Unit MiniOLED
+];
+
+// Distinct resolutions (for the "add profile" menu), each with its boards. Board-
+// derived sizes come first (with their board ids); board-less common sizes
+// (EXTRA_RESOLUTIONS) are appended, skipping any a board already covers.
 export function commonResolutions() {
   const map = new Map();
   for (const b of BOARDS) {
     const k = `${b.w}x${b.h}`;
     if (!map.has(k)) map.set(k, { w: b.w, h: b.h, boards: [] });
     map.get(k).boards.push(b.id);
+  }
+  for (const r of EXTRA_RESOLUTIONS) {
+    const k = `${r.w}x${r.h}`;
+    if (!map.has(k)) map.set(k, { w: r.w, h: r.h, boards: [], note: r.note });
   }
   return [...map.values()];
 }

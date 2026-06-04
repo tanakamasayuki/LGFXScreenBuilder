@@ -557,17 +557,26 @@ The feature to change rotation per scene (changing portrait/landscape per screen
 
 #### 8.9.4 Profile Selection at Runtime
 
-The profile selection order is as follows.
+The guiding idea is: "**what is determined by size is selected automatically by size match; you specify a board explicitly only when you want a different layout at the same size**". `Profile::Auto` (default) resolves in the following priority order.
 
-1. `Profile::Auto` (default): resolves the result of `getBoard()` against the assignment table.
-2. `screen.setProfile(Profile::<Id>)`: the user specifies it explicitly to override. Used for a self-built panel (`board_unknown`) or when you intentionally want to use a different layout.
-3. Fallback: a board that was detected but is not assigned to any profile, or an unknown board, uses the fallback profile.
+1. **Explicit board match (highest priority)**: if `getBoard()` is in some profile's `boards[]`, use that profile. This is where assigning a dedicated layout to a specific device works even when devices share a size (board assignment is meaningful only on the M5 family in practice, since M5GFX/M5Unified return a `board_t`; §8.9.5).
+2. **Size match**: choose among the profiles whose size equals the physical screen size (post-rotation `width()`×`height()`).
+   - Exactly one matches → use it. **The normal case** — with one profile per size, every device of that size lands here automatically (no board assignment needed).
+   - Multiple match (the same size split by board) → ① use the fallback profile (`defaultProfile`) if it is among them, ② otherwise use the **first declared**. That device is definitely of that size, so rendering it with a size-matching layout is correct. The authoring tool also **warns** when "multiple profiles share a size and cannot be disambiguated by board or by default", prompting you to designate a default.
+   - None match → next.
+3. **Fallback (last resort)**: if no size matches either (e.g. an unknown screen size), use `defaultProfile`. It still renders even at a different size (absolute drawing in logical coordinates, clipped outside the physical bounds). If `defaultProfile` is unset, the first profile (index 0).
+
+An explicit `screen.setProfile(Profile::<Id>)` can override this auto resolution at any time (a self-built panel = `board_unknown`, intentionally checking a different layout, etc.).
+
+**MCU chip type is not used for detection** (it is cumbersome to judge, and when a distinction is needed `board_t` identifies the device sufficiently). For the rare case of distinguishing same-size, different-chip devices on bare LovyanGFX (e.g. the 320×240 Core2 vs CoreS3), resolve it via the default designation / `setProfile()` of step 2 above, or by an explicit board on the M5GFX/M5Unified target.
 
 The fallback profile (= the default in the generated code) is **chosen at output time**, not by a flag on the profile side (§10). This is a build-level concern of "which profile in this output is the receptacle for undetermined boards", and one is specified from among the profiles included in the output target. In a single-device build (one output target), that profile itself is the receptacle, so no specification is needed. Only when there are multiple outputs is one chosen. The chosen value is remembered as `defaultProfile` (directly under the project, optional) in the project file and used as the initial selection for the next output (§9).
 
 The fallback specification is independent of layout saving. Because each profile fully holds its own layout (§8.2), changing the fallback selection does not affect any profile's layout.
 
-In the future, a scheme to automatically fall back an unknown board to the profile closest to the physical resolution is a candidate extension. In the MVP, a fixed fallback profile is sufficient.
+**Orientation (portrait/landscape) handling**: size match **distinguishes orientation**. Because it compares the post-rotation `width()`×`height()`, 135×240 (portrait) and 240×135 (landscape) are different sizes. Example: StickCPlus (portrait 135×240) and Cardputer (landscape 240×135) resolve to different profiles under auto-detection (a separate concern from the authoring "add resolution" menu, which groups orientation-independently).
+
+Rotation is a per-profile value (§8.9.3), and a board assigned to a profile is drawn with that profile's rotation. So "use Cardputer with a portrait layout" is achieved by assigning Cardputer to a portrait profile (one with the appropriate rotation) — priority 1 board match plus that profile's rotation. However, **sharing one profile across multiple boards that need different rotations (per-board rotation) is not done in the MVP**. To reuse a layout across orientations, create a separate profile per orientation and use "copy to start" (§8.9.6). A per-board rotation override is a future extension (§15).
 
 #### 8.9.5 Premises of Board Detection
 
@@ -583,15 +592,7 @@ The boards the authoring tool offers as assignment candidates follow the project
 
 If a project that has boards assigned with M5GFX/M5Unified is later changed to LovyanGFX (e.g., Cardputer is already assigned), that assignment is **not automatically deleted but kept, and warned as "auto-detection not possible"**. On the actual device, it follows the fallback rules above: if the resolution matches, it falls back to that profile; if ambiguous at the same resolution, it is resolved by a compile-time hint or `setProfile()`. Seeing the warning, the user can choose to remove the assignment, switch to manual operation, etc.
 
-#### Auto-Detection Extension Rules (Outside the MVP. Defined as rules.)
-
-As an aid when `getBoard()` cannot determine the board, the following are used in order. They are not implemented in the MVP, but are defined as future detection rules.
-
-1. **Resolution** … Narrow down to the group of profiles of the same size by `gfx.width()` × `gfx.height()`.
-2. **MCU chip type** … Determine ESP32 / ESP32-S3 etc. by the compile-time `CONFIG_IDF_TARGET_*` or the runtime `ESP.getChipModel()`, and distinguish profiles of the same resolution. Example: the 320×240 Core2 (ESP32) and CoreS3 (ESP32-S3) can be distinguished by chip, and can be selected automatically even with bare LovyanGFX.
-3. Only when still indistinguishable (same resolution, same chip), fall back to a compile-time hint or manual specification via `setProfile()`.
-
-As a result, many of the "boards that cannot be distinguished at the same resolution" mentioned at the top of §8.9.5 are resolved by chip detection, narrowing the range that requires manual specification.
+Note that narrowing by size (resolution) is not a future aid but a **first-class resolution rule**, already built into priority 2 of §8.9.4. **MCU chip type (ESP32 / ESP32-S3 etc.) is not used for detection** (it is cumbersome to judge, and where a distinction is needed `board_t` identifies the device sufficiently). For the case of forcing an automatic split of same-size, same-orientation, different-chip devices on bare LovyanGFX (e.g. the 320×240 Core2 vs CoreS3), resolve it via the default designation / `setProfile()` of §8.9.4, or by an explicit board on the M5GFX/M5Unified target.
 
 #### 8.9.6 Per-Profile Layout
 
@@ -1172,7 +1173,7 @@ The MVP defers the following.
 - Reverse-lookup input of text size px height (entering a px height to automatically select the font + multiplier; the MVP uses multiplier specification + px auxiliary display. §8.7)
 - Text box (giving Text a width and height to perform clipping/wrapping/in-box alignment; the MVP has only single-line anchor + datum. §8.7)
 - Layout JSON import/export (for AI collaboration; import/export the size, name, description, and placement of a single screen as a self-contained JSON with project-specific information stripped. The import method is undecided. §8.15)
-- Auto-detection extension rules (assisted detection by resolution and MCU chip ESP32/S3. §8.9.5)
+- Per-board rotation override (sharing one profile across boards of different orientation. MVP: rotation is per-profile. §8.9.4)
 - Animation in general (frame/fade/move/scale, playback and editing)
 - Additional Parts such as Icon/Gauge/Graph/Container/Button
 - ValueText/Value family (dedicated numeric display: prefix/suffix/decimal places/unit)

@@ -15,7 +15,9 @@ function fillDeviceMenu() {
   presets.forEach((r, i) => {
     const o = document.createElement('option');
     o.value = String(i);
-    o.textContent = `${r.w}×${r.h} — ${r.boards.join(' / ')}`;
+    // Board-derived presets list their boards; board-less common sizes show a note.
+    const tail = r.boards.length ? r.boards.join(' / ') : (r.note || '');
+    o.textContent = tail ? `${r.w}×${r.h} — ${tail}` : `${r.w}×${r.h}`;
     sel.appendChild(o);
   });
   const custom = document.createElement('option');
