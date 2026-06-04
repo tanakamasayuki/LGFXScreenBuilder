@@ -8,4 +8,76 @@ profiles:
       - dir: ../../
       - LovyanGFX (1.2.21)
 
+  sld2_m5stack:
+    fqbn: lang-ship:native:SLD2_M5Stack
+    platforms:
+      - platform: lang-ship:native (1.1.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - LovyanGFX (1.2.21)
+
+  sld2_m5stackcore2:
+    fqbn: lang-ship:native:SLD2_M5StackCore2
+    platforms:
+      - platform: lang-ship:native (1.0.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - LovyanGFX (1.2.21)
+
+  sld2_m5stackcores3:
+    fqbn: lang-ship:native:SLD2_M5StackCoreS3
+    platforms:
+      - platform: lang-ship:native (1.0.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - LovyanGFX (1.2.21)
+
+  sld2_m5stickcplus:
+    fqbn: lang-ship:native:SLD2_M5StickCPlus
+    platforms:
+      - platform: lang-ship:native (1.0.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - LovyanGFX (1.2.21)
+
+  sld2_m5stickcplus2:
+    fqbn: lang-ship:native:SLD2_M5StickCPlus2
+    platforms:
+      - platform: lang-ship:native (1.0.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - LovyanGFX (1.2.21)
+
+  sld2_m5tab5:
+    fqbn: lang-ship:native:SLD2_M5Tab5
+    platforms:
+      - platform: lang-ship:native (1.0.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - LovyanGFX (1.2.21)
+
+  sld2_m5stackcoreink:
+    fqbn: lang-ship:native:SLD2_M5StackCoreInk
+    platforms:
+      - platform: lang-ship:native (1.0.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - LovyanGFX (1.2.21)
+
+  sld2_m5dial:
+    fqbn: lang-ship:native:SLD2_M5Dial
+    platforms:
+      - platform: lang-ship:native (1.0.0)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - LovyanGFX (1.2.21)
+
 default_profile: esp32

@@ -7,6 +7,16 @@ export const BOARDS = [
   { id: 'Cardputer', w: 240, h: 135 }, { id: 'DinMeter', w: 240, h: 135 },
   { id: 'Dial', w: 240, h: 240 }, { id: 'AtomS3', w: 128, h: 128 },
   { id: 'CoreInk', w: 200, h: 200 }, { id: 'Paper', w: 540, h: 960 },
+  // Newer M5GFX board_t entries (resolutions from M5GFX 0.2.22 panel setup, in the
+  // device's used orientation to match the convention above). All M5GFX/M5Unified-
+  // only (not in LGFX_KNOWN). CoreMP135 is not in the ESP32 autodetect path — 320×240
+  // assumed; verify against hardware.
+  { id: 'CoreS3SE', w: 320, h: 240 }, { id: 'StackChan', w: 320, h: 240 }, { id: 'CoreMP135', w: 320, h: 240 },
+  { id: 'StickS3', w: 135, h: 240 }, { id: 'StampPLC', w: 135, h: 240 }, { id: 'NessoN1', w: 135, h: 240 },
+  { id: 'CardputerADV', w: 240, h: 135 }, { id: 'AtomS3R', w: 128, h: 128 }, { id: 'VAMeter', w: 240, h: 240 },
+  { id: 'AirQ', w: 200, h: 200 }, { id: 'PaperS3', w: 540, h: 960 }, { id: 'PaperColor', w: 400, h: 600 },
+  { id: 'PaperMono', w: 480, h: 800 }, { id: 'StopWatch', w: 468, h: 468 },
+  { id: 'Tab5', w: 1280, h: 720 }, { id: 'UnitC6L', w: 64, h: 48 },
 ];
 
 // Subset that plain LovyanGFX (autodetect) can identify via board_t. Newer M5
@@ -27,6 +37,12 @@ export const BOARD_T = {
   StickC: 'board_M5StickC', StickCPlus: 'board_M5StickCPlus', StickCPlus2: 'board_M5StickCPlus2',
   Cardputer: 'board_M5Cardputer', DinMeter: 'board_M5DinMeter', Dial: 'board_M5Dial',
   AtomS3: 'board_M5AtomS3', CoreInk: 'board_M5StackCoreInk', Paper: 'board_M5Paper',
+  CoreS3SE: 'board_M5StackCoreS3SE', StackChan: 'board_M5StackChan', CoreMP135: 'board_M5CoreMP135',
+  StickS3: 'board_M5StickS3', StampPLC: 'board_M5StampPLC', NessoN1: 'board_ArduinoNessoN1',
+  CardputerADV: 'board_M5CardputerADV', AtomS3R: 'board_M5AtomS3R', VAMeter: 'board_M5VAMeter',
+  AirQ: 'board_M5AirQ', PaperS3: 'board_M5PaperS3', PaperColor: 'board_M5PaperColor',
+  PaperMono: 'board_M5PaperMono', StopWatch: 'board_M5StopWatch',
+  Tab5: 'board_M5Tab5', UnitC6L: 'board_M5UnitC6L',
 };
 
 export const boardById = (id) => BOARDS.find((b) => b.id === id);
