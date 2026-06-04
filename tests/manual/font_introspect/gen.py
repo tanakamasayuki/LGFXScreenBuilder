@@ -127,18 +127,20 @@ def classify(type_sym, name):
 def sample_for(cls):
     """Preview sample string for a font. Latin shows width contrast (W wide vs
     ili narrow, so a fixed-pitch font visibly aligns); CJK uses the self-naming
-    script word so the language is obvious and every glyph is a high-frequency
-    char present in that family's font (SPEC §8.7.2)."""
+    script word (so the language is obvious, every glyph high-frequency) plus
+    "ABC123" since CJK fonts also carry ASCII and the latin glyphs are otherwise
+    invisible in the preview (SPEC §8.7.2). Digit-only fonts are detected at
+    render time and overridden to all ten digits in the harness, not here."""
     s = cls["script"]
     if s == "latin":
         return "Wax Lily 12"
     if s == "cn":
-        return "简体中文"   # Simplified Chinese
+        return "简体中文 ABC123"   # Simplified Chinese
     if s == "tw":
-        return "繁體中文"   # Traditional Chinese
+        return "繁體中文 ABC123"   # Traditional Chinese
     if s == "ko":
-        return "한국어"     # Korean
-    return "日本語"          # ja: lgfxJapan*, efontJA
+        return "한국어 ABC123"     # Korean
+    return "日本語 ABC123"          # ja: lgfxJapan*, efontJA
 
 
 def classified(version):

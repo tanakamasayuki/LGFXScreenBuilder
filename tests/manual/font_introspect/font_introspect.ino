@@ -134,13 +134,17 @@ void setup()
     int mono = detectMono(font, m);
 
     // Actual character coverage (rendered, not metric-claimed). Done before the
-    // sample render below since these reuse the same canvas.
-    bool letters = drawsGlyph(canvas, font, "Aa");
+    // sample render below since these reuse the same canvas. Letters are probed
+    // with uppercase "ABC": numeric/clock fonts (Font6) carry only the lowercase
+    // am/pm markers a/p/m, so probing 'a' would wrongly flag them as text fonts.
+    bool letters = drawsGlyph(canvas, font, "ABC");
     bool digits = drawsGlyph(canvas, font, "0123456789");
     bool latinExt = drawsGlyph(canvas, font, "éÑ"); // Latin-1 accented
 
     // Render the generated sample (script-appropriate), cropped to its box.
-    const char *sample = e.sample;
+    // Digit-only fonts (e.g. the 7-segment Font7) carry no letters, so the
+    // table sample would render only its stray digits — show all ten instead.
+    const char *sample = (!letters && digits) ? "0123456789" : e.sample;
     canvas.fillScreen(TFT_BLACK);
     canvas.setFont(font);
     canvas.setTextColor(TFT_WHITE, TFT_BLACK);

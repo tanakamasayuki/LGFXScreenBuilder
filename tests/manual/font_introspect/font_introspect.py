@@ -32,11 +32,14 @@ SKETCH_DIR = Path(__file__).resolve().parent       # tests/manual/font_introspec
 DOCS_SRC = SKETCH_DIR.parents[2] / "docs" / "src"  # repo root / docs / src
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session", autouse=True)
 def generated():
     """Regenerate the font table (and ensure the pinned libs are downloaded)
-    before the dut fixture builds the sketch. Ordered ahead of `dut` in the test
-    signature so fonts_table.h exists at build time."""
+    before the sketch is compiled. The arduino_cli_build fixture that compiles is
+    module-scoped + autouse; pytest sets up higher-scoped fixtures first, so this
+    must be session-scoped to be guaranteed to run BEFORE the build — otherwise
+    the compile picks up the previous run's stale fonts_table.h (the catalog would
+    always lag one run behind, and sample-string changes would not take effect)."""
     return gen.generate()
 
 

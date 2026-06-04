@@ -112,9 +112,12 @@ export function approxCss(f) {
 }
 
 // A representative sample string for a font (script-appropriate for CJK).
+// Kept in sync with gen.py sample_for: CJK appends "ABC123" since those fonts
+// also carry ASCII and the latin glyphs are otherwise invisible in the preview.
 export const sampleFor = (f) => {
   if (!f || !isCjkScript(f.script)) return 'AaBbGg 0123';
-  return { ja: '日本語', cn: '简体中文', tw: '繁體中文', ko: '한국어' }[f.script] || '日本語';
+  const word = { ja: '日本語', cn: '简体中文', tw: '繁體中文', ko: '한국어' }[f.script] || '日本語';
+  return `${word} ABC123`;
 };
 
 // Human-readable byte size (e.g. 159287 -> "156 KB").
