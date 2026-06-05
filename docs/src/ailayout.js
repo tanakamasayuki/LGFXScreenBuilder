@@ -13,9 +13,11 @@
 
 import { sceneById, placement } from './model.js';
 
-// Public catalog/spec page (GitHub Pages serves docs/ ; Jekyll renders .md -> .html).
+// The AI-facing interface contract, embedded in the output as `spec` so an AI
+// that only receives the JSON can locate it. The file has no front matter, so
+// GitHub Pages serves it verbatim (raw Markdown) at this .md URL.
 export const AI_LAYOUT_DOC_URL =
-  'https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.html';
+  'https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.md';
 
 // One part entry. Field set per type matches model.js:
 //   Text  -> x,y,datum,size,color,text   (no w/h; anchored by datum, §8.7)
@@ -53,6 +55,7 @@ export function buildAiLayout(project, sceneId) {
   return {
     format: 'lgfxsb-layout',
     version: 1,
+    spec: AI_LAYOUT_DOC_URL, // where to read the field types and rules
     scene: scene.id,
     desc: scene.desc || '',
     background: project.background || undefined, // dropped by JSON.stringify when undefined

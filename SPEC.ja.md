@@ -743,7 +743,8 @@ AI に渡す IF 契約書は単独の**英語のみ**ドキュメント [docs/AI
 
 フォーマット:
 
-- トップレベル: `format`・`version`・`scene`（Scene ID）・`desc`（備考）・任意 `background`（視覚文脈）・`profiles[]`。
+- トップレベル: `format`・`version`・`spec`（`docs/AI_LAYOUT_IO.md` の URL。JSON だけ渡された AI が契約書を辿れる）・`scene`（Scene ID）・`desc`（備考）・任意 `background`（視覚文脈）・`profiles[]`。
+- 値の型は契約書に明示: `w`/`h`/`x`/`y`/`rot`/`version` は整数、`size` は実数可（倍率）、`color` は `"#rrggbb"`、`visible` は真偽値。
 - 各プロファイル: `id`・`w`・`h`・`rot`・`parts[]`。
 - 各パーツ: `id`・`type`・`parent`・`visible` ＋ 種別別の配置値（Text は `x`/`y` アンカー・`datum`・`size` 倍率・`color`・`text`、Rect は `x`/`y`/`w`/`h`/`color`、Image は `x`/`y`/`w`/`h`/`asset` 名、Group は `x`/`y` 原点のみ）。
 - **剥がすもの:** アセットのバイナリ（Data URL / RGB565）・ボード割当・名前空間／プロジェクト名・出力設定・`defaultProfile`・`targetLibrary`。

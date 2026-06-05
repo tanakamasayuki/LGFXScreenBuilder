@@ -752,7 +752,8 @@ The AI-facing interface contract is a standalone, **English-only** document, [do
 
 Format:
 
-- Top-level: `format`, `version`, `scene` (Scene ID), `desc` (description), optional `background` (visual context), and `profiles[]`.
+- Top-level: `format`, `version`, `spec` (the URL of `docs/AI_LAYOUT_IO.md`, so an AI given only the JSON can fetch the contract), `scene` (Scene ID), `desc` (description), optional `background` (visual context), and `profiles[]`.
+- Value types are explicit in the contract: `w`/`h`/`x`/`y`/`rot`/`version` are integers; `size` is a number that may be fractional; `color` is `"#rrggbb"`; `visible` is boolean.
 - Each profile: `id`, `w`, `h`, `rot`, and `parts[]`.
 - Each part: `id`, `type`, `parent`, `visible`, plus per-type placement (Text: `x`/`y` anchor, `datum`, `size` multiplier, `color`, `text`; Rect: `x`/`y`/`w`/`h`/`color`; Image: `x`/`y`/`w`/`h`/`asset` name; Group: `x`/`y` origin only).
 - **Stripped:** asset binaries (Data URLs / RGB565), board assignments, namespace / project name, output settings, `defaultProfile`, `targetLibrary`.

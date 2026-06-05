@@ -27,6 +27,7 @@ fit a tall one.
 {
   "format": "lgfxsb-layout",
   "version": 1,
+  "spec": "https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.md",
   "scene": "Main",            // screen name (a C identifier)
   "desc": "",                 // free-text note about the screen
   "background": "#000000",    // full-screen background color (context; usually leave as-is)
@@ -37,6 +38,7 @@ fit a tall one.
 }
 ```
 
+- `spec` — the URL of this document (so you can re-fetch the rules). Echo it back unchanged.
 - `w` / `h` — the profile's screen size in pixels, at rotation `rot`.
 - `rot` — rotation 0–3. `0` is the panel's native orientation; `w`/`h` already reflect it.
 
@@ -61,6 +63,20 @@ outside `w`×`h` is clipped. Keep parts inside the screen.
 | `type` | `"Rect"`, `"Text"`, `"Image"`, or `"Group"`. |
 | `parent` | `null`, or the `id` of a `Group` that contains this part. |
 | `visible` | `true` / `false`. A hidden part is kept but not drawn. |
+
+### Field value types
+
+| field | JSON type | notes |
+|-------|-----------|-------|
+| `w`, `h`, `x`, `y` | **integer** | pixels. No fractional coordinates or sizes. |
+| `rot` | **integer** | 0, 1, 2, or 3. |
+| `size` (Text) | **number** | a scale multiplier; **may be fractional** (e.g. `1`, `1.5`, `3.5`). |
+| `color` | **string** | `"#rrggbb"` (6 hex digits, lowercase). |
+| `visible` | **boolean** | `true` / `false`. |
+| `id`, `type`, `datum`, `text` | **string** | — |
+| `parent`, `asset` | **string or null** | a referenced ID/name, or `null`. |
+| `scene`, `desc`, `spec`, `format` | **string** | — |
+| `version` | **integer** | currently `1`. |
 
 ### Per-type fields
 
@@ -94,6 +110,7 @@ The `Main` screen of the sample project, across three profiles:
 {
   "format": "lgfxsb-layout",
   "version": 1,
+  "spec": "https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.md",
   "scene": "Main",
   "desc": "",
   "background": "#000000",
