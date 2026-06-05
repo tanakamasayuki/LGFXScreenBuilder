@@ -1,11 +1,14 @@
 name: tests
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:
+  schedule:
+    # Every Monday at 10:00 JST (01:00 UTC).
+    - cron: '0 1 * * 1'
 
 concurrency:
   group: tests-${{ github.ref }}
@@ -25,8 +28,9 @@ jobs:
 
       - name: Setup arduino-cli
         uses: arduino/setup-arduino-cli@v2
-        with:
-          version: 1.4.0
+
+      - name: Show arduino-cli version
+        run: arduino-cli version
 
       - name: Initialize arduino-cli
         run: |
