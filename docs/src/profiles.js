@@ -198,5 +198,7 @@ export function initProfiles() {
   menu.addEventListener('click', (ev) => ev.stopPropagation());
   document.addEventListener('click', close);
   window.addEventListener('resize', close);
-  document.addEventListener('scroll', close, true); // capture: any scroller, incl. the left pane
+  // Close when an OUTSIDE scroller moves (the menu is fixed and won't follow it),
+  // but not when the user scrolls inside the menu itself.
+  document.addEventListener('scroll', (ev) => { if (!menu.contains(ev.target)) close(); }, true);
 }
