@@ -4,7 +4,7 @@
 // candidate is visible; the Height facet (rendered px) is the primary one.
 import { store, mutate } from './store.js';
 import { adoptFont, removeFont, toggleProfileFont, profileFonts, isFontAdopted } from './model.js';
-import { filterCatalog, facets, HEIGHT_BUCKETS, CONTENT_TYPES, approxCss, sampleFor, describe, loadMetrics, sampleImage, flashFor, fmtBytes, monoFor, heightOf, fontDetailUrl } from './fonts.js';
+import { filterCatalog, facets, HEIGHT_BUCKETS, CONTENT_TYPES, approxCss, approxWeight, sampleFor, describe, loadMetrics, sampleImage, flashFor, fmtBytes, monoFor, heightOf, fontDetailUrl } from './fonts.js';
 import { t } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
@@ -62,7 +62,8 @@ function renderGrid() {
         `transform:scale(${s.toFixed(3)})" role="img" aria-label="${sampleFor(f)}"></div></div>`;
     } else {
       const size = Math.max(14, Math.min(f.size || 16, 34));
-      prev = `<div class="fprev" style="font-family:${approxCss(f)};font-size:${size}px;${f.bold ? 'font-weight:700;' : ''}${f.italic ? 'font-style:italic;' : ''}">${sampleFor(f)}</div>`;
+      const wt = approxWeight(f);
+      prev = `<div class="fprev" style="font-family:${approxCss(f)};font-size:${size}px;${wt ? `font-weight:${wt};` : ''}${f.italic ? 'font-style:italic;' : ''}">${sampleFor(f)}</div>`;
     }
     const mono = monoFor(f.name);
     const wbadge = mono == null ? ''

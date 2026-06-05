@@ -8,7 +8,7 @@ import {
   absOrigin, reorderPart, groupParts, ungroupPart, reparentPart, assetById, profileFonts,
   reconcileAiLayout, applyAiLayout,
 } from './model.js';
-import { loadMetrics, metricsFor, approxCss, fontByName, fontDetailUrl } from './fonts.js';
+import { loadMetrics, metricsFor, approxCss, approxWeight, fontByName, fontDetailUrl } from './fonts.js';
 import { aiLayoutJson } from './ailayout.js';
 import { downloadText } from './persist.js';
 import { t } from './i18n.js';
@@ -111,7 +111,7 @@ function renderCanvas() {
       const cat = e.font ? fontByName(e.font) : null;
       d.style.fontSize = fontBaseHeight(e.font) * e.size * scale + 'px';
       d.style.fontFamily = cat ? approxCss(cat) : '';
-      d.style.fontWeight = cat && cat.bold ? '700' : '';
+      d.style.fontWeight = cat ? approxWeight(cat) : '';
       d.style.fontStyle = cat && cat.italic ? 'italic' : '';
       d.textContent = e.text;
       scr.appendChild(d); // append first to measure

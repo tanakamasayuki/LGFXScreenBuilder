@@ -104,18 +104,54 @@ export const FONT_SITE_BASE = 'https://tanakamasayuki.github.io/LGFXFontCatalog'
 export const fontDetailUrl = (name) =>
   FONT_SITE_BASE && name ? `${FONT_SITE_BASE}/fonts/${encodeURIComponent(name)}.html` : null;
 
-// Approximate CSS font-family that resembles the preset's family/category.
+// LovyanGFX font family -> a CSS font stack that resembles it for the preview
+// (SPEC §8.7.3: approximate, never the embedded glyphs). The distinctive Latin
+// display faces (Orbitron / Satisfy / Yellowtail / Roboto) are loaded via Google
+// Fonts in index.html; the metric-compatible ones (Free*) and the CJK families
+// resolve to comparable system fonts. Each stack ends in a generic so it still
+// degrades sensibly offline or when a font is missing.
+const FAMILY_CSS = {
+  FreeSans: '"Arimo","Liberation Sans",Arial,"Helvetica Neue",sans-serif',
+  FreeSerif: '"Tinos","Liberation Serif",Georgia,"Times New Roman",serif',
+  FreeMono: '"Cousine","Liberation Mono",ui-monospace,Menlo,Consolas,monospace',
+  DejaVu: '"DejaVu Sans","Bitstream Vera Sans","Noto Sans",Verdana,sans-serif',
+  Roboto_Thin: '"Roboto","Noto Sans",system-ui,sans-serif',
+  Orbitron_Light: '"Orbitron","Eurostile","Arial Narrow",sans-serif',
+  Satisfy: '"Satisfy","Segoe Script","Brush Script MT",cursive',
+  Yellowtail: '"Yellowtail","Segoe Script","Brush Script MT",cursive',
+  lgfxJapanGothic: '"M PLUS 1p","Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif',
+  lgfxJapanGothicP: '"M PLUS 1p","Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif',
+  lgfxJapanMincho: '"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif',
+  lgfxJapanMinchoP: '"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif',
+  efontJA: '"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif',
+  efontCN: '"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif',
+  efontTW: '"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif',
+  efontKR: '"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif',
+};
+
+// Approximate CSS font-family that resembles the preset's family (then category).
 export function approxCss(f) {
   if (!f) return 'system-ui,sans-serif';
+  const mapped = FAMILY_CSS[f.family];
+  if (mapped) return mapped;
+  // Unmapped family (bitmap Font0/AsciiFont, TomThumb, …): fall back by script/category.
   if (isCjkScript(f.script)) {
-    if (f.script === 'ko') return '"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif';
+    if (f.script === 'ko') return '"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif';
     return '"Hiragino Sans","Noto Sans JP","Yu Gothic","Noto Sans SC",sans-serif';
   }
-  const fam = f.family.toLowerCase();
+  const fam = (f.family || '').toLowerCase();
   if (f.category === 'bitmap' || /mono|tomthumb/.test(fam)) return 'ui-monospace,Menlo,Consolas,monospace';
   if (/serif/.test(fam)) return 'Georgia,"Times New Roman",serif';
-  if (/satisfy|yellowtail/.test(fam)) return '"Segoe Script","Brush Script MT",cursive';
   return 'system-ui,Arial,sans-serif';
+}
+
+// Approximate font-weight for the preview: bold faces -> 700; the "Thin" display
+// family renders lighter (Roboto ships a 100 weight); otherwise normal.
+export function approxWeight(f) {
+  if (!f) return '';
+  if (f.bold) return '700';
+  if (f.family === 'Roboto_Thin') return '100';
+  return '';
 }
 
 // A representative sample string for a font (script-appropriate for CJK).
