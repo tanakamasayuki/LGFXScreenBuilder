@@ -393,7 +393,7 @@ export function initDesign() {
     const { w: dw, h: dh } = dispDims(curProfile());
     const r = $('stage').getBoundingClientRect();
     const availW = Math.max(40, r.width - 36), availH = Math.max(40, r.height - 36); // 18px padding each side
-    setZoom(Math.min(availW / dw, availH / dh));
+    setZoom(Math.min(availW / dw, availH / dh) * 0.9); // leave a little margin around the canvas
   };
   scr.addEventListener('wheel', (ev) => { ev.preventDefault(); setZoom(store.ui.zoom * (ev.deltaY < 0 ? 1.1 : 1 / 1.1)); }, { passive: false });
 
