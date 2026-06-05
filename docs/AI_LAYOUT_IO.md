@@ -185,10 +185,14 @@ If a part should not appear on a certain profile, keep the part and set
 
 **Use only the part types and fields defined here.** For visual-polish requests such as
 "make it richer", do not invent unsupported fields such as `radius`, `cornerRadius`,
-`stroke`, `border`, `opacity`, `alpha`, `gradient`, `shadow`, `font`(family),
-`fontFamily`, `bold`, `wrap`, or `align`. Approximate cards, dividers, highlights, and
-simple shadows by layering `Rect` and `Text` parts. Use `Image` only to reference an
-existing project asset.
+`stroke`, `border`, `opacity`, `alpha`, `gradient`, `shadow`, `fontFamily`, `fontStyle`,
+`fontWeight`, `bold`, `italic`, `wrap`, or `align`. Approximate cards, dividers,
+highlights, and simple shadows by layering `Rect` and `Text` parts. Use `Image` only to
+reference an existing project asset.
+
+The `font` field **is** a supported Text field — this restriction is only about *other*
+text-styling fields. Preserve `font` as-is unless the request explicitly asks to switch
+to another font that already appears in this JSON, and never invent a new font name.
 
 **This format does not include**, and you must not add: font *family/style* selection
 beyond the `font` name + `size` + `color` already defined; animation/transition/keyframe/
