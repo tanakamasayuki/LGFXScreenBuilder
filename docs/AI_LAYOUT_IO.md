@@ -7,7 +7,9 @@ a tool that authors UI screens for embedded displays (LovyanGFX / M5GFX / M5Unif
 You will be given:
 
 1. **This document** (the format and the rules).
-2. A **layout JSON** for one screen (exported from the tool, or hand-written).
+2. A **layout JSON** for one screen (exported from the tool, or hand-written). It is
+   usually **minified** (a single line); that is normal. The pretty example below is
+   only for readability.
 3. A **request** ("make a clock screen", "move the battery to the top-right", …).
 
 Produce a **layout JSON in exactly this format** as your answer. Keep it valid JSON

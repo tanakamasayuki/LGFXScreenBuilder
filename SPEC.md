@@ -760,7 +760,7 @@ Format:
 - **Invariant:** the `(id, type, parent)` set is identical across all profiles (the data contract of §8.2). Everything else may differ per profile — coordinates, size, `color`, `visible`, and a Text's `datum`/`size`/`text`/`font`.
 - The AI layout format v1 intentionally excludes font *family/style* selection beyond the `font` name + `size` + `color`, profile-specific asset replacement, and animation.
 
-Export (implemented): the Design screen's **"Copy AI JSON"** action (`docs/src/ailayout.js`) copies the current scene (all profiles) in this format to the clipboard, with a file-download fallback when the clipboard is unavailable.
+Export (implemented): the Design screen's **"Copy AI JSON"** action (`docs/src/ailayout.js`) copies the current scene (all profiles) in this format to the clipboard as **minified JSON** (the clipboard is an AI input, so no whitespace — fewer tokens; the contract's worked example stays pretty for human readers). A file download is used as a fallback when the clipboard is unavailable.
 
 Import (post-MVP): re-importing AI output is applied manually for now. Open questions to settle before wiring automatic import:
 

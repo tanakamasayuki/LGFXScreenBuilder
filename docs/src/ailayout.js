@@ -64,7 +64,9 @@ export function buildAiLayout(project, sceneId) {
   };
 }
 
-// Pretty-printed JSON string for the clipboard / a downloaded file.
+// Minified JSON string for the clipboard / a downloaded file. The clipboard is
+// an AI input (not read by a human), so no whitespace — fewer tokens. The
+// contract's worked example stays pretty for human readers; AI parses either.
 export function aiLayoutJson(project, sceneId) {
-  return JSON.stringify(buildAiLayout(project, sceneId), null, 2);
+  return JSON.stringify(buildAiLayout(project, sceneId));
 }
