@@ -108,16 +108,16 @@ export const fontDetailUrl = (name) =>
 // LovyanGFX font name -> a CSS font stack for bitmap/special preset faces where
 // the catalog family is the same as the symbol. These are still approximations.
 const FONT_CSS = {
-  Font0: '"Pixelify Sans","DotGothic16",monospace',
-  Font2: '"Pixelify Sans","DotGothic16",monospace',
-  Font4: '"Pixelify Sans","DotGothic16",monospace',
-  Font6: '"DSEG7 Classic","DSEG7Classic",monospace',
-  Font7: '"DSEG7 Classic","DSEG7Classic",monospace',
+  Font0: '"Pixelify Sans","DotGothic16","Silkscreen",monospace',
+  Font2: '"Pixelify Sans","DotGothic16","Silkscreen",monospace',
+  Font4: '"Pixelify Sans","DotGothic16","Silkscreen",monospace',
+  Font6: '"DSEG7 Classic","DSEG7Classic","Micro 5","Tiny5","Orbitron",monospace',
+  Font7: '"DSEG7 Classic","DSEG7Classic","Micro 5","Tiny5","Orbitron",monospace',
   Font8: 'Arial,"Helvetica Neue",sans-serif',
-  Font8x8C64: '"C64 Pro Mono","Pixelify Sans",monospace',
-  AsciiFont8x16: '"Web437 IBM VGA 8x16","Perfect DOS VGA 437",monospace',
-  AsciiFont24x48: '"Web437 IBM VGA 8x16","Perfect DOS VGA 437",monospace',
-  TomThumb: '"Tom Thumb","Pixelify Sans",monospace',
+  Font8x8C64: '"C64 Pro Mono","Micro 5","Tiny5","Pixelify Sans",monospace',
+  AsciiFont8x16: '"Web437 IBM VGA 8x16","Perfect DOS VGA 437","VT323","Share Tech Mono",monospace',
+  AsciiFont24x48: '"Web437 IBM VGA 8x16","Perfect DOS VGA 437","VT323","Share Tech Mono",monospace',
+  TomThumb: '"Tom Thumb","Tiny5","Micro 5","Pixelify Sans",monospace',
 };
 
 // LovyanGFX font family -> a CSS font stack that resembles it for the preview
