@@ -109,7 +109,9 @@ select.icon { padding: 0 4px; }
 .board .bd { color: var(--muted); font-size: 11px; }
 .board .taken { color: var(--warn); font-size: 11px; }
 .menu-wrap { position: relative; }
-.menu { position: absolute; left: 0; top: 30px; z-index: 10; display: none; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 12px 30px rgba(0, 0, 0, .18); padding: 6px; width: 230px; max-height: 60vh; overflow: auto; }
+/* Fixed (not absolute) so the popup is not clipped by the scrollable left pane;
+   coordinates are set from the trigger button's rect on open (profiles.js). */
+.menu { position: fixed; z-index: 50; display: none; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 12px 30px rgba(0, 0, 0, .18); padding: 6px; width: 230px; max-height: 60vh; overflow: auto; }
 .menu.open { display: grid; }
 .menu-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 0; border-radius: 6px; padding: 7px 8px; text-align: left; background: transparent; width: 100%; cursor: pointer; min-height: auto; }
 .menu-item:hover { background: var(--soft); }

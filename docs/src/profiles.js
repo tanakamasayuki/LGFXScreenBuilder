@@ -179,13 +179,24 @@ export function initProfiles() {
   props.addEventListener('change', armFire, true);
   $('hide-mismatch').addEventListener('change', () => renderProfCenter());
   const menu = $('profile-add-menu');
+  const btn = $('profile-add');
   const close = () => menu.classList.remove('open');
-  $('profile-add').addEventListener('click', (ev) => {
+  // The menu is position:fixed (so the scrollable left pane can't clip it); place
+  // it just under the trigger button. Scrolling closes it (fixed won't follow).
+  const place = () => {
+    const r = btn.getBoundingClientRect();
+    menu.style.top = `${Math.round(r.bottom + 4)}px`;
+    menu.style.left = `${Math.round(Math.min(r.left, window.innerWidth - menu.offsetWidth - 8))}px`;
+  };
+  btn.addEventListener('click', (ev) => {
     ev.stopPropagation();
     if (menu.classList.contains('open')) { close(); return; }
     renderAddMenu(menu, close);
     menu.classList.add('open');
+    place();
   });
   menu.addEventListener('click', (ev) => ev.stopPropagation());
   document.addEventListener('click', close);
+  window.addEventListener('resize', close);
+  document.addEventListener('scroll', close, true); // capture: any scroller, incl. the left pane
 }
