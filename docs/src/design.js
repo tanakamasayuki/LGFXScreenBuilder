@@ -6,6 +6,7 @@ import {
   DATUMS, DATUM_FX, DATUM_FY, orient, pxOf, sceneById, profileById, partDef, placement,
   addPart, removePart, renamePart, addScene, removeScene, renameScene,
   absOrigin, reorderPart, groupParts, ungroupPart, reparentPart, assetById, profileFonts,
+  reconcileAiLayout, applyAiLayout,
 } from './model.js';
 import { loadMetrics, metricsFor, approxCss, fontByName, fontDetailUrl } from './fonts.js';
 import { aiLayoutJson } from './ailayout.js';
@@ -456,5 +457,36 @@ export function initDesign() {
       downloadText(`${store.ui.sceneId}.ai-layout.json`, json, 'application/json');
       flash(t('ailayout.downloaded'));
     }
+  };
+
+  // Paste AI JSON: import a layout (§8.15). Existing scene id -> update, else add.
+  const pasteOv = $('paste-overlay'), pasteTa = $('paste-json');
+  const pasteSummary = $('paste-summary'), pasteErr = $('paste-err'), pasteImport = $('paste-import');
+  const closePaste = () => { pasteOv.hidden = true; };
+  const parsePaste = () => { try { return { obj: JSON.parse(pasteTa.value) }; } catch (e) { return { err: e.message }; } };
+  const refreshPaste = () => {
+    pasteSummary.textContent = ''; pasteErr.textContent = '';
+    if (!pasteTa.value.trim()) { pasteSummary.textContent = t('paste.empty'); pasteImport.disabled = true; return; }
+    const { obj, err } = parsePaste();
+    if (err) { pasteErr.textContent = t('paste.invalid', { msg: err }); pasteImport.disabled = true; return; }
+    const r = reconcileAiLayout(store.project, obj);
+    if (r.errors.length) { pasteErr.textContent = r.errors.join(' '); pasteImport.disabled = true; return; }
+    let s = t(r.mode === 'update' ? 'paste.willUpdate' : 'paste.willAdd',
+      { scene: r.sceneId, parts: r.partCount, profiles: store.project.profiles.length });
+    if (r.warnings.length) s += ' ' + t('paste.warnings', { n: r.warnings.length, list: r.warnings.join(' ') });
+    pasteSummary.textContent = s; pasteImport.disabled = false;
+  };
+  $('btn-paste-ai').onclick = () => { pasteTa.value = ''; refreshPaste(); pasteOv.hidden = false; pasteTa.focus(); };
+  pasteTa.addEventListener('input', refreshPaste);
+  $('paste-cancel').onclick = closePaste;
+  pasteOv.addEventListener('pointerdown', (ev) => { if (ev.target === pasteOv) closePaste(); });
+  pasteImport.onclick = () => {
+    const { obj, err } = parsePaste();
+    if (err) { refreshPaste(); return; }
+    if (reconcileAiLayout(store.project, obj).errors.length) { refreshPaste(); return; }
+    let res;
+    mutate((st) => { res = applyAiLayout(st.project, obj); st.ui.sceneId = res.sceneId; st.ui.selected = null; });
+    closePaste();
+    flash(t('paste.imported', { scene: res.sceneId, mode: res.mode }));
   };
 }

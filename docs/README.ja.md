@@ -65,9 +65,10 @@ python -m http.server 8000 --directory docs
 - **コード生成**（`src/codegen.js`）: `generateHeader(project, opts)`（§11 ファサード＋記述子、
   プロファイル絞り込み/fallback 任意）＋ `generateSketch(project, framework)`（サンプル `.ino`）。
   `tests/codegen_roundtrip` で end-to-end 検証済み。ツールバー「.h 出力」はワンクリックの近道として残置。
-- **AI レイアウト I/O**（`src/ailayout.js`、SPEC §8.15）: Design の「AI用JSONコピー」ボタンで
-  現在の画面（全プロファイル）を自己完結・モデル忠実な JSON でコピー。AI に画面の作成・修正を
-  頼むとき [AI_LAYOUT_IO.md](AI_LAYOUT_IO.md)（AI 向け IF 契約書、英語）と一緒に渡す。取り込みは予定。
+- **AI レイアウト I/O**（`src/ailayout.js` ＋ `src/model.js` の `reconcileAiLayout`/`applyAiLayout`、
+  SPEC §8.15）: 「AI用JSONコピー」で現在の画面（全プロファイル）を自己完結・モデル忠実な**minified** JSON でコピー、
+  「AI結果を貼付」で編集済みレイアウトを取り込み（同名シーンは上書き・無ければ追加、Undo 対応・適用前プレビュー付き）。
+  AI に画面の作成・修正を頼むとき [AI_LAYOUT_IO.md](AI_LAYOUT_IO.md)（AI 向け IF 契約書、英語）と一緒に渡す。
 
 ## 構成
 

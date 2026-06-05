@@ -78,10 +78,12 @@ python -m http.server 8000 --directory docs
   facade + descriptor, with optional profile subset/fallback) and
   `generateSketch(project, framework)` (the example `.ino`); verified end-to-end by
   `tests/codegen_roundtrip`. The toolbar "Export .h" remains a one-click shortcut.
-- **AI layout I/O** (`src/ailayout.js`, SPEC §8.15): the "Copy AI JSON" button in
-  Design copies the current scene (all profiles) as a self-contained, model-faithful
-  JSON. Hand it to an AI together with [AI_LAYOUT_IO.md](AI_LAYOUT_IO.md) (the AI-facing
-  interface contract) to design or edit a screen. Import is planned.
+- **AI layout I/O** (`src/ailayout.js` + `reconcileAiLayout`/`applyAiLayout` in
+  `src/model.js`, SPEC §8.15): "Copy AI JSON" copies the current scene (all profiles) as a
+  self-contained, model-faithful **minified** JSON; "Paste AI JSON" imports an edited
+  layout back (scene name exists → update, else add; undoable, with a pre-apply preview).
+  Hand the JSON to an AI together with [AI_LAYOUT_IO.md](AI_LAYOUT_IO.md) (the AI-facing
+  interface contract) to design or edit a screen.
 
 ## Layout
 

@@ -229,5 +229,6 @@ This format maps one-to-one to the tool's internal model, so a layout exported f
 tool and edited by you can be imported back. Stable IDs are what make editing safe: an
 unchanged `id` means "the same part, moved/restyled"; a new `id` means "a new part".
 
-> The tool currently provides **export** ("Copy AI JSON" in Design mode). Re-importing
-> AI output is applied manually for now; automatic import is planned (SPEC §8.15).
+> The tool provides both **export** ("Copy AI JSON") and **import** ("Paste AI JSON") in
+> Design mode. On import, a scene whose name already exists is **updated**; a new name is
+> **added**. Import is undoable. (SPEC §8.15.)

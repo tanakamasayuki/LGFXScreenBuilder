@@ -79,6 +79,7 @@
       <div class="zbar">
         <span class="sub" data-i18n="zbar.hint">Middle button = pan / wheel = zoom</span>
         <button class="mini" id="btn-copy-ai" data-i18n="ailayout.copy" data-i18n-title="ailayout.copyTitle">Copy AI JSON</button>
+        <button class="mini" id="btn-paste-ai" data-i18n="ailayout.paste" data-i18n-title="ailayout.pasteTitle">Paste AI JSON</button>
         <span class="grow"></span>
         <button class="mini" id="zoom-out">−</button>
         <span class="sub" id="zoom-label">100%</span>
@@ -276,6 +277,20 @@
       <div class="dialog-actions">
         <button class="mini" id="np-cancel" data-i18n="newproj.cancel">Cancel</button>
         <button class="mini" id="np-create" data-i18n="newproj.create">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="paste-overlay" class="overlay" hidden>
+    <div class="dialog">
+      <h2 data-i18n="paste.title">Import AI layout JSON</h2>
+      <p class="sub" data-i18n="paste.hint">Paste the layout JSON returned by the AI. The scene is updated if its name already exists, otherwise added.</p>
+      <textarea id="paste-json" class="paste-area" data-i18n-placeholder="paste.placeholder" placeholder="Paste layout JSON here…"></textarea>
+      <p class="sub" id="paste-summary"></p>
+      <p class="sub np-err" id="paste-err"></p>
+      <div class="dialog-actions">
+        <button class="mini" id="paste-cancel" data-i18n="paste.cancel">Cancel</button>
+        <button class="mini" id="paste-import" data-i18n="paste.import">Import</button>
       </div>
     </div>
   </div>

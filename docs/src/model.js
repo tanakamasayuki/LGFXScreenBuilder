@@ -552,6 +552,128 @@ export function renameScene(project, oldId, newId) {
   return newId;
 }
 
+// --- AI layout import (§8.15) --------------------------------------------
+// Fold a one-scene x all-profiles AI layout JSON (docs/AI_LAYOUT_IO.md) back
+// into the model. The model keeps ONE shared (id,type,parent)+order per scene
+// plus a per-profile placement map, so part definitions are taken from a single
+// canonical profile and each project profile's placements are rebuilt from it.
+
+const HEX6 = /^#[0-9a-fA-F]{6}$/;
+const toInt = (v, d = 0) => (Number.isFinite(+v) ? Math.round(+v) : d);
+const toColor = (v, d) => (typeof v === 'string' && HEX6.test(v) ? v.toLowerCase() : d);
+
+// Placement object for one part, from its AI entry + type (mirrors the factories).
+function aiPlacement(type, p) {
+  const x = toInt(p.x), y = toInt(p.y), visible = p.visible !== false;
+  if (type === 'Text') {
+    return {
+      x, y,
+      datum: DATUMS.includes(p.datum) ? p.datum : 'TL',
+      size: Number.isFinite(+p.size) ? +p.size : 1,
+      color: toColor(p.color, '#ffffff'),
+      text: typeof p.text === 'string' ? p.text : '',
+      font: p.font || null,
+      visible,
+    };
+  }
+  if (type === 'Group') return { x, y, visible };
+  const w = Math.max(1, toInt(p.w, 1)), h = Math.max(1, toInt(p.h, 1));
+  if (type === 'Rect') return { x, y, w, h, color: toColor(p.color, '#1e2a30'), visible };
+  return { x, y, w, h, visible }; // Image (asset lives on the part definition)
+}
+
+// Reconcile a parsed AI layout against the project. Pure: no mutation. Returns
+// { errors[], warnings[], sceneId, exists, mode, partDefs, layouts, partCount }.
+export function reconcileAiLayout(project, obj) {
+  const errors = [], warnings = [];
+  if (!obj || typeof obj !== 'object') return { errors: ['Top-level JSON is not an object.'], warnings };
+  if (obj.format && obj.format !== 'lgfxsb-layout') warnings.push(`Unexpected format "${obj.format}".`);
+  const sceneId = obj.scene;
+  const profs = Array.isArray(obj.profiles) ? obj.profiles : [];
+  if (!isValidId(sceneId)) errors.push(`scene "${sceneId}" is not a valid identifier.`);
+  if (!profs.length) errors.push('Layout has no profiles.');
+  if (errors.length) return { errors, warnings };
+
+  // Canonical profile for definitions: defaultProfile if present, else the first.
+  const canonical = profs.find((p) => p.id === project.defaultProfile) || profs[0];
+  const existingScene = sceneById(project, sceneId);
+
+  // Part definitions (id/type/parent/asset) from the canonical profile.
+  const partDefs = [], seen = new Set();
+  for (const p of (canonical.parts || [])) {
+    if (!isValidId(p.id)) { errors.push(`part id "${p.id}" is not a valid identifier.`); continue; }
+    if (seen.has(p.id)) { errors.push(`duplicate part id "${p.id}".`); continue; }
+    if (!PART_TYPES.includes(p.type)) { errors.push(`part "${p.id}" has unknown type "${p.type}".`); continue; }
+    seen.add(p.id);
+    let asset = null;
+    if (p.type === 'Image' && p.asset) {
+      if (assetById(project, p.asset)) asset = p.asset;
+      else warnings.push(`asset "${p.asset}" (part ${p.id}) is not in the project — left empty.`);
+    }
+    const prev = existingScene && partDef(existingScene, p.id); // keep existing description
+    partDefs.push({ id: p.id, type: p.type, parent: p.parent == null ? null : String(p.parent), desc: (prev && prev.desc) || '', asset });
+  }
+  if (errors.length) return { errors, warnings };
+
+  // Validate parents (must reference a Group in the set) and break cycles.
+  const byId = new Map(partDefs.map((d) => [d.id, d]));
+  for (const d of partDefs) {
+    if (d.parent == null) continue;
+    const par = byId.get(d.parent);
+    if (!par) { warnings.push(`part "${d.id}": parent "${d.parent}" not found — moved to root.`); d.parent = null; }
+    else if (par.type !== 'Group') { warnings.push(`part "${d.id}": parent "${d.parent}" is not a Group — moved to root.`); d.parent = null; }
+  }
+  for (const d of partDefs) {
+    const chain = new Set(); let cur = d;
+    while (cur && cur.parent != null) {
+      if (chain.has(cur.id)) { warnings.push(`part "${d.id}": parent cycle — moved to root.`); d.parent = null; break; }
+      chain.add(cur.id); cur = byId.get(cur.parent);
+    }
+  }
+
+  // Per-profile placements for every PROJECT profile.
+  const aiById = new Map(profs.map((p) => [p.id, p]));
+  const canonParts = new Map((canonical.parts || []).map((p) => [p.id, p]));
+  const layouts = {};
+  const skipped = profs.filter((p) => !profileById(project, p.id)).map((p) => p.id);
+  if (skipped.length) warnings.push(`profiles not in the project, ignored: ${skipped.join(', ')}.`);
+  for (const pr of project.profiles) {
+    const src = aiById.get(pr.id);
+    if (!src) warnings.push(`profile "${pr.id}" missing from layout — placements cloned from "${canonical.id}".`);
+    const srcParts = src ? new Map((src.parts || []).map((p) => [p.id, p])) : null;
+    const map = {};
+    for (const d of partDefs) {
+      const ai = (srcParts && srcParts.get(d.id)) || canonParts.get(d.id) || {};
+      map[d.id] = aiPlacement(d.type, ai);
+    }
+    layouts[pr.id] = map;
+  }
+
+  // Cross-profile (id,type) consistency note vs the canonical definition.
+  const canonSig = [...canonParts.keys()].map((id) => `${id}:${canonParts.get(id).type}`).sort().join('|');
+  for (const p of profs) {
+    if (p === canonical) continue;
+    const sig = (p.parts || []).map((q) => `${q.id}:${q.type}`).sort().join('|');
+    if (sig !== canonSig) warnings.push(`profile "${p.id}" part set differs from "${canonical.id}" — "${canonical.id}" used as the definition.`);
+  }
+
+  return { errors, warnings, sceneId, exists: !!existingScene, mode: existingScene ? 'update' : 'add', partDefs, layouts, partCount: partDefs.length };
+}
+
+// Apply a parsed AI layout (mutates project). Updates the scene if its id exists,
+// otherwise adds it. Returns { ok, sceneId, mode, warnings } or { errors }.
+export function applyAiLayout(project, obj) {
+  const r = reconcileAiLayout(project, obj);
+  if (r.errors.length) return { errors: r.errors, warnings: r.warnings };
+  let scene = sceneById(project, r.sceneId);
+  const desc = typeof obj.desc === 'string' ? obj.desc : '';
+  if (scene) { scene.parts = r.partDefs; scene.desc = desc || scene.desc || ''; }
+  else { scene = { id: r.sceneId, desc, parts: r.partDefs }; project.scenes.push(scene); }
+  for (const pr of project.profiles) pr.layout[r.sceneId] = r.layouts[pr.id];
+  scene.parts = normalize(scene); // pre-order for draw order / codegen invariants
+  return { ok: true, sceneId: r.sceneId, mode: r.mode, warnings: r.warnings };
+}
+
 // Base font height (px) used to convert a text-size multiplier to a px hint (§8.7).
 export const BASE_FONT_PX = 8;
 export const pxOf = (size) => Math.round(size * BASE_FONT_PX);

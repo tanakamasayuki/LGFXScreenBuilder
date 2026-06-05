@@ -44,6 +44,18 @@ const MESSAGES = {
     'ailayout.copyTitle': 'Copy this scene (all profiles) as AI layout JSON. Paste it with docs/AI_LAYOUT_IO.md when asking an AI to design or edit the screen (§8.15).',
     'ailayout.copied': 'Copied "{scene}" layout JSON (all profiles) to the clipboard.',
     'ailayout.downloaded': 'Clipboard unavailable — downloaded the layout JSON instead.',
+    'ailayout.paste': 'Paste AI JSON',
+    'ailayout.pasteTitle': 'Import a layout JSON produced by an AI (paste it). The scene is updated if its name exists, otherwise added (§8.15).',
+    'paste.title': 'Import AI layout JSON',
+    'paste.hint': 'Paste the layout JSON returned by the AI. The scene is updated if its name already exists, otherwise added.',
+    'paste.placeholder': 'Paste layout JSON here…',
+    'paste.cancel': 'Cancel', 'paste.import': 'Import',
+    'paste.empty': 'Paste layout JSON above.',
+    'paste.invalid': 'Invalid JSON: {msg}',
+    'paste.willUpdate': 'Update existing scene "{scene}" — {parts} parts, {profiles} profiles.',
+    'paste.willAdd': 'Add new scene "{scene}" — {parts} parts, {profiles} profiles.',
+    'paste.warnings': '{n} warning(s): {list}',
+    'paste.imported': 'Imported "{scene}" ({mode}).',
     'hint.profileMeta': 'Size, rotation, and board assignment are in the Profiles screen. Here you edit placement.',
     'hint.sceneProps': 'Rotation is per profile (Profiles screen). Select a part to edit its placement.',
     'inspector.scene': 'Screen properties ({scene})',
@@ -150,6 +162,18 @@ const MESSAGES = {
     'ailayout.copyTitle': 'この画面（全プロファイル）を AI 用レイアウト JSON でコピー。AI に画面の作成・修正を頼むとき docs/AI_LAYOUT_IO.md と一緒に貼り付ける（§8.15）。',
     'ailayout.copied': '「{scene}」のレイアウト JSON（全プロファイル）をクリップボードにコピーしました。',
     'ailayout.downloaded': 'クリップボードが使えないため、レイアウト JSON をダウンロードしました。',
+    'ailayout.paste': 'AI結果を貼付',
+    'ailayout.pasteTitle': 'AI が返したレイアウト JSON を取り込む（貼り付け）。同名シーンがあれば上書き更新、無ければ新規追加（§8.15）。',
+    'paste.title': 'AI レイアウト JSON の取り込み',
+    'paste.hint': 'AI が返したレイアウト JSON を貼り付け。同名シーンがあれば上書き更新、無ければ新規追加します。',
+    'paste.placeholder': 'ここにレイアウト JSON を貼り付け…',
+    'paste.cancel': 'キャンセル', 'paste.import': '取り込む',
+    'paste.empty': '上にレイアウト JSON を貼り付けてください。',
+    'paste.invalid': 'JSON が不正です: {msg}',
+    'paste.willUpdate': '既存シーン「{scene}」を上書き更新 — パーツ {parts}・プロファイル {profiles}。',
+    'paste.willAdd': '新規シーン「{scene}」を追加 — パーツ {parts}・プロファイル {profiles}。',
+    'paste.warnings': '警告 {n} 件: {list}',
+    'paste.imported': '「{scene}」を取り込みました（{mode}）。',
     'hint.profileMeta': 'サイズ・回転・ボード割当は Profiles 画面。ここは配置編集。',
     'hint.sceneProps': '回転はプロファイル単位（Profiles 画面）。パーツを選ぶと配置を編集します。',
     'inspector.scene': '画面プロパティ（{scene}）',
@@ -239,4 +263,5 @@ export function applyStatic(root = document) {
   if (!root || !root.querySelectorAll) return;
   root.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.getAttribute('data-i18n')); });
   root.querySelectorAll('[data-i18n-title]').forEach((el) => { el.title = t(el.getAttribute('data-i18n-title')); });
+  root.querySelectorAll('[data-i18n-placeholder]').forEach((el) => { el.placeholder = t(el.getAttribute('data-i18n-placeholder')); });
 }

@@ -762,14 +762,14 @@ Format:
 
 Export (implemented): the Design screen's **"Copy AI JSON"** action (`docs/src/ailayout.js`) copies the current scene (all profiles) in this format to the clipboard as **minified JSON** (the clipboard is an AI input, so no whitespace — fewer tokens; the contract's worked example stays pretty for human readers). A file download is used as a fallback when the clipboard is unavailable.
 
-Import (post-MVP): re-importing AI output is applied manually for now. Open questions to settle before wiring automatic import:
+Import (implemented): the Design screen's **"Paste AI JSON"** action opens a dialog; the user pastes the JSON (minified or pretty) and sees a live preview (update vs add, part/profile counts, warnings) before applying. Import is wired through the undo system (`reconcileAiLayout` / `applyAiLayout` in `docs/src/model.js`). Reconciliation rules:
 
-- Whether an import is **applied to an existing screen**, or is **import-only and reflected via "add as a screen" after a preview**.
-- Reconciling profiles in the imported JSON with the project's profiles (matching by `id` / size; behavior on mismatch).
-- Handling of ID collisions on import and of referenced assets that are not registered.
-- Normalizing a JSON whose `parts` order or `parent` links differ between profiles (the model keeps one shared `(id, type, parent)` + order per scene), e.g. which profile wins.
+- **Update vs add by scene ID:** if the JSON's `scene` matches an existing scene it is **overwritten**; otherwise it is **added** as a new scene.
+- **Part definitions** (the shared `(id, type, parent)` + order + `asset`) are taken from one **canonical profile** — the one matching `defaultProfile` if present, else the first; if other profiles' part sets differ, the canonical one wins (with a warning).
+- **Profiles** are matched by `id`. A JSON profile not in the project is ignored (warning); a project profile missing from the JSON has its placements cloned from the canonical profile (warning).
+- **Validation:** part IDs must be C identifiers and types known; a `parent` that is missing / not a Group / cyclic is moved to root (warning); an `asset` name not in the project is cleared to null (warning). The scene is re-normalized to pre-order.
 
-The import method is worked out separately (§15).
+Deferred: file-based import, and creating project profiles that the JSON references but the project lacks (profile creation stays a Profiles-mode action). Further refinements are worked out separately (§15).
 
 ## 9. Project File
 
@@ -1182,7 +1182,7 @@ The MVP defers the following.
 - Per-scene rotation setting (the MVP has rotation only per profile)
 - Reverse-lookup input of text size px height (entering a px height to automatically select the font + multiplier; the MVP uses multiplier specification + px auxiliary display. §8.7)
 - Text box (giving Text a width and height to perform clipping/wrapping/in-box alignment; the MVP has only single-line anchor + datum. §8.7)
-- Layout JSON **import** (for AI collaboration; reconstructing a screen from the AI layout JSON. **Export is implemented** — "Copy AI JSON" for one scene across all profiles; only re-import is deferred. §8.15)
+- File-based AI layout import (clipboard paste import and export are both implemented — "Paste AI JSON" / "Copy AI JSON"; only opening a `.json` file is deferred. §8.15)
 - Per-board rotation override (sharing one profile across boards of different orientation. MVP: rotation is per-profile. §8.9.4)
 - Animation in general (frame/fade/move/scale, playback and editing)
 - Additional Parts such as Icon/Gauge/Graph/Container/Button
