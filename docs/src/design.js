@@ -83,11 +83,10 @@ function renderCanvas() {
   const pr = curProfile();
   const scr = $('canvas-screen');
   const { w: dw, h: dh } = dispDims(pr); // rotation-aware canvas size (§7)
-  // Fit on the longer edge so the scale is the SAME in either orientation: that
-  // way rotating actually swaps on-screen width/height (a portrait's height equals
-  // the landscape's width) instead of both fitting to the same height.
-  const base = Math.max(pr.w, pr.h);
-  scale = Math.min(440 / base, 300 / base, 2.2) * store.ui.zoom;
+  // 100% = actual size (1 logical px : 1 CSS px), so a device's resolution shows
+  // its real size (small vs large devices differ) and rotation swaps width/height.
+  // Use the zoom buttons / Fit to rescale; the stage scrolls when larger.
+  scale = store.ui.zoom;
   scr.style.width = dw * scale + 'px';
   scr.style.height = dh * scale + 'px';
   scr.style.background = store.project.background;
@@ -388,7 +387,14 @@ export function initDesign() {
   const setZoom = (z) => update((st) => { st.ui.zoom = Math.max(0.4, Math.min(6, z)); });
   $('zoom-in').onclick = () => setZoom(store.ui.zoom * 1.2);
   $('zoom-out').onclick = () => setZoom(store.ui.zoom / 1.2);
-  $('zoom-reset').onclick = () => setZoom(1);
+  $('zoom-reset').onclick = () => setZoom(1); // 100% = actual size
+  // Fit: scale the current profile's screen to the stage (then zoom adjusts from there).
+  $('zoom-fit').onclick = () => {
+    const { w: dw, h: dh } = dispDims(curProfile());
+    const r = $('stage').getBoundingClientRect();
+    const availW = Math.max(40, r.width - 36), availH = Math.max(40, r.height - 36); // 18px padding each side
+    setZoom(Math.min(availW / dw, availH / dh));
+  };
   scr.addEventListener('wheel', (ev) => { ev.preventDefault(); setZoom(store.ui.zoom * (ev.deltaY < 0 ? 1.1 : 1 / 1.1)); }, { passive: false });
 
   // Scene add / delete (delete is disabled when only one scene remains).
