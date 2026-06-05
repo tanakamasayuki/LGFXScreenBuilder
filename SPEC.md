@@ -742,27 +742,31 @@ Auxiliary display:
 
 Text size uses the multiplier as the stored value, and the px height is auxiliary information (§8.7).
 
-### 8.15 Layout JSON Import/Export (for AI Collaboration; post-MVP)
+### 8.15 Layout JSON Import/Export (for AI Collaboration)
 
-The Design screen provides a feature to import/export the layout of a single screen as a simple **JSON**. The main purpose is to hand a screen back and forth when **asking an AI to modify or create a screen** (a self-contained, minimal format that a generative AI can easily read and write). This is distinct from the project file (§9) and also from the Arduino generated output (§10).
+The tool exchanges the layout of a screen as a simple **JSON**, so that a screen can be handed back and forth when **asking an AI to modify or create a screen**. This is distinct from the project file (§9) and from the Arduino generated output (§10).
 
-Export policy:
+**Scope and granularity (decided):** the unit is **one scene across all profiles** — the same screen laid out for every device size — so the AI can keep the per-device layouts consistent in one pass. The format is **model-faithful and round-trippable**: it mirrors the internal model values almost one-to-one (absolute pixel coordinates, datum, size multiplier, color), so a layout exported from the tool and edited by the AI can be reconstructed. Stable part IDs are what make round-trip editing safe.
 
-- **Strip project-specific information.** Do not include asset binaries (Data URLs), board assignments, the namespace / project name, output settings, `defaultProfile`, and so on.
-- So that the screen can be understood at a glance, embed the **screen size (width/height), rotation, screen name (Scene ID), and description** at the top.
-- Then export the **part placement information**: type, ID, parent/child (group hierarchy), and the per-type placement values (Text: anchor `x`/`y`, datum, text-size multiplier, color, preview string, visibility; Rect/Image: `x`/`y`/`w`/`h`, color or referenced asset name, visibility). Use a granularity that conveys the meaning of the layout to the AI.
+The AI-facing interface contract is a standalone, **English-only** document, [docs/AI_LAYOUT_IO.md](docs/AI_LAYOUT_IO.md), served on GitHub Pages (e.g. `https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.html`) so it can be referenced by URL. (Per the doc-naming convention this contract is intentionally English-only, since it is read by an AI.)
 
-Import policy:
+Format:
 
-- **Import** the JSON above and reconstruct the screen from the size, screen name, description, and placement information.
+- Top-level: `format`, `version`, `scene` (Scene ID), `desc` (description), optional `background` (visual context), and `profiles[]`.
+- Each profile: `id`, `w`, `h`, `rot`, and `parts[]`.
+- Each part: `id`, `type`, `parent`, `visible`, plus per-type placement (Text: `x`/`y` anchor, `datum`, `size` multiplier, `color`, `text`; Rect: `x`/`y`/`w`/`h`/`color`; Image: `x`/`y`/`w`/`h`/`asset` name; Group: `x`/`y` origin only).
+- **Stripped:** asset binaries (Data URLs / RGB565), board assignments, namespace / project name, output settings, `defaultProfile`, `targetLibrary`.
+- **Invariant:** the `(id, type, parent)` set is identical across all profiles (the data contract of §8.2); only placement differs.
 
-Open questions (to be decided later):
+Export (implemented): the Design screen's **"Copy AI JSON"** action (`docs/src/ailayout.js`) copies the current scene (all profiles) in this format to the clipboard, with a file-download fallback when the clipboard is unavailable.
+
+Import (post-MVP): re-importing AI output is applied manually for now. Open questions to settle before wiring automatic import:
 
 - Whether an import is **applied to an existing screen**, or is **import-only and reflected via "add as a screen" after a preview**.
-- Which profile (which screen size) the layout is treated as (matching against the size embedded at export time, and behavior on mismatch).
+- Reconciling profiles in the imported JSON with the project's profiles (matching by `id` / size; behavior on mismatch).
 - Handling of ID collisions on import and of referenced assets that are not registered.
 
-This is not implemented in the MVP; the format and import method will be worked out separately (§15).
+The import method is worked out separately (§15).
 
 ## 9. Project File
 
@@ -1175,7 +1179,7 @@ The MVP defers the following.
 - Per-scene rotation setting (the MVP has rotation only per profile)
 - Reverse-lookup input of text size px height (entering a px height to automatically select the font + multiplier; the MVP uses multiplier specification + px auxiliary display. §8.7)
 - Text box (giving Text a width and height to perform clipping/wrapping/in-box alignment; the MVP has only single-line anchor + datum. §8.7)
-- Layout JSON import/export (for AI collaboration; import/export the size, name, description, and placement of a single screen as a self-contained JSON with project-specific information stripped. The import method is undecided. §8.15)
+- Layout JSON **import** (for AI collaboration; reconstructing a screen from the AI layout JSON. **Export is implemented** — "Copy AI JSON" for one scene across all profiles; only re-import is deferred. §8.15)
 - Per-board rotation override (sharing one profile across boards of different orientation. MVP: rotation is per-profile. §8.9.4)
 - Animation in general (frame/fade/move/scale, playback and editing)
 - Additional Parts such as Icon/Gauge/Graph/Container/Button

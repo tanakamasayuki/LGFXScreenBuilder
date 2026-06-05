@@ -8,7 +8,25 @@ import {
   absOrigin, reorderPart, groupParts, ungroupPart, reparentPart, assetById, profileFonts,
 } from './model.js';
 import { loadMetrics, metricsFor, approxCss, fontByName, fontDetailUrl } from './fonts.js';
+import { aiLayoutJson } from './ailayout.js';
+import { downloadText } from './persist.js';
 import { t } from './i18n.js';
+
+// Transient bottom-center toast for one-shot feedback (e.g. clipboard copy).
+function flash(msg) {
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.className = 'toast';
+    el.setAttribute('aria-live', 'polite');
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(flash._t);
+  flash._t = setTimeout(() => el.classList.remove('show'), 1800);
+}
 
 // Approximate on-canvas height (px) of a Text part's font at multiplier 1.
 // Uses the host-introspected native height when available, else the default
@@ -426,4 +444,17 @@ export function initDesign() {
   const armFire = () => { if (armed) { checkpoint(); armed = false; } };
   insp.addEventListener('input', armFire, true);
   insp.addEventListener('change', armFire, true);
+
+  // Copy the current scene (all profiles) as AI layout JSON (§8.15). Clipboard
+  // first; if unavailable (e.g. non-secure context), fall back to a download.
+  $('btn-copy-ai').onclick = async () => {
+    const json = aiLayoutJson(store.project, store.ui.sceneId);
+    try {
+      await navigator.clipboard.writeText(json);
+      flash(t('ailayout.copied', { scene: store.ui.sceneId }));
+    } catch {
+      downloadText(`${store.ui.sceneId}.ai-layout.json`, json, 'application/json');
+      flash(t('ailayout.downloaded'));
+    }
+  };
 }

@@ -78,6 +78,10 @@ python -m http.server 8000 --directory docs
   facade + descriptor, with optional profile subset/fallback) and
   `generateSketch(project, framework)` (the example `.ino`); verified end-to-end by
   `tests/codegen_roundtrip`. The toolbar "Export .h" remains a one-click shortcut.
+- **AI layout I/O** (`src/ailayout.js`, SPEC §8.15): the "Copy AI JSON" button in
+  Design copies the current scene (all profiles) as a self-contained, model-faithful
+  JSON. Hand it to an AI together with [AI_LAYOUT_IO.md](AI_LAYOUT_IO.md) (the AI-facing
+  interface contract) to design or edit a screen. Import is planned.
 
 ## Layout
 
