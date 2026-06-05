@@ -22,6 +22,12 @@ export const DATUM_FY = { T: 0, M: 0.5, B: 1 };
 // Orientation as a code; localized via i18n (orient.<code>).
 export const orient = (w, h) => (w > h ? 'landscape' : h > w ? 'portrait' : 'square');
 
+// Displayed (post-rotation) dimensions. profile.w/h are the panel's native
+// (rotation-0) size; the runtime applies setRotation(rotation) before drawing
+// (Renderer.h §7), so an odd rotation swaps width/height in the coordinate space
+// that layouts are authored in. Use this for canvases/previews, not p.w/p.h.
+export const dispDims = (p) => ((p.rotation & 1) ? { w: p.h, h: p.w } : { w: p.w, h: p.h });
+
 // Placement factories. Rect/Image carry w/h; Text carries datum/size (no box; §8.7).
 const rect = (x, y, w, h, color, visible = true) => ({ x, y, w, h, color, visible });
 const text = (x, y, datum, size, color, content, visible = true) =>

@@ -3,7 +3,7 @@
 // re-renders the canvas. Ported from the validated design probe.
 import { store, update, mutate, checkpoint } from './store.js';
 import {
-  DATUMS, DATUM_FX, DATUM_FY, orient, pxOf, sceneById, profileById, partDef, placement,
+  DATUMS, DATUM_FX, DATUM_FY, orient, dispDims, pxOf, sceneById, profileById, partDef, placement,
   addPart, removePart, renamePart, addScene, removeScene, renameScene,
   absOrigin, reorderPart, groupParts, ungroupPart, reparentPart, assetById, profileFonts,
   reconcileAiLayout, applyAiLayout,
@@ -70,8 +70,9 @@ function renderTabs() {
     const tab = document.createElement('div');
     tab.className = 'tab' + (p.id === store.ui.profileId ? ' active' : '');
     const def = store.project.defaultProfile === p.id ? '<span class="defbadge">default</span>' : '';
+    const d = dispDims(p); // show the effective (rotated) screen, matching the canvas
     tab.innerHTML = `<span class="t1">${p.id}${def}</span>` +
-      `<span class="t2">${p.w}×${p.h} · ${orientText(p.w, p.h)} · rot${p.rotation}</span>`;
+      `<span class="t2">${d.w}×${d.h} · ${orientText(d.w, d.h)} · rot${p.rotation}</span>`;
     tab.onclick = () => update((st) => { st.ui.profileId = p.id; });
     el.appendChild(tab);
   }
@@ -81,9 +82,10 @@ function renderTabs() {
 function renderCanvas() {
   const pr = curProfile();
   const scr = $('canvas-screen');
-  scale = Math.min(440 / pr.w, 300 / pr.h, 2.2) * store.ui.zoom;
-  scr.style.width = pr.w * scale + 'px';
-  scr.style.height = pr.h * scale + 'px';
+  const { w: dw, h: dh } = dispDims(pr); // rotation-aware canvas size (§7)
+  scale = Math.min(440 / dw, 300 / dh, 2.2) * store.ui.zoom;
+  scr.style.width = dw * scale + 'px';
+  scr.style.height = dh * scale + 'px';
   scr.style.background = store.project.background;
   scr.innerHTML = '';
 
@@ -193,9 +195,10 @@ const readout = (label, value) => `<div class="field"><label>${label}</label><di
 // --- left: profile meta --------------------------------------------------
 function renderProfMeta() {
   const pr = curProfile();
+  const d = dispDims(pr); // effective (rotated) screen size shown in the canvas
   $('prof-meta').innerHTML =
-    readout(t('field.size'), `${pr.w} × ${pr.h}`) +
-    readout(t('field.rotation'), `${pr.rotation} <span class="unit">（${orientText(pr.w, pr.h)}）</span>`) +
+    readout(t('field.size'), `${d.w} × ${d.h}`) +
+    readout(t('field.rotation'), `${pr.rotation} <span class="unit">（${orientText(d.w, d.h)}）</span>`) +
     `<p class="sub">${t('hint.profileMeta')}</p>`;
 }
 
@@ -309,7 +312,8 @@ function renderStatus() {
   } else {
     $('st-sel').textContent = t('status.none', { scene: store.ui.sceneId });
   }
-  $('st-prof').textContent = t('status.profile', { profile: pr.id, w: pr.w, h: pr.h, orient: orientText(pr.w, pr.h), rot: pr.rotation });
+  const dp = dispDims(pr);
+  $('st-prof').textContent = t('status.profile', { profile: pr.id, w: dp.w, h: dp.h, orient: orientText(dp.w, dp.h), rot: pr.rotation });
   $('zoom-label').textContent = Math.round(store.ui.zoom * 100) + '%';
 }
 

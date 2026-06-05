@@ -4,7 +4,7 @@
 // Ported from the validated profiles probe.
 import { store, update, mutate, checkpoint } from './store.js';
 import {
-  orient, profileById, addProfile, removeProfile, renameProfile, toggleBoard,
+  orient, dispDims, profileById, addProfile, removeProfile, renameProfile, toggleBoard,
 } from './model.js';
 import {
   BOARDS, LGFX_KNOWN, boardById, dimKey, boardDetectable, boardCatalog, commonResolutions,
@@ -35,12 +35,14 @@ function renderProfCenter() {
   const scr = $('prof-screen'), dev = $('prof-device');
   if (!p) { dev.style.display = 'none'; return; }
   dev.style.display = '';
-  const sc = 240 / Math.max(p.w, p.h);
-  scr.style.width = p.w * sc + 'px';
-  scr.style.height = p.h * sc + 'px';
-  scr.textContent = `${p.w} × ${p.h}`;
-  const oc = orient(p.w, p.h);
-  $('prof-size').textContent = `${t('orient.' + oc)} ${p.w}×${p.h}`;
+  // Preview the effective (rotated) screen so the rotation setting is visible.
+  const d = dispDims(p);
+  const sc = 240 / Math.max(d.w, d.h);
+  scr.style.width = d.w * sc + 'px';
+  scr.style.height = d.h * sc + 'px';
+  scr.textContent = `${d.w} × ${d.h}`;
+  const oc = orient(d.w, d.h);
+  $('prof-size').textContent = `${t('orient.' + oc)} ${d.w}×${d.h}`;
   $('prof-rot').textContent = `rotation ${p.rotation}`;
   $('prof-orient').textContent = t('orient.' + oc);
 
