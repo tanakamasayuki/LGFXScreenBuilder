@@ -83,7 +83,11 @@ function renderCanvas() {
   const pr = curProfile();
   const scr = $('canvas-screen');
   const { w: dw, h: dh } = dispDims(pr); // rotation-aware canvas size (§7)
-  scale = Math.min(440 / dw, 300 / dh, 2.2) * store.ui.zoom;
+  // Fit on the longer edge so the scale is the SAME in either orientation: that
+  // way rotating actually swaps on-screen width/height (a portrait's height equals
+  // the landscape's width) instead of both fitting to the same height.
+  const base = Math.max(pr.w, pr.h);
+  scale = Math.min(440 / base, 300 / base, 2.2) * store.ui.zoom;
   scr.style.width = dw * scale + 'px';
   scr.style.height = dh * scale + 'px';
   scr.style.background = store.project.background;
