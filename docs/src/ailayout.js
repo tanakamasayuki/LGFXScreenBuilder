@@ -11,7 +11,8 @@
 // is identical across every profile (data contract §8.2); only placement
 // differs per profile.
 
-import { sceneById, placement } from './model.js';
+import { sceneById, placement, profileFonts } from './model.js';
+import { contentOf, fontByName, heightOf } from './fonts.js';
 
 // The AI-facing interface contract, embedded in the output as `spec` so an AI
 // that only receives the JSON can locate it. The file has no front matter, so
@@ -42,6 +43,19 @@ function partEntry(def, pl) {
   return e;
 }
 
+function fontEntry(name) {
+  const f = fontByName(name);
+  const h = heightOf(name);
+  return {
+    name,
+    family: (f && f.family) || name,
+    content: contentOf(f),
+    size: f ? f.size : null,
+    unit: f ? f.unit : null,
+    height: h == null ? (f && f.unit === 'px' ? f.size : null) : h,
+  };
+}
+
 // Build the AI layout object for `sceneId`, or null if the scene is missing.
 export function buildAiLayout(project, sceneId) {
   const scene = sceneById(project, sceneId);
@@ -51,8 +65,10 @@ export function buildAiLayout(project, sceneId) {
     w: pr.w,
     h: pr.h,
     rot: pr.rotation || 0,
+    fonts: profileFonts(project, pr.id),
     parts: scene.parts.map((def) => partEntry(def, placement(pr, sceneId, def.id) || {})),
   }));
+  const fonts = (project.fonts || []).map((f) => fontEntry(f.name));
   return {
     format: 'lgfxsb-layout',
     version: 1,
@@ -60,6 +76,7 @@ export function buildAiLayout(project, sceneId) {
     scene: scene.id,
     desc: scene.desc || '',
     background: project.background || undefined, // dropped by JSON.stringify when undefined
+    fonts,
     profiles,
   };
 }

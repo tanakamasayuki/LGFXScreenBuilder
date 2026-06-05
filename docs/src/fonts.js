@@ -59,6 +59,7 @@ export function contentOf(f) {
   if (isCjkScript(f.script)) return f.script;
   const m = metricsFor(f.name);
   if (m && !m.letters && m.digits) return 'digits';
+  if (/^Font[78]$/.test(f.name)) return 'digits';
   return 'latin';
 }
 
@@ -104,6 +105,21 @@ export const FONT_SITE_BASE = 'https://tanakamasayuki.github.io/LGFXFontCatalog'
 export const fontDetailUrl = (name) =>
   FONT_SITE_BASE && name ? `${FONT_SITE_BASE}/fonts/${encodeURIComponent(name)}.html` : null;
 
+// LovyanGFX font name -> a CSS font stack for bitmap/special preset faces where
+// the catalog family is the same as the symbol. These are still approximations.
+const FONT_CSS = {
+  Font0: '"Pixelify Sans","DotGothic16",monospace',
+  Font2: '"Pixelify Sans","DotGothic16",monospace',
+  Font4: '"Pixelify Sans","DotGothic16",monospace',
+  Font6: '"DSEG7 Classic","DSEG7Classic",monospace',
+  Font7: '"DSEG7 Classic","DSEG7Classic",monospace',
+  Font8: 'Arial,"Helvetica Neue",sans-serif',
+  Font8x8C64: '"C64 Pro Mono","Pixelify Sans",monospace',
+  AsciiFont8x16: '"Web437 IBM VGA 8x16","Perfect DOS VGA 437",monospace',
+  AsciiFont24x48: '"Web437 IBM VGA 8x16","Perfect DOS VGA 437",monospace',
+  TomThumb: '"Tom Thumb","Pixelify Sans",monospace',
+};
+
 // LovyanGFX font family -> a CSS font stack that resembles it for the preview
 // (SPEC §8.7.3: approximate, never the embedded glyphs). The distinctive Latin
 // display faces (Orbitron / Satisfy / Yellowtail / Roboto) are loaded via Google
@@ -132,6 +148,8 @@ const FAMILY_CSS = {
 // Approximate CSS font-family that resembles the preset's family (then category).
 export function approxCss(f) {
   if (!f) return 'system-ui,sans-serif';
+  const named = FONT_CSS[f.name];
+  if (named) return named;
   const mapped = FAMILY_CSS[f.family];
   if (mapped) return mapped;
   // Unmapped family (bitmap Font0/AsciiFont, TomThumb, …): fall back by script/category.
