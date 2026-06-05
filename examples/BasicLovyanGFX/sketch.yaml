@@ -6,20 +6,21 @@
 #     examples/BasicM5Unified にある）。
 profiles:
   # Real hardware (ESP32, LovyanGFX autodetect).
+
   esp32:
     fqbn: esp32:esp32:esp32:DebugLevel=debug
     platforms:
-      - platform: esp32:esp32 (3.3.8)
+      - platform: esp32:esp32 (3.3.9)
         platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
     libraries:
       - dir: ../../
       - LovyanGFX (1.2.21)
-
   # Native (SDL) preview — LovyanGFX-supported boards only.
+
   sld2_m5stack:
     fqbn: lang-ship:native:SLD2_M5Stack
     platforms:
-      - platform: lang-ship:native (1.1.0)
+      - platform: lang-ship:native (1.1.2)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -28,7 +29,7 @@ profiles:
   sld2_m5stackcore2:
     fqbn: lang-ship:native:SLD2_M5StackCore2
     platforms:
-      - platform: lang-ship:native (1.1.0)
+      - platform: lang-ship:native (1.1.2)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -37,7 +38,7 @@ profiles:
   sld2_m5stackcores3:
     fqbn: lang-ship:native:SLD2_M5StackCoreS3
     platforms:
-      - platform: lang-ship:native (1.1.0)
+      - platform: lang-ship:native (1.1.2)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -46,7 +47,7 @@ profiles:
   sld2_m5stickcplus:
     fqbn: lang-ship:native:SLD2_M5StickCPlus
     platforms:
-      - platform: lang-ship:native (1.1.0)
+      - platform: lang-ship:native (1.1.2)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -55,7 +56,7 @@ profiles:
   sld2_m5stickcplus2:
     fqbn: lang-ship:native:SLD2_M5StickCPlus2
     platforms:
-      - platform: lang-ship:native (1.1.0)
+      - platform: lang-ship:native (1.1.2)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -64,7 +65,7 @@ profiles:
   sld2_m5stackcoreink:
     fqbn: lang-ship:native:SLD2_M5StackCoreInk
     platforms:
-      - platform: lang-ship:native (1.1.0)
+      - platform: lang-ship:native (1.1.2)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
