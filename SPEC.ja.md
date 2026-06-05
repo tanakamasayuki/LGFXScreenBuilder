@@ -739,16 +739,17 @@ UI 専用の共通項目として、一覧に並ぶ要素（シーン、パー�
 
 **スコープと粒度（確定）:** 受け渡し単位は **1 画面（Scene）× 全プロファイル**＝同一画面を全機種サイズ分まとめて渡す。これにより AI が機種間のレイアウト整合を一度に取れる。フォーマットは**モデル忠実・ラウンドトリップ可**で、内部モデルの値をほぼ 1:1 で写す（絶対 px 座標・datum・文字サイズ倍率・色）。ツールから出力したレイアウトを AI が編集したものを再構成できる。ラウンドトリップ編集の安全性は **ID を保持する**ことで担保する。
 
-AI に渡す IF 契約書は単独の**英語のみ**ドキュメント [docs/AI_LAYOUT_IO.md](docs/AI_LAYOUT_IO.md) とし、GitHub Pages で配信（例 `https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.html`）して URL で参照できるようにする。（[[doc-naming]] 規約の ja+en 同期は、AI が読む契約書であるこの文書に限り適用外＝英語単独とする。）
+AI に渡す IF 契約書は単独の**英語のみ**ドキュメント [docs/AI_LAYOUT_IO.md](docs/AI_LAYOUT_IO.md) とし、GitHub Pages でそのまま配信（front matter を持たないため Jekyll は変換せず生 markdown を配信）する。export JSON に埋める正規 URL（`spec` フィールド）は `https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.md`＝全体を通して同じ `.md` URL で統一する。（[[doc-naming]] 規約の ja+en 同期は、AI が読む契約書であるこの文書に限り適用外＝英語単独とする。）
 
 フォーマット:
 
 - トップレベル: `format`・`version`・`spec`（`docs/AI_LAYOUT_IO.md` の URL。JSON だけ渡された AI が契約書を辿れる）・`scene`（Scene ID）・`desc`（備考）・任意 `background`（視覚文脈）・`profiles[]`。
 - 値の型は契約書に明示: `w`/`h`/`x`/`y`/`rot`/`version` は整数、`size` は実数可（倍率）、`color` は `"#rrggbb"`、`visible` は真偽値。
 - 各プロファイル: `id`・`w`・`h`・`rot`・`parts[]`。
-- 各パーツ: `id`・`type`・`parent`・`visible` ＋ 種別別の配置値（Text は `x`/`y` アンカー・`datum`・`size` 倍率・`color`・`text`、Rect は `x`/`y`/`w`/`h`/`color`、Image は `x`/`y`/`w`/`h`/`asset` 名、Group は `x`/`y` 原点のみ）。
-- **剥がすもの:** アセットのバイナリ（Data URL / RGB565）・ボード割当・名前空間／プロジェクト名・出力設定・`defaultProfile`・`targetLibrary`。
-- **不変条件:** `(id, type, parent)` の集合は全プロファイルで一致（§8.2 のデータ契約）。配置のみ機種毎に異なる。
+- 各パーツ: `id`・`type`・`parent`・`visible` ＋ 種別別の配置値（Text は `x`/`y` アンカー・`datum`・`size` 倍率・`color`・`text`・`font` 名（null=既定）、Rect は `x`/`y`/`w`/`h`/`color`、Image は `x`/`y`/`w`/`h`/`asset` 名（全プロファイル共有）、Group は `x`/`y` 原点のみ＝整合のため `visible` は出すが描画はしない）。
+- **剥がすもの:** アセットのバイナリ（Data URL / RGB565）・ボード割当・名前空間／プロジェクト名・出力設定・`defaultProfile`・`targetLibrary`・アニメーション/タイミング・Arduino コード。
+- **不変条件:** `(id, type, parent)` の集合は全プロファイルで一致（§8.2 のデータ契約）。それ以外（座標・サイズ・`color`・`visible`・Text の `datum`/`size`/`text`/`font`）は機種毎に異なってよい。
+- AI レイアウト形式 v1 は、`font` 名＋`size`＋`color` を超えるフォント family/style 指定、プロファイル毎のアセット差し替え、アニメーションを意図的に対象外とする。
 
 出力（実装済み）: Design 画面の**「AI用JSONコピー」**（`docs/src/ailayout.js`）で、現在の画面（全プロファイル）をこの形式でクリップボードにコピーする。クリップボード不可環境ではファイルダウンロードにフォールバックする。
 
@@ -757,6 +758,7 @@ AI に渡す IF 契約書は単独の**英語のみ**ドキュメント [docs/AI
 - 取り込みを**既存画面へ反映**するのか、**取り込み専用としてプレビュー後に「画面として追加」で反映**するのか。
 - 取り込み JSON のプロファイルとプロジェクトのプロファイルの突き合わせ（`id`／サイズ照合・差異時の挙動）。
 - 取り込み時の ID 衝突・参照アセット未登録時の扱い。
+- `parts` の順序や `parent` がプロファイル間で食い違う JSON の正規化（モデルはシーン毎に `(id, type, parent)`＋順序を1本だけ共有）＝どのプロファイルを正とするか。
 
 取り込み方式は別途詰める（§15）。
 

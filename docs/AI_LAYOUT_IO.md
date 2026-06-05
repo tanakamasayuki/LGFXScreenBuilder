@@ -49,8 +49,10 @@ fit a tall one.
 Each profile has a `parts` array, drawn **back-to-front in array order** (first = behind).
 
 **Critical invariant:** the set of `(id, type, parent)` must be **identical in every
-profile**. Only the position/size/style differ per profile. If you add, remove, or
-rename a part, do it in **all** profiles. Never change a part's `type` between profiles.
+profile**. Everything else may differ per profile when needed to fit the screen —
+position, size (`w`/`h`), `color`, `visible`, and a Text's `datum`/`size`/`text`/`font`.
+If you add, remove, or rename a part, do it in **all** profiles. Never change a part's
+`type` between profiles.
 
 All coordinates are **integer pixels, top-left origin (0,0), no scaling**. Anything drawn
 outside `w`×`h` is clipped. Keep parts inside the screen.
@@ -74,7 +76,7 @@ outside `w`×`h` is clipped. Keep parts inside the screen.
 | `color` | **string** | `"#rrggbb"` (6 hex digits, lowercase). |
 | `visible` | **boolean** | `true` / `false`. |
 | `id`, `type`, `datum`, `text` | **string** | — |
-| `parent`, `asset` | **string or null** | a referenced ID/name, or `null`. |
+| `parent`, `asset`, `font` | **string or null** | a referenced ID / asset name / font name, or `null`. |
 | `scene`, `desc`, `spec`, `format` | **string** | — |
 | `version` | **integer** | currently `1`. |
 
@@ -83,10 +85,15 @@ outside `w`×`h` is clipped. Keep parts inside the screen.
 **Rect** — a filled rectangle.
 `x, y` top-left corner · `w, h` size · `color` `"#rrggbb"`.
 
-**Text** — a single line of text. **Text has no width/height box.**
+**Text** — a single line of text. **Text has no width/height box.** There is no
+wrapping, clipping, ellipsis, or in-box alignment; keep the text short enough to fit, or
+use different `text`/`size` values per profile.
 `x, y` is the **anchor point**; `datum` says which point of the text sits on the anchor;
 `size` is a **scale multiplier** (rendered height ≈ font base height × `size`);
-`color` `"#rrggbb"`; `text` the string to show.
+`color` `"#rrggbb"`; `text` the string to show;
+`font` the font name (string) or `null` for the default. **Preserve `font` as-is** —
+only use a font name that already appears in this JSON; never invent a font name and
+never add `fontFamily`/`bold`/`italic` fields.
 `datum` is one of (vertical `T`/`M`/`B` × horizontal `L`/`C`/`R`):
 `TL TC TR ML MC MR BL BC BR`. Example: `TR` right-aligns text whose top-right corner is at `(x,y)`; `MC` centers text on `(x,y)`.
 
@@ -99,6 +106,8 @@ asset name that already exists in the project.
 `x, y` is the group origin. **Children's coordinates are relative to the group origin.**
 A Group has no `w`/`h`/`color`. Use groups to move a cluster of parts together.
 Containers may only be `Group`s, and the hierarchy must not form a cycle.
+A Group still carries `visible` for shape consistency, but it draws nothing, so leave it
+unchanged — to hide content, set `visible: false` on the child drawing parts.
 
 ---
 
@@ -119,9 +128,9 @@ The `Main` screen of the sample project, across three profiles:
       "id": "Core", "w": 320, "h": 240, "rot": 0,
       "parts": [
         { "id": "headerBand", "type": "Rect", "parent": null, "x": 0, "y": 0, "w": 320, "h": 40, "color": "#1e2a30", "visible": true },
-        { "id": "title", "type": "Text", "parent": null, "x": 12, "y": 10, "datum": "TL", "size": 2, "color": "#ffffff", "text": "Main", "visible": true },
-        { "id": "battery", "type": "Text", "parent": null, "x": 310, "y": 12, "datum": "TR", "size": 1.5, "color": "#9ce5ac", "text": "82%", "visible": true },
-        { "id": "temp", "type": "Text", "parent": null, "x": 18, "y": 70, "datum": "TL", "size": 4, "color": "#ffffff", "text": "24.5C", "visible": true },
+        { "id": "title", "type": "Text", "parent": null, "x": 12, "y": 10, "datum": "TL", "size": 2, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
+        { "id": "battery", "type": "Text", "parent": null, "x": 310, "y": 12, "datum": "TR", "size": 1.5, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
+        { "id": "temp", "type": "Text", "parent": null, "x": 18, "y": 70, "datum": "TL", "size": 4, "color": "#ffffff", "text": "24.5C", "font": null, "visible": true },
         { "id": "panel", "type": "Rect", "parent": null, "x": 18, "y": 150, "w": 284, "h": 54, "color": "#172126", "visible": true }
       ]
     },
@@ -129,9 +138,9 @@ The `Main` screen of the sample project, across three profiles:
       "id": "Stick", "w": 135, "h": 240, "rot": 0,
       "parts": [
         { "id": "headerBand", "type": "Rect", "parent": null, "x": 0, "y": 0, "w": 135, "h": 30, "color": "#1e2a30", "visible": true },
-        { "id": "title", "type": "Text", "parent": null, "x": 8, "y": 7, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "visible": true },
-        { "id": "battery", "type": "Text", "parent": null, "x": 8, "y": 180, "datum": "TL", "size": 1.5, "color": "#9ce5ac", "text": "82%", "visible": true },
-        { "id": "temp", "type": "Text", "parent": null, "x": 10, "y": 60, "datum": "TL", "size": 3.5, "color": "#ffffff", "text": "24.5", "visible": true },
+        { "id": "title", "type": "Text", "parent": null, "x": 8, "y": 7, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
+        { "id": "battery", "type": "Text", "parent": null, "x": 8, "y": 180, "datum": "TL", "size": 1.5, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
+        { "id": "temp", "type": "Text", "parent": null, "x": 10, "y": 60, "datum": "TL", "size": 3.5, "color": "#ffffff", "text": "24.5", "font": null, "visible": true },
         { "id": "panel", "type": "Rect", "parent": null, "x": 10, "y": 110, "w": 115, "h": 60, "color": "#172126", "visible": true }
       ]
     },
@@ -139,9 +148,9 @@ The `Main` screen of the sample project, across three profiles:
       "id": "Cardputer", "w": 240, "h": 135, "rot": 0,
       "parts": [
         { "id": "headerBand", "type": "Rect", "parent": null, "x": 0, "y": 0, "w": 240, "h": 26, "color": "#1e2a30", "visible": true },
-        { "id": "title", "type": "Text", "parent": null, "x": 8, "y": 5, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "visible": true },
-        { "id": "battery", "type": "Text", "parent": null, "x": 232, "y": 6, "datum": "TR", "size": 1.25, "color": "#9ce5ac", "text": "82%", "visible": true },
-        { "id": "temp", "type": "Text", "parent": null, "x": 12, "y": 40, "datum": "TL", "size": 3, "color": "#ffffff", "text": "24.5C", "visible": true },
+        { "id": "title", "type": "Text", "parent": null, "x": 8, "y": 5, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
+        { "id": "battery", "type": "Text", "parent": null, "x": 232, "y": 6, "datum": "TR", "size": 1.25, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
+        { "id": "temp", "type": "Text", "parent": null, "x": 12, "y": 40, "datum": "TL", "size": 3, "color": "#ffffff", "text": "24.5C", "font": null, "visible": true },
         { "id": "panel", "type": "Rect", "parent": null, "x": 12, "y": 86, "w": 216, "h": 40, "color": "#172126", "visible": false }
       ]
     }
@@ -155,7 +164,42 @@ on `Cardputer` — `panel` hidden (`"visible": false`).
 
 ---
 
-## 4. Do / Don't
+## 4. Output rules
+
+Output **raw JSON only**. Do not wrap the response in Markdown code fences, prose,
+explanations, or comments.
+
+Return the **entire layout object, including every profile**. Do not return patches,
+diffs, partial profiles, or only the changed parts.
+
+**Preserve the profile list.** Do not add, remove, rename, or reorder profiles, and do
+not change a profile's `id`, `w`, `h`, or `rot`, unless the user explicitly asks for a
+profile-level change.
+
+**Keep the `parts` array order consistent across profiles**, because array order is the
+draw order. If you reorder layers, apply the same relative order to every profile. For
+grouped parts, keep the hierarchy valid and avoid cycles.
+
+If a part should not appear on a certain profile, keep the part and set
+`"visible": false` — do **not** delete it from that profile.
+
+**Use only the part types and fields defined here.** For visual-polish requests such as
+"make it richer", do not invent unsupported fields such as `radius`, `cornerRadius`,
+`stroke`, `border`, `opacity`, `alpha`, `gradient`, `shadow`, `font`(family),
+`fontFamily`, `bold`, `wrap`, or `align`. Approximate cards, dividers, highlights, and
+simple shadows by layering `Rect` and `Text` parts. Use `Image` only to reference an
+existing project asset.
+
+**This format does not include**, and you must not add: font *family/style* selection
+beyond the `font` name + `size` + `color` already defined; animation/transition/keyframe/
+fade/duration/delay/timing; or any project-level data (`assets`, asset binaries / Data
+URLs, `boards`, `targetLibrary`, `defaultProfile`, project name/namespace, output
+settings, Arduino code). This is **not** the `.lgfxsb.json` project file and **not**
+Arduino generated output. Represent **static layouts only**.
+
+---
+
+## 5. Do / Don't
 
 **Do**
 - Keep the `(id, type, parent)` set identical across all profiles.
@@ -173,7 +217,7 @@ on `Cardputer` — `panel` hidden (`"visible": false`).
 
 ---
 
-## 5. Round-trip
+## 6. Round-trip
 
 This format maps one-to-one to the tool's internal model, so a layout exported from the
 tool and edited by you can be imported back. Stable IDs are what make editing safe: an

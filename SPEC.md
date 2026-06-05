@@ -748,16 +748,17 @@ The tool exchanges the layout of a screen as a simple **JSON**, so that a screen
 
 **Scope and granularity (decided):** the unit is **one scene across all profiles** — the same screen laid out for every device size — so the AI can keep the per-device layouts consistent in one pass. The format is **model-faithful and round-trippable**: it mirrors the internal model values almost one-to-one (absolute pixel coordinates, datum, size multiplier, color), so a layout exported from the tool and edited by the AI can be reconstructed. Stable part IDs are what make round-trip editing safe.
 
-The AI-facing interface contract is a standalone, **English-only** document, [docs/AI_LAYOUT_IO.md](docs/AI_LAYOUT_IO.md), served on GitHub Pages (e.g. `https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.html`) so it can be referenced by URL. (Per the doc-naming convention this contract is intentionally English-only, since it is read by an AI.)
+The AI-facing interface contract is a standalone, **English-only** document, [docs/AI_LAYOUT_IO.md](docs/AI_LAYOUT_IO.md), served verbatim on GitHub Pages (the file has no front matter, so Jekyll does not convert it). The canonical contract URL embedded in exported JSON (the `spec` field) is `https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.md` — the same `.md` URL throughout. (Per the doc-naming convention this contract is intentionally English-only, since it is read by an AI.)
 
 Format:
 
 - Top-level: `format`, `version`, `spec` (the URL of `docs/AI_LAYOUT_IO.md`, so an AI given only the JSON can fetch the contract), `scene` (Scene ID), `desc` (description), optional `background` (visual context), and `profiles[]`.
 - Value types are explicit in the contract: `w`/`h`/`x`/`y`/`rot`/`version` are integers; `size` is a number that may be fractional; `color` is `"#rrggbb"`; `visible` is boolean.
 - Each profile: `id`, `w`, `h`, `rot`, and `parts[]`.
-- Each part: `id`, `type`, `parent`, `visible`, plus per-type placement (Text: `x`/`y` anchor, `datum`, `size` multiplier, `color`, `text`; Rect: `x`/`y`/`w`/`h`/`color`; Image: `x`/`y`/`w`/`h`/`asset` name; Group: `x`/`y` origin only).
-- **Stripped:** asset binaries (Data URLs / RGB565), board assignments, namespace / project name, output settings, `defaultProfile`, `targetLibrary`.
-- **Invariant:** the `(id, type, parent)` set is identical across all profiles (the data contract of §8.2); only placement differs.
+- Each part: `id`, `type`, `parent`, `visible`, plus per-type placement (Text: `x`/`y` anchor, `datum`, `size` multiplier, `color`, `text`, `font` name (or null = default); Rect: `x`/`y`/`w`/`h`/`color`; Image: `x`/`y`/`w`/`h`/`asset` name (shared across profiles); Group: `x`/`y` origin only — a Group also carries `visible` for shape consistency but draws nothing).
+- **Stripped:** asset binaries (Data URLs / RGB565), board assignments, namespace / project name, output settings, `defaultProfile`, `targetLibrary`, animation/timing, and Arduino code.
+- **Invariant:** the `(id, type, parent)` set is identical across all profiles (the data contract of §8.2). Everything else may differ per profile — coordinates, size, `color`, `visible`, and a Text's `datum`/`size`/`text`/`font`.
+- The AI layout format v1 intentionally excludes font *family/style* selection beyond the `font` name + `size` + `color`, profile-specific asset replacement, and animation.
 
 Export (implemented): the Design screen's **"Copy AI JSON"** action (`docs/src/ailayout.js`) copies the current scene (all profiles) in this format to the clipboard, with a file-download fallback when the clipboard is unavailable.
 
@@ -766,6 +767,7 @@ Import (post-MVP): re-importing AI output is applied manually for now. Open ques
 - Whether an import is **applied to an existing screen**, or is **import-only and reflected via "add as a screen" after a preview**.
 - Reconciling profiles in the imported JSON with the project's profiles (matching by `id` / size; behavior on mismatch).
 - Handling of ID collisions on import and of referenced assets that are not registered.
+- Normalizing a JSON whose `parts` order or `parent` links differ between profiles (the model keeps one shared `(id, type, parent)` + order per scene), e.g. which profile wins.
 
 The import method is worked out separately (§15).
 

@@ -20,7 +20,8 @@ export const AI_LAYOUT_DOC_URL =
   'https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.md';
 
 // One part entry. Field set per type matches model.js:
-//   Text  -> x,y,datum,size,color,text   (no w/h; anchored by datum, §8.7)
+//   Text  -> x,y,datum,size,color,text,font  (no w/h; anchored by datum, §8.7;
+//                                              font = adopted font name or null=default)
 //   Group -> x,y                          (logical origin only)
 //   Rect  -> x,y,w,h,color
 //   Image -> x,y,w,h,asset                (asset = existing asset name or null)
@@ -29,7 +30,7 @@ function partEntry(def, pl) {
   const e = { id: def.id, type: def.type, parent: def.parent || null };
   if (def.type === 'Text') {
     e.x = pl.x; e.y = pl.y; e.datum = pl.datum; e.size = pl.size;
-    e.color = pl.color; e.text = pl.text;
+    e.color = pl.color; e.text = pl.text; e.font = pl.font || null;
   } else if (def.type === 'Group') {
     e.x = pl.x; e.y = pl.y;
   } else { // Rect / Image
