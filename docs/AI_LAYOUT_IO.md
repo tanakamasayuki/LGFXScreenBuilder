@@ -173,8 +173,9 @@ values.
 
 **Image** — a bitmap from the project's asset library.
 `x, y` top-left · `w, h` size · `asset` the **existing asset name** (string) or `null`.
-You **cannot create image data**; you may only place, resize, or point an Image at an
-asset name that already exists in the project.
+You **cannot create image data**, slice images, or reference image regions. Preserve
+`asset` as-is unless the user explicitly asks to switch to another existing asset. In
+normal layout edits, only adjust `x` / `y` / `w` / `h` / `visible`.
 
 ---
 
@@ -265,7 +266,8 @@ If a part should not appear on a certain profile, keep the part and set
 `stroke`, `strokeWidth`, `border`, `opacity`, `alpha`, `gradient`, `shadow`, `fontFamily`, `fontStyle`,
 `fontWeight`, `bold`, `italic`, `wrap`, or `align`. Approximate cards, dividers,
 highlights, and simple shadows by layering `Rect` and `Text` parts. Use `Image` only to
-reference an existing project asset.
+place an existing project asset; do not invent asset names, image slices, or per-profile
+asset replacements.
 
 The `font` field **is** a supported Text field — this restriction is only about *other*
 text-styling fields. Preserve `font` as-is unless the request explicitly asks to switch
@@ -285,7 +287,7 @@ unnecessary or near-duplicate fonts.
 selection beyond the provided font catalog context plus Text `font` name + `size` +
 `color`; animation/transition/keyframe/fade/duration/delay/timing; or any project-level
 data (`assets`, asset binaries / Data URLs, `targetLibrary`,
-project name/namespace, output settings, Arduino code). This is **not** the
+image slices, project name/namespace, output settings, Arduino code). This is **not** the
 `.lgfxsb.json` project file and **not** Arduino generated output. Represent **static
 layouts only**.
 
@@ -304,6 +306,7 @@ layouts only**.
 **Don't**
 - Don't add `w`/`h` to a `Text` (it has none).
 - Don't invent `asset` names — only reference assets that already exist.
+- Don't change `Image.asset` unless explicitly requested, and never add image-slice fields.
 - Don't change a part's `id` or `type` between profiles.
 - Don't add fields not described here, and don't include comments or trailing commas.
 

@@ -140,7 +140,7 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 
 **Image** — プロジェクトの asset ライブラリにある bitmap。
 `x, y` は左上 · `w, h` はサイズ · `asset` は **既存 asset 名**（string）または `null`。
-画像データは作れません。既存 asset 名を配置、リサイズ、参照変更するだけです。
+画像データの作成、画像スライス、画像内領域の参照はできません。ユーザーが既存 asset への切り替えを明示しない限り、`asset` はそのまま保持します。通常のレイアウト編集では `x` / `y` / `w` / `h` / `visible` だけを調整します。
 
 ---
 
@@ -216,13 +216,13 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 
 ある profile で part を表示したくない場合は、part を残して `"visible": false` にします。その profile から削除してはいけません。
 
-**ここで定義した part type と field だけを使います。** 「もっとリッチに」などの見た目改善依頼でも、`radius`, `cornerRadius`, `stroke`, `strokeWidth`, `border`, `opacity`, `alpha`, `gradient`, `shadow`, `fontFamily`, `fontStyle`, `fontWeight`, `bold`, `italic`, `wrap`, `align` など未対応フィールドを作ってはいけません。カード、区切り線、ハイライト、簡単な影は `Rect` と `Text` の重ね合わせで近似します。`Image` は既存 project asset を参照する場合だけ使います。
+**ここで定義した part type と field だけを使います。** 「もっとリッチに」などの見た目改善依頼でも、`radius`, `cornerRadius`, `stroke`, `strokeWidth`, `border`, `opacity`, `alpha`, `gradient`, `shadow`, `fontFamily`, `fontStyle`, `fontWeight`, `bold`, `italic`, `wrap`, `align` など未対応フィールドを作ってはいけません。カード、区切り線、ハイライト、簡単な影は `Rect` と `Text` の重ね合わせで近似します。`Image` は既存 project asset を配置する場合だけ使い、asset 名、画像スライス、プロファイル別 asset 差し替えを捏造してはいけません。
 
 `font` フィールドは対応済み Text フィールドです。この制限は他の text styling フィールドについてのものです。依頼で明示されない限り `font` はそのまま保持します。変更する場合も、同じ profile の `fonts` リストにあるフォントだけを使い、フォント名を捏造してはいけません。
 
 利用可能フォントでは依頼を満たせない場合、layout JSON を作る前または後に、人間へフォント追加を依頼して構いません。この依頼は layout JSON 形式の **外側**です。JSON にフォント追加要求フィールドを入れたり、該当 profile の `fonts` 配列にないフォント名を使ったりしてはいけません。必要な文字種がない、見た目が大きく違う、利用可能なネイティブ高さでは bitmap 拡大率が不自然になる、など必要な場合だけ新規フォントを依頼します。フォント追加は任意であり、却下されることがあります。フォントはストレージを消費するため、不要なフォントや同系統の重複フォントを依頼しないでください。
 
-**この形式には含まれず、追加してはいけないもの:** 提供済みフォント文脈と Text の `font` 名 + `size` + `color` を超える編集可能な font family/style 指定、animation/transition/keyframe/fade/duration/delay/timing、project-level data（`assets`、asset binary / Data URL、`targetLibrary`、project name/namespace、output settings、Arduino code）。これは `.lgfxsb.json` project file ではなく、Arduino 生成出力でもありません。**静的レイアウトだけ**を表します。
+**この形式には含まれず、追加してはいけないもの:** 提供済みフォント文脈と Text の `font` 名 + `size` + `color` を超える編集可能な font family/style 指定、animation/transition/keyframe/fade/duration/delay/timing、project-level data（`assets`、asset binary / Data URL、`targetLibrary`、画像スライス、project name/namespace、output settings、Arduino code）。これは `.lgfxsb.json` project file ではなく、Arduino 生成出力でもありません。**静的レイアウトだけ**を表します。
 
 ---
 
@@ -238,6 +238,7 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 **Don't**
 - `Text` に `w`/`h` を追加しない（Text には存在しない）。
 - `asset` 名を捏造しない。既存 asset だけを参照する。
+- 明示的に依頼されない限り `Image.asset` を変更しない。画像スライス用 field を追加しない。
 - profile 間で part の `id` や `type` を変えない。
 - ここにない field を追加しない。コメントや末尾カンマを含めない。
 

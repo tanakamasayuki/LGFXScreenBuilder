@@ -155,7 +155,6 @@ Inside the Arduino runtime, a common drawing API of LovyanGFX and M5GFX is assum
 - String drawing
 - Image drawing
 - Rectangle drawing
-- Sprite drawing
 - Color conversion
 - Screen size retrieval
 - Clipping
@@ -180,7 +179,7 @@ Rather than fully transitioning the entire screen, the authoring tool switches t
 Top-level modes:
 
 - Design: Scenes, layers, part placement, property editing
-- Assets: Management of images, fonts, slices, and output formats
+- Assets: Management of images, fonts, and output formats
 - Export: Arduino output artifacts, generation API, asset output settings, downloads
 - Devices: Management of profiles (screen size, rotation, order, layout) and the target library
 
@@ -212,7 +211,7 @@ The terminology is organized as follows.
 
 In Design mode, the `Parts` section always displays the Parts that can be added. The path for adding elements to the screen is unified into `Parts`, and Assets are not given special treatment alone.
 
-Assets mode is used to register material and manage image slices, fonts, and output formats. When an Image is added in Design mode, the referenced Asset is selected in the property pane on the right.
+Assets mode is used to register material and manage fonts and output formats. When an Image is added in Design mode, the referenced Asset is selected in the property pane on the right.
 
 The supported Parts are as follows.
 
@@ -314,7 +313,7 @@ main.footerBattery = battery;
 
 ### 8.4 Asset Management
 
-Images, fonts, colors, sprite sheets, and the like can be managed within the project.
+Images, fonts, colors, and the like can be managed within the project.
 
 Examples of image assets:
 
@@ -324,6 +323,8 @@ Examples of image assets:
 - loading.png
 
 Assets are given a unique ID.
+
+An Image Part references an existing image asset. The image asset payload is shared project-wide, and profile-specific differences are handled by placement values: `x` / `y` / `w` / `h` / `visible`. Profile-specific image replacement is outside the current scope. If needed, user code switches images directly, or the user prepares the required image as a separate asset and references it from a separate layout.
 
 Image assets are converted to a format close to the drawing target for Arduino output.
 
@@ -335,34 +336,13 @@ Flash direct-draw RAW is pre-converted to a format close to the drawing target, 
 
 In-memory fast drawing, compressed formats, and storage-destination variations (LittleFS/SPIFFS/SD/RAM/PSRAM) are not handled in the current specification. If needed, user code manages those images and draws them directly with LovyanGFX/M5GFX.
 
-### 8.5 Slicing
+### 8.5 Image Slicing
 
-Multiple asset regions can be cut out from a large image.
-
-Example:
-
-```text
-dashboard.png
-  logo
-  battery
-  wifi
-  loading_frame_01
-  loading_frame_02
-```
+Image slicing is outside the current scope. Required images are prepared in advance with an external tool and registered as individual image assets.
 
 ### 8.6 Sprite Sheet Support
 
-Sprite sheets are not handled as an independent feature in the current specification. Regions cut out by image slicing can be used as static Images, but frame animation and auto-play are not provided.
-
-Example:
-
-```text
-loading.png
-  frame0
-  frame1
-  frame2
-  frame3
-```
+Sprite sheets are outside the current scope. Frame animation, auto-play, and frame selection from regions inside an image are not provided. If needed, user code draws directly with LovyanGFX/M5GFX.
 
 ### 8.7 Font Management
 
@@ -630,15 +610,15 @@ The web authoring tool provides the following assistance features.
 
 The diff highlight of "showing items whose value differs from the default in the display" is deferred (it is meaningful only between profiles of the same size and has limited use; §8.9.6).
 
-As a UI-only common item, elements that line up in a list (scenes, parts, assets, slices, profiles) can have a `displayOrder` and a `description` (remarks). `displayOrder` is used to control the display order in the UI, and ties are sorted by ascending ID. `description` is a working note, treated as an optional, low-priority item, and is not included in the Arduino-bound output (if empty, it is not output).
+As a UI-only common item, elements that line up in a list (scenes, parts, assets, profiles) can have a `displayOrder` and a `description` (remarks). `displayOrder` is used to control the display order in the UI, and ties are sorted by ascending ID. `description` is a working note, treated as an optional, low-priority item, and is not included in the Arduino-bound output (if empty, it is not output).
 
 ### 8.14 Editor Operations (Key Map)
 
-Common key/mouse operations are defined for editing screens that have a canvas (Design, slice editing in Assets, etc.). They are aligned with common conventions of shape-editing tools.
+Common key/mouse operations are defined for the Design screen canvas. They are aligned with common conventions of shape-editing tools.
 
 Selection and focus:
 
-- Click a part/slice: select it.
+- Click a part: select it.
 - Click an empty area of the canvas / outside the editing target (the screen frame / image): deselect. In Design, when deselected, the property pane displays **the properties of that screen (scene) itself (remarks, etc.)**.
 - While a text input field (`input` / `textarea` / `select`) has focus, the key operations below are not performed (normal text editing takes priority).
 
@@ -684,7 +664,7 @@ Format:
 - Each part: `id`, `type`, `visible`, plus per-type placement (Text: `x`/`y` anchor, `datum`, `size` multiplier, `color`, `text`, `font` name (or null = default); Rect: `x`/`y`/`w`/`h`/`r`/`fill`/`color`; Image: `x`/`y`/`w`/`h`/`asset` name (shared across profiles)).
 - **Stripped:** asset binaries (Data URLs / RGB565), namespace / project name, output settings, `targetLibrary`, animation/timing, and Arduino code.
 - **Invariant:** the `(id, type)` set is identical across all profiles (the data contract of §8.2). Everything else may differ per profile — coordinates, size, `color`, `visible`, and a Text's `datum`/`size`/`text`/`font`.
-- The AI layout format v1 intentionally excludes editable font *family/style* selection beyond the provided font context plus a Text's `font` name + `size` + `color`, profile-specific asset replacement, and animation.
+- The AI layout format v1 intentionally excludes editable font *family/style* selection beyond the provided font context plus a Text's `font` name + `size` + `color`, profile-specific asset replacement, image slicing, and animation. The AI normally preserves `Image.asset` and adjusts only image position, size, and visibility.
 - If the AI determines that the available fonts cannot satisfy the request, it may ask the human to add fonts before or after producing the JSON. This is an **out-of-band operation outside the AI layout JSON**: do not add font-request fields to the JSON, and do not invent or use font names that are not adopted/enabled. Because fonts have storage cost, requests should be limited to cases such as missing script coverage, a large visual-style mismatch, or no natural native height, and should avoid many near-duplicate fonts in the same family.
 
 Export (implemented): the Design screen's **"Copy AI JSON"** action (`docs/src/ailayout.js`) copies the current scene (all profiles) in this format to the clipboard as **minified JSON** (the clipboard is an AI input, so no whitespace — fewer tokens; the contract's worked example stays pretty for human readers). A file download is used as a fallback when the clipboard is unavailable.
@@ -1085,6 +1065,7 @@ The current scope excludes the following.
 - ValueText/Value family (dedicated numeric display: prefix/suffix/decimal places/unit)
 - Custom font (TTF/OTF) registration and management (the current scope uses LovyanGFX/M5GFX preset fonts)
 - Asset slicing (§8.5)
+- Profile-specific image asset replacement
 - Sprite sheets (§8.6)
 - Asset storage-destination variations (LittleFS/SPIFFS/SD/RAM/PSRAM)
 - Drawing format variations (RGB888/RGBA, Palette, PNG/JPEG, custom compression) / in-memory and compressed drawing paths
