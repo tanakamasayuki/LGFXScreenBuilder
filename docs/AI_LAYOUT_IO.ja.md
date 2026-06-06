@@ -49,7 +49,7 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 
 各 profile は `parts` 配列を持ちます。描画順は **配列順で奥から手前**です（先頭が背面）。
 
-**重要な不変条件:** `(id, type, parent)` の集合は **すべての profile で同一**でなければなりません。それ以外の値、つまり位置、サイズ（`w`/`h`）、`color`、`visible`、Text の `datum`/`size`/`text`/`font` は、画面に合わせて profile ごとに変えて構いません。パーツを追加・削除・リネームする場合は、**すべての profile**で行います。profile 間で同じ part の `type` を変えてはいけません。
+**重要な不変条件:** `(id, type)` の集合は **すべての profile で同一**でなければなりません。それ以外の値、つまり位置、サイズ（`w`/`h`）、`color`、`visible`、Text の `datum`/`size`/`text`/`font` は、画面に合わせて profile ごとに変えて構いません。パーツを追加・削除・リネームする場合は、**すべての profile**で行います。profile 間で同じ part の `type` を変えてはいけません。
 
 すべての座標は **整数 px、左上原点 (0,0)、スケーリングなし**です。`w`×`h` の外に描いたものはクリップされます。パーツは画面内に収めます。
 
@@ -58,8 +58,7 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 | field | 意味 |
 |-------|------|
 | `id` | scene 内で一意な C 識別子（`[A-Za-z_]\w*`）。profile 間で安定していること。 |
-| `type` | `"Rect"`、`"Text"`、`"Image"`、`"Group"` のいずれか。 |
-| `parent` | `null`、またはこの part を含む `Group` の `id`。 |
+| `type` | `"Rect"`、`"Text"`、`"Image"` のいずれか。 |
 | `visible` | `true` / `false`。非表示 part は保持されるが描画されない。 |
 
 ### 値の型
@@ -73,7 +72,7 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 | `color` | **string** | `"#rrggbb"`（6 桁 hex、小文字）。 |
 | `visible` | **boolean** | `true` / `false`。 |
 | `id`, `type`, `datum`, `text`, `family`, `content` | **string** | — |
-| `parent`, `asset`, `font`, `unit` | **string or null** | 参照 ID / asset 名 / font 名 / 単位、または `null`。 |
+| `asset`, `font`, `unit` | **string or null** | asset 名 / font 名 / 単位、または `null`。 |
 | `scene`, `desc`, `spec`, `format` | **string** | — |
 | `version` | **integer** | 現在は `1`。 |
 
@@ -142,12 +141,6 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 `x, y` は左上 · `w, h` はサイズ · `asset` は **既存 asset 名**（string）または `null`。
 画像データは作れません。既存 asset 名を配置、リサイズ、参照変更するだけです。
 
-**Group** — 原点を持つ論理コンテナ。自身は描画しません。
-`x, y` は group 原点です。**子の座標は group 原点からの相対座標**です。
-Group には `w`/`h`/`color` はありません。まとまったパーツを一緒に動かすために使います。
-コンテナになれるのは `Group` だけで、階層は循環してはいけません。
-Group も形状整合のため `visible` を持ちますが、描画しないので通常はそのままにします。内容を隠す場合は、子の描画パーツを `visible: false` にします。
-
 ---
 
 ## 3. 例
@@ -171,33 +164,33 @@ Group も形状整合のため `visible` を持ちますが、描画しないの
       "id": "Core", "w": 320, "h": 240, "rot": 0,
       "fonts": [ "Font4", "efontJA_16" ],
       "parts": [
-        { "id": "headerBand", "type": "Rect", "parent": null, "x": 0, "y": 0, "w": 320, "h": 40, "color": "#1e2a30", "visible": true },
-        { "id": "title", "type": "Text", "parent": null, "x": 12, "y": 10, "datum": "TL", "size": 2, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
-        { "id": "battery", "type": "Text", "parent": null, "x": 310, "y": 12, "datum": "TR", "size": 1.5, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
-        { "id": "temp", "type": "Text", "parent": null, "x": 18, "y": 70, "datum": "TL", "size": 4, "color": "#ffffff", "text": "24.5C", "font": null, "visible": true },
-        { "id": "panel", "type": "Rect", "parent": null, "x": 18, "y": 150, "w": 284, "h": 54, "color": "#172126", "visible": true }
+        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 320, "h": 40, "color": "#1e2a30", "visible": true },
+        { "id": "title", "type": "Text", "x": 12, "y": 10, "datum": "TL", "size": 2, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
+        { "id": "battery", "type": "Text", "x": 310, "y": 12, "datum": "TR", "size": 1.5, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
+        { "id": "temp", "type": "Text", "x": 18, "y": 70, "datum": "TL", "size": 4, "color": "#ffffff", "text": "24.5C", "font": null, "visible": true },
+        { "id": "panel", "type": "Rect", "x": 18, "y": 150, "w": 284, "h": 54, "color": "#172126", "visible": true }
       ]
     },
     {
       "id": "Stick", "w": 135, "h": 240, "rot": 0,
       "fonts": [ "Font4" ],
       "parts": [
-        { "id": "headerBand", "type": "Rect", "parent": null, "x": 0, "y": 0, "w": 135, "h": 30, "color": "#1e2a30", "visible": true },
-        { "id": "title", "type": "Text", "parent": null, "x": 8, "y": 7, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
-        { "id": "battery", "type": "Text", "parent": null, "x": 8, "y": 180, "datum": "TL", "size": 1.5, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
-        { "id": "temp", "type": "Text", "parent": null, "x": 10, "y": 60, "datum": "TL", "size": 3.5, "color": "#ffffff", "text": "24.5", "font": null, "visible": true },
-        { "id": "panel", "type": "Rect", "parent": null, "x": 10, "y": 110, "w": 115, "h": 60, "color": "#172126", "visible": true }
+        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 135, "h": 30, "color": "#1e2a30", "visible": true },
+        { "id": "title", "type": "Text", "x": 8, "y": 7, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
+        { "id": "battery", "type": "Text", "x": 8, "y": 180, "datum": "TL", "size": 1.5, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
+        { "id": "temp", "type": "Text", "x": 10, "y": 60, "datum": "TL", "size": 3.5, "color": "#ffffff", "text": "24.5", "font": null, "visible": true },
+        { "id": "panel", "type": "Rect", "x": 10, "y": 110, "w": 115, "h": 60, "color": "#172126", "visible": true }
       ]
     },
     {
       "id": "Cardputer", "w": 240, "h": 135, "rot": 0,
       "fonts": [ "Font4" ],
       "parts": [
-        { "id": "headerBand", "type": "Rect", "parent": null, "x": 0, "y": 0, "w": 240, "h": 26, "color": "#1e2a30", "visible": true },
-        { "id": "title", "type": "Text", "parent": null, "x": 8, "y": 5, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
-        { "id": "battery", "type": "Text", "parent": null, "x": 232, "y": 6, "datum": "TR", "size": 1.25, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
-        { "id": "temp", "type": "Text", "parent": null, "x": 12, "y": 40, "datum": "TL", "size": 3, "color": "#ffffff", "text": "24.5C", "font": null, "visible": true },
-        { "id": "panel", "type": "Rect", "parent": null, "x": 12, "y": 86, "w": 216, "h": 40, "color": "#172126", "visible": false }
+        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 240, "h": 26, "color": "#1e2a30", "visible": true },
+        { "id": "title", "type": "Text", "x": 8, "y": 5, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
+        { "id": "battery", "type": "Text", "x": 232, "y": 6, "datum": "TR", "size": 1.25, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
+        { "id": "temp", "type": "Text", "x": 12, "y": 40, "datum": "TL", "size": 3, "color": "#ffffff", "text": "24.5C", "font": null, "visible": true },
+        { "id": "panel", "type": "Rect", "x": 12, "y": 86, "w": 216, "h": 40, "color": "#172126", "visible": false }
       ]
     }
   ]
@@ -218,7 +211,7 @@ Group も形状整合のため `visible` を持ちますが、描画しないの
 
 **トップレベル `fonts` と各 profile の `fonts` 配列は変更せず保持**します。これらはカタログ/文脈データであり、レイアウト編集対象ではありません。Text `font` の有効な選択肢を判断するためだけに使います。
 
-**`parts` 配列順を profile 間で一貫させます。** 配列順は描画順です。レイヤー順を変える場合は、すべての profile で同じ相対順にします。group 化された part は階層を有効に保ち、循環を避けます。
+**`parts` 配列順を profile 間で一貫させます。** 配列順は描画順です。レイヤー順を変える場合は、すべての profile で同じ相対順にします。
 
 ある profile で part を表示したくない場合は、part を残して `"visible": false` にします。その profile から削除してはいけません。
 
@@ -235,14 +228,14 @@ Group も形状整合のため `visible` を持ちますが、描画しないの
 ## 5. Do / Don't
 
 **Do**
-- `(id, type, parent)` の集合をすべての profile で同一にする。
+- `(id, type)` の集合をすべての profile で同一にする。
 - すべての part を profile の `w`×`h` 内に収める。
 - profile のアスペクト比に合わせてサイズと位置を調整する（縦長 135×240 には、横長 320×240 とは違う配置が必要）。
 - text の整列には anchor + `datum` を使う（例: 右寄せ値は `x = w` の `TR`）。
 - すべての profile を含む全体オブジェクトを、有効な JSON として返す。
 
 **Don't**
-- `Text` に `w`/`h` を追加しない（Text には存在しない）。`Group` にも追加しない。
+- `Text` に `w`/`h` を追加しない（Text には存在しない）。
 - `asset` 名を捏造しない。既存 asset だけを参照する。
 - profile 間で part の `id` や `type` を変えない。
 - ここにない field を追加しない。コメントや末尾カンマを含めない。

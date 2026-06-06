@@ -207,11 +207,10 @@ A screen is composed as a collection of parts.
 The terminology is organized as follows.
 
 - Asset: Material referenced by a Part, not something placed directly on the screen. Images, fonts, color palettes, etc.
-- Part: A general term for the elements placed on a Scene. There are Parts that draw (Text, Image, Rect, Line, Circle, etc.) and container Parts (Group) that group children without drawing.
-- Group: A container Part that groups child Parts. It provides hierarchy, namespace, and a local-coordinate reference, and does not draw itself.
+- Part: A general term for drawable elements placed on a Scene. Text, Image, Rect, Line, Circle, etc.
 - Component: A template for reusing multiple Parts. Not handled in the current specification; a future extension.
 
-A Group is also a kind of Part (a container Part) and is added from `Parts`. In Design mode, the `Parts` section always displays the Parts that can be added. The path for adding elements to the screen is unified into `Parts`, and Assets are not given special treatment alone.
+In Design mode, the `Parts` section always displays the Parts that can be added. The path for adding elements to the screen is unified into `Parts`, and Assets are not given special treatment alone.
 
 Assets mode is used to register material and manage image slices, fonts, and output formats. When an Image is added in Design mode, the referenced Asset is selected in the property pane on the right.
 
@@ -223,7 +222,6 @@ The supported Parts are as follows.
 - Line
 - Circle
 - Ellipse
-- Group
 
 Rect / Line / Circle / Ellipse are basic shapes included so AI-assisted static layouts can look reasonably polished. They stay within the range that maps naturally to LovyanGFX/M5GFX basic drawing APIs, such as fill, stroke width, and color. Advanced vector editing such as rounded corners, shadows, gradients, complex paths, or boolean operations is not provided.
 
@@ -253,7 +251,7 @@ Each part has the following.
 
 - ID
 - Type
-- Local coordinates relative to the parent Group
+- Coordinates in the root coordinate system
 - Size
 - Visibility state
 - Drawing order
@@ -263,86 +261,41 @@ Each part has the following.
 
 However, the items a part has differ by type. Text does not have a size (width/height); it is placed by an anchor point (`x` / `y`) + a datum + a text size (multiplier) (§8.7). Image / Rect have a rectangle size (`w` / `h`).
 
-The generated structures (the data contract) are determined only by the part's ID, type, and parent-child relationships. Coordinates, size, visibility state, style, preview strings, and per-profile layout are not included in the structures. As a result, the Arduino-side usage code (e.g., `main.header.title = "..."`) stays constant regardless of device or profile, and adding a profile later does not change the structure definitions. This is an invariant to avoid rework in multi-device support.
+The generated structures (the data contract) are determined only by the part's ID and type. Coordinates, size, visibility state, style, preview strings, and per-profile layout are not included in the structures. As a result, the Arduino-side usage code (e.g., `main.title = "..."`) stays constant regardless of device or profile, and adding a profile later does not change the structure definitions. This is an invariant to avoid rework in multi-device support.
 
 A part's layout (coordinates/size/visibility/style) is held **as a complete, independent value per profile**. There is no concept of a base or a diff (override). When adding a profile, you can start by copying an existing profile's layout. In a single-profile project, only one set of layouts is held.
 
-The coordinate system uses local coordinates as the standard. A Scene has a root coordinate system, and Parts under a Group store `x` / `y` relative to the origin of the parent Group (since a Group is also a Part, nesting works the same way). When drawing, the parent's coordinates are added to resolve to absolute coordinates.
+The coordinate system uses the Scene root coordinate system as the standard. Each Part stores `x` / `y` as absolute coordinates on the screen.
 
-The editor uses local coordinates as the primary edited value, and displays absolute coordinates as auxiliary information as needed.
+The editor uses absolute coordinates as the primary edited value.
 
-### 8.3 Group Management
+### 8.3 Layer Order Management
 
-Multiple parts can be grouped.
-
-Group is a container Part that provides hierarchy, namespace, and a local-coordinate reference (it does not draw itself).
-
-What Group has:
-
-- ID
-- Local coordinates
-- Child Parts
-- Drawing order
-
-Group does not have the following.
-
-- Visibility
-- Clipping
-- Background
-- Border
-
-The following are not handled in the current specification. If introduced, they are considered separately.
-
-- Move
-- Clipping
-
-The `children` array of a scene and a group represents the drawing order. Drawing proceeds from the head of the array, and later parts are drawn in front. That is, the last-drawn part is displayed on top of the overlap.
+The Scene `parts` array represents the drawing order. Drawing proceeds from the head of the array, and later parts are drawn in front. That is, the last-drawn part is displayed on top of the overlap.
 
 In the layer panel, in line with common design tools, front parts are displayed at the top and back parts at the bottom. Changing the layer order is done with the "Bring forward" / "Send backward" buttons (`↑` / `↓`) on the layer panel. These are button operations on the panel, distinct from the arrow keys that move the selected part on the canvas (§8.14).
 
-#### 8.3.1 Reordering and Moving Parts In and Out of Groups
-
-Layer reordering happens **among siblings that share the same parent (the same level)**. "Bring forward / Send backward" swaps the selected part with an adjacent sibling; it does not move the part across levels.
-
-**Drag and drop** in the layer tree performs both reordering and **changing the parent (moving parts in and out of groups)**. The behavior depends on the drop target:
-
-- Drop onto a group row: **nest inside** that group.
-- Drop onto another part row: make it a **sibling of that part (same parent)**.
-- Drop onto an empty area of the tree: move it to the **scene root**.
-
-When a part is **moved into or out of** a group, its **absolute on-screen position is preserved**. The local coordinates are recomputed relative to the new parent's origin, so the layout does not shift when moving parts in and out. Parts are expected to be freely movable in and out of groups at any time.
-
-Group operations:
-
-- **Group**: wrap the selection in a new Group. The Group is created at the same parent as the selection, and the children's absolute positions are preserved.
-- **Ungroup**: dissolve a Group and lift its children up to that Group's parent (preserving absolute positions).
-
-Constraints:
-
-- Only a Group can be a container that holds children (a drawing Part cannot be a container).
-- A part's own descendant cannot become its new parent (no cycles).
-- Deleting a group also deletes all of its descendant children.
+Moving multiple parts together is treated as an editor operation that does not create a dedicated Part in saved data. The editor applies the same movement delta to the selected Parts without changing the saved structure.
 
 `displayOrder` is auxiliary information for the UI list display and is handled separately from the drawing order.
 
 Example:
 
 ```text
-Header
-  Logo
-  Title
-  StatusIcon
+Logo
+Title
+StatusIcon
 ```
 
-The values of grouped parts are turned into structure fields following the group hierarchy in the Arduino-bound generated code as well.
+Part values are emitted as fields of the Scene structure in the Arduino-bound generated code.
 
 Example:
 
 ```cpp
 Scene::Main main;
-main.header.title = "Status";
-main.header.battery = 82;
-main.body.temperature = "24.5C";
+main.title = "Status";
+main.battery = 82;
+main.temperature = "24.5C";
 
 screen.show(main);
 ```
@@ -354,8 +307,8 @@ Example:
 ```cpp
 int battery = readBatteryLevel();
 
-main.header.battery = battery;
-main.footer.battery = battery;
+main.battery = battery;
+main.footerBattery = battery;
 ```
 
 ### 8.4 Asset Management
@@ -603,10 +556,10 @@ Parts are managed in a hierarchical namespace. In the Arduino-bound generated co
 Example:
 
 ```text
-Main.header.title
-Main.header.battery
-Main.body.temperature
-Main.body.loading
+Main.title
+Main.battery
+Main.temperature
+Main.loading
 Settings.volume
 Settings.brightness
 ```
@@ -628,10 +581,10 @@ Arduino-side usage example (when the project name is `MyScreen`):
 using namespace MyScreen;          // optional; to omit the prefix
 
 Scene::Main main;
-main.header.title = "Main";
-main.header.battery = 82;
-main.body.temperature = "24.5C";
-main.body.loadingVisible = false;
+main.title = "Main";
+main.battery = 82;
+main.temperature = "24.5C";
+main.loadingVisible = false;
 
 screen.show(main);
 ```
@@ -640,7 +593,7 @@ The authoring tool and the generated runtime do not provide automatic variable b
 
 ### 8.12 ID Naming Rules
 
-IDs that are converted into type names, field names, and constant names in the Arduino-bound C++ code—such as scenes, groups, parts, and assets—are in principle limited to names usable as C/C++ identifiers.
+IDs that are converted into type names, field names, and constant names in the Arduino-bound C++ code—such as scenes, parts, and assets—are in principle limited to names usable as C/C++ identifiers.
 
 Basic rules:
 
@@ -648,13 +601,13 @@ Basic rules:
 - The first character is a letter or `_`.
 - Do not start with a digit.
 - Do not use C/C++ reserved words such as `class`, `struct`, `template`, `namespace`, `int`, `float`, `bool`, `auto`.
-- Do not duplicate IDs within the same hierarchy.
-- Case-sensitive, but because it is confusing, IDs that differ only in case within the same hierarchy are warned.
+- Do not duplicate IDs within the same Scene.
+- Case-sensitive, but because it is confusing, IDs that differ only in case within the same Scene are warned.
 
 Recommended style:
 
 - Scene IDs are `PascalCase`. Examples: `Boot`, `Main`, `Settings`
-- Group, part, and asset IDs are `camelCase` or `snake_case`. Examples: `header`, `batteryLevel`, `loading_icon`
+- Part and asset IDs are `camelCase` or `snake_case`. Examples: `header`, `batteryLevel`, `loading_icon`
 - Profile IDs are `PascalCase`. In the generated code they become `Profile::<Id>` constants. Examples: `Core`, `Stick`. The built-in profile representing auto-detection is `Auto` (`auto` cannot be used because it is a reserved word).
 - Because the project name becomes the namespace of the generated code, it follows the same ID naming rules (C/C++ identifier; reserved words not allowed). By convention `PascalCase`. Example: `MyScreen`
 
@@ -676,7 +629,7 @@ The web authoring tool provides the following assistance features.
 
 The diff highlight of "showing items whose value differs from the default in the display" is deferred (it is meaningful only between profiles of the same size and has limited use; §8.9.6).
 
-As a UI-only common item, elements that line up in a list (scenes, parts, groups, assets, slices, profiles) can have a `displayOrder` and a `description` (remarks). `displayOrder` is used to control the display order in the UI, and ties are sorted by ascending ID. `description` is a working note, treated as an optional, low-priority item, and is not included in the Arduino-bound output (if empty, it is not output).
+As a UI-only common item, elements that line up in a list (scenes, parts, assets, slices, profiles) can have a `displayOrder` and a `description` (remarks). `displayOrder` is used to control the display order in the UI, and ties are sorted by ascending ID. `description` is a working note, treated as an optional, low-priority item, and is not included in the Arduino-bound output (if empty, it is not output).
 
 ### 8.14 Editor Operations (Key Map)
 
@@ -727,9 +680,9 @@ Format:
 - Value types are explicit in the contract: `w`/`h`/`x`/`y`/`rot`/`version` are integers; `size` is a number that may be fractional; `color` is `"#rrggbb"`; `visible` is boolean.
 - Top-level `fonts[]`: adopted fonts with `name`, `family`, `content` (`digits` / `latin` / `ja` / `cn` / `tw` / `ko`), nominal `size`/`unit`, and approximate rendered `height`. This is emitted as authoritative context for choosing existing fonts, but importing the JSON does not add or change font assets.
 - Each profile: `id`, `w`, `h`, `rot`, `fonts[]` (the adopted font names enabled for that profile; not editable), and `parts[]`.
-- Each part: `id`, `type`, `parent`, `visible`, plus per-type placement (Text: `x`/`y` anchor, `datum`, `size` multiplier, `color`, `text`, `font` name (or null = default); Rect: `x`/`y`/`w`/`h`/`color`; Image: `x`/`y`/`w`/`h`/`asset` name (shared across profiles); Group: `x`/`y` origin only — a Group also carries `visible` for shape consistency but draws nothing).
+- Each part: `id`, `type`, `visible`, plus per-type placement (Text: `x`/`y` anchor, `datum`, `size` multiplier, `color`, `text`, `font` name (or null = default); Rect: `x`/`y`/`w`/`h`/`color`; Image: `x`/`y`/`w`/`h`/`asset` name (shared across profiles)).
 - **Stripped:** asset binaries (Data URLs / RGB565), namespace / project name, output settings, `targetLibrary`, animation/timing, and Arduino code.
-- **Invariant:** the `(id, type, parent)` set is identical across all profiles (the data contract of §8.2). Everything else may differ per profile — coordinates, size, `color`, `visible`, and a Text's `datum`/`size`/`text`/`font`.
+- **Invariant:** the `(id, type)` set is identical across all profiles (the data contract of §8.2). Everything else may differ per profile — coordinates, size, `color`, `visible`, and a Text's `datum`/`size`/`text`/`font`.
 - The AI layout format v1 intentionally excludes editable font *family/style* selection beyond the provided font context plus a Text's `font` name + `size` + `color`, profile-specific asset replacement, and animation.
 - If the AI determines that the available fonts cannot satisfy the request, it may ask the human to add fonts before or after producing the JSON. This is an **out-of-band operation outside the AI layout JSON**: do not add font-request fields to the JSON, and do not invent or use font names that are not adopted/enabled. Because fonts have storage cost, requests should be limited to cases such as missing script coverage, a large visual-style mismatch, or no natural native height, and should avoid many near-duplicate fonts in the same family.
 
@@ -738,9 +691,9 @@ Export (implemented): the Design screen's **"Copy AI JSON"** action (`docs/src/a
 Import (implemented): the Design screen's **"Paste AI JSON"** action opens a dialog; the user pastes the JSON (minified or pretty) and sees a live preview (update vs add, part/profile counts, warnings) before applying. Import is wired through the undo system (`reconcileAiLayout` / `applyAiLayout` in `docs/src/model.js`). Reconciliation rules:
 
 - **Update vs add by scene ID:** if the JSON's `scene` matches an existing scene it is **overwritten**; otherwise it is **added** as a new scene.
-- **Part definitions** (the shared `(id, type, parent)` + order + `asset`) are taken from one **canonical profile** — the first profile in profile order; if other profiles' part sets differ, the canonical one wins (with a warning).
+- **Part definitions** (the shared `(id, type)` + order + `asset`) are taken from one **canonical profile** — the first profile in profile order; if other profiles' part sets differ, the canonical one wins (with a warning).
 - **Profiles** are matched by `id`. A JSON profile not in the project is ignored (warning); a project profile missing from the JSON has its placements cloned from the canonical profile (warning).
-- **Validation:** part IDs must be C identifiers and types known; a `parent` that is missing / not a Group / cyclic is moved to root (warning); an `asset` name not in the project is cleared to null (warning). The scene is re-normalized to pre-order.
+- **Validation:** part IDs must be C identifiers and types known; an `asset` name not in the project is cleared to null (warning). The scene draw order is re-normalized.
 
 Deferred: file-based import, and creating project profiles that the JSON references but the project lacks (profile creation stays a Profiles-mode action). Further refinements are worked out separately (§15).
 
@@ -766,13 +719,12 @@ The project file includes the following.
 - Profile definitions (ID, size, default rotation, order)
 - Scene definitions
 - Part definitions
-- Group definitions
 - Animation definitions
 - Asset definitions
 - Font definitions
 - Output settings
 
-A part's layout is held keyed by the profile ID, as a **complete value per profile** (§8.2). There is no concept of a base or a diff. For a single profile, only one set. The generated structures are determined only by the part's ID, type, and parent-child relationships, and do not depend on profile or layout values.
+A part's layout is held keyed by the profile ID, as a **complete value per profile** (§8.2). There is no concept of a base or a diff. For a single profile, only one set. The generated structures are determined only by the part's ID and type, and do not depend on profile or layout values.
 
 Asset source data such as images and fonts is embedded in `.lgfxsb.json` as a Data URL. This makes it possible to carry the editing project as a single file.
 
@@ -1106,7 +1058,7 @@ LGFXScreenBuilder is responsible for creating AI-assistable static basic layouts
 - Basic screens of the web authoring tool (3 panes + mode switching, ja/en, startup flow)
 - Profile creation (screen size / default rotation), `Profile::Auto` auto-detection, and profile reordering
 - Scene creation
-- Text/Image/Rect/Line/Circle/Ellipse/Group part placement (direct manipulation: add/move/resize/group/layer order)
+- Text/Image/Rect/Line/Circle/Ellipse part placement (direct manipulation: add/move/resize/layer order)
 - Text font selection, size, color, datum, and single-line display
 - PNG image asset registration (Data URL embedding)
 - JSON project save/load (single `.lgfxsb.json`, download method)
@@ -1156,33 +1108,18 @@ The following are considered in the future.
 - Automatic Pages deployment via GitHub Actions
 - Editor completion using TypeScript type definitions
 - Multi-language documentation
-- Frame group (animation / state management; §16.1)
-- Static text designation (fixed text not exposed as a value; §16.2)
-- Font context JSON (limited subset for AI / font asset management; §16.3)
+- Static text designation (fixed text not exposed as a value; §16.1)
+- Font context JSON (limited subset for AI / font asset management; §16.2)
 
-### 16.1 Frame group (animation / state management)
-
-A Group extension that bundles several display states into one part and switches between them by frame number. The same mechanism serves both animation cels and widget states (normal / pressed / disabled, …).
-
-- **Structure (independent per-frame compositions)**: a frame group has N frames, and each frame is an **independent, complete layout** (Image / Rect / Text / nested groups placed at arbitrary coordinates). Only the active frame's subtree is shown. There is no linkage or interpolation between frames; each frame is free to use a different set of objects and different coordinates (it feels like "switching to a different group"). **There is no override/inheritance concept.** Elements common to all frames are placed in each frame (no shared layer). Coordinates remain per-profile as before.
-- **Frame number and state names**: frames are numbered 0..N-1 and may optionally carry state names (e.g. normal / pressed / disabled). State names are emitted as an enum in the generated code.
-- **Two ways to use it (same mechanism = the frame number)**:
-  - **State (manual)**: the app selects the frame number (or a state enum). This rides on the same value-setting mechanism as text-value updates.
-  - **Animation (auto-play)**: each frame has a display duration (Wait, ms) and a loop on/off flag, playing back automatically like a GIF.
-- **Rendering model (pull-based)**: the runtime does not own a redraw loop. When the app draws (show / update) at whatever cadence it likes, the frame is **advanced by the time elapsed since the previous draw**. If a lot of time elapsed it advances several frames to stay wall-clock accurate, handling loop wrap-around. The engine keeps, per instance, the "current frame" and the "last timestamp (or accumulated elapsed)". Animation smoothness depends on the app's draw cadence.
-- **Reuse (template style)**: a frame group can be reused as a template. This is not a symbol/instance with references, propagation, or overrides — inserting it **deep-copies it so it is fully independent thereafter** (editing the copy does not affect others). Both built-in stock templates and user-defined templates are envisioned.
-- **Relation to sprites**: image slices (sub-rectangles of an asset) are **placed by hand** into each frame. There is no automatic "frame number = slice number" mapping.
-- **Implementation scope**: manual state switching can be implemented first and auto-play (Wait + loop) later; how far to implement is decided at implementation time.
-
-### 16.2 Static text (fixed-text designation)
+### 16.1 Static text (fixed-text designation)
 
 Add a flag to a Text part to choose between fixed text (a literal) and a settable value.
 
 - The current generated code emits every Text as a settable field, but fixed labels whose content is determined by ID should not be exposed as values — they should be embedded as literals in the generated code.
 - Add a `static` (fixed / not exposed — descriptor preview string only, not a struct field) vs `dynamic` (settable value) distinction on Text.
-- This is a tool-wide Text feature rather than frame-group-specific, and may be implemented independently, before frame groups.
+- This is a tool-wide Text feature.
 
-### 16.3 Font context JSON (for AI / font asset management)
+### 16.2 Font context JSON (for AI / font asset management)
 
 In the future, consider a limited JSON format for font asset management and pre-layout AI consultation, separate from the layout JSON.
 

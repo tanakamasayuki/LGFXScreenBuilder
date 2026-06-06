@@ -58,7 +58,7 @@ fit a tall one.
 
 Each profile has a `parts` array, drawn **back-to-front in array order** (first = behind).
 
-**Critical invariant:** the set of `(id, type, parent)` must be **identical in every
+**Critical invariant:** the set of `(id, type)` must be **identical in every
 profile**. Everything else may differ per profile when needed to fit the screen —
 position, size (`w`/`h`), `color`, `visible`, and a Text's `datum`/`size`/`text`/`font`.
 If you add, remove, or rename a part, do it in **all** profiles. Never change a part's
@@ -72,8 +72,7 @@ outside `w`×`h` is clipped. Keep parts inside the screen.
 | field | meaning |
 |-------|---------|
 | `id` | unique within the scene; a C identifier (`[A-Za-z_]\w*`). Stable across profiles. |
-| `type` | `"Rect"`, `"Text"`, `"Image"`, or `"Group"`. |
-| `parent` | `null`, or the `id` of a `Group` that contains this part. |
+| `type` | `"Rect"`, `"Text"`, or `"Image"`. |
 | `visible` | `true` / `false`. A hidden part is kept but not drawn. |
 
 ### Field value types
@@ -87,7 +86,7 @@ outside `w`×`h` is clipped. Keep parts inside the screen.
 | `color` | **string** | `"#rrggbb"` (6 hex digits, lowercase). |
 | `visible` | **boolean** | `true` / `false`. |
 | `id`, `type`, `datum`, `text`, `family`, `content` | **string** | — |
-| `parent`, `asset`, `font`, `unit` | **string or null** | a referenced ID / asset name / font name / unit, or `null`. |
+| `asset`, `font`, `unit` | **string or null** | an asset name / font name / unit, or `null`. |
 | `scene`, `desc`, `spec`, `format` | **string** | — |
 | `version` | **integer** | currently `1`. |
 
@@ -172,13 +171,6 @@ values.
 You **cannot create image data**; you may only place, resize, or point an Image at an
 asset name that already exists in the project.
 
-**Group** — a logical container with an origin; it draws nothing itself.
-`x, y` is the group origin. **Children's coordinates are relative to the group origin.**
-A Group has no `w`/`h`/`color`. Use groups to move a cluster of parts together.
-Containers may only be `Group`s, and the hierarchy must not form a cycle.
-A Group still carries `visible` for shape consistency, but it draws nothing, so leave it
-unchanged — to hide content, set `visible: false` on the child drawing parts.
-
 ---
 
 ## 3. Worked example
@@ -202,33 +194,33 @@ The `Main` screen of the sample project, across three profiles:
       "id": "Core", "w": 320, "h": 240, "rot": 0,
       "fonts": [ "Font4", "efontJA_16" ],
       "parts": [
-        { "id": "headerBand", "type": "Rect", "parent": null, "x": 0, "y": 0, "w": 320, "h": 40, "color": "#1e2a30", "visible": true },
-        { "id": "title", "type": "Text", "parent": null, "x": 12, "y": 10, "datum": "TL", "size": 2, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
-        { "id": "battery", "type": "Text", "parent": null, "x": 310, "y": 12, "datum": "TR", "size": 1.5, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
-        { "id": "temp", "type": "Text", "parent": null, "x": 18, "y": 70, "datum": "TL", "size": 4, "color": "#ffffff", "text": "24.5C", "font": null, "visible": true },
-        { "id": "panel", "type": "Rect", "parent": null, "x": 18, "y": 150, "w": 284, "h": 54, "color": "#172126", "visible": true }
+        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 320, "h": 40, "color": "#1e2a30", "visible": true },
+        { "id": "title", "type": "Text", "x": 12, "y": 10, "datum": "TL", "size": 2, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
+        { "id": "battery", "type": "Text", "x": 310, "y": 12, "datum": "TR", "size": 1.5, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
+        { "id": "temp", "type": "Text", "x": 18, "y": 70, "datum": "TL", "size": 4, "color": "#ffffff", "text": "24.5C", "font": null, "visible": true },
+        { "id": "panel", "type": "Rect", "x": 18, "y": 150, "w": 284, "h": 54, "color": "#172126", "visible": true }
       ]
     },
     {
       "id": "Stick", "w": 135, "h": 240, "rot": 0,
       "fonts": [ "Font4" ],
       "parts": [
-        { "id": "headerBand", "type": "Rect", "parent": null, "x": 0, "y": 0, "w": 135, "h": 30, "color": "#1e2a30", "visible": true },
-        { "id": "title", "type": "Text", "parent": null, "x": 8, "y": 7, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
-        { "id": "battery", "type": "Text", "parent": null, "x": 8, "y": 180, "datum": "TL", "size": 1.5, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
-        { "id": "temp", "type": "Text", "parent": null, "x": 10, "y": 60, "datum": "TL", "size": 3.5, "color": "#ffffff", "text": "24.5", "font": null, "visible": true },
-        { "id": "panel", "type": "Rect", "parent": null, "x": 10, "y": 110, "w": 115, "h": 60, "color": "#172126", "visible": true }
+        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 135, "h": 30, "color": "#1e2a30", "visible": true },
+        { "id": "title", "type": "Text", "x": 8, "y": 7, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
+        { "id": "battery", "type": "Text", "x": 8, "y": 180, "datum": "TL", "size": 1.5, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
+        { "id": "temp", "type": "Text", "x": 10, "y": 60, "datum": "TL", "size": 3.5, "color": "#ffffff", "text": "24.5", "font": null, "visible": true },
+        { "id": "panel", "type": "Rect", "x": 10, "y": 110, "w": 115, "h": 60, "color": "#172126", "visible": true }
       ]
     },
     {
       "id": "Cardputer", "w": 240, "h": 135, "rot": 0,
       "fonts": [ "Font4" ],
       "parts": [
-        { "id": "headerBand", "type": "Rect", "parent": null, "x": 0, "y": 0, "w": 240, "h": 26, "color": "#1e2a30", "visible": true },
-        { "id": "title", "type": "Text", "parent": null, "x": 8, "y": 5, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
-        { "id": "battery", "type": "Text", "parent": null, "x": 232, "y": 6, "datum": "TR", "size": 1.25, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
-        { "id": "temp", "type": "Text", "parent": null, "x": 12, "y": 40, "datum": "TL", "size": 3, "color": "#ffffff", "text": "24.5C", "font": null, "visible": true },
-        { "id": "panel", "type": "Rect", "parent": null, "x": 12, "y": 86, "w": 216, "h": 40, "color": "#172126", "visible": false }
+        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 240, "h": 26, "color": "#1e2a30", "visible": true },
+        { "id": "title", "type": "Text", "x": 8, "y": 5, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
+        { "id": "battery", "type": "Text", "x": 232, "y": 6, "datum": "TR", "size": 1.25, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
+        { "id": "temp", "type": "Text", "x": 12, "y": 40, "datum": "TL", "size": 3, "color": "#ffffff", "text": "24.5C", "font": null, "visible": true },
+        { "id": "panel", "type": "Rect", "x": 12, "y": 86, "w": 216, "h": 40, "color": "#172126", "visible": false }
       ]
     }
   ]
@@ -258,8 +250,7 @@ catalog/context data, not layout edits. Use them only to decide valid Text `font
 values.
 
 **Keep the `parts` array order consistent across profiles**, because array order is the
-draw order. If you reorder layers, apply the same relative order to every profile. For
-grouped parts, keep the hierarchy valid and avoid cycles.
+draw order. If you reorder layers, apply the same relative order to every profile.
 
 If a part should not appear on a certain profile, keep the part and set
 `"visible": false` — do **not** delete it from that profile.
@@ -298,7 +289,7 @@ layouts only**.
 ## 5. Do / Don't
 
 **Do**
-- Keep the `(id, type, parent)` set identical across all profiles.
+- Keep the `(id, type)` set identical across all profiles.
 - Keep every part inside its profile's `w`×`h`.
 - Adapt sizes and positions to each profile's aspect ratio (a tall 135×240 needs a
   different arrangement than a wide 320×240).
@@ -306,7 +297,7 @@ layouts only**.
 - Return the whole object, with all profiles, as valid JSON.
 
 **Don't**
-- Don't add `w`/`h` to a `Text` (it has none) or to a `Group`.
+- Don't add `w`/`h` to a `Text` (it has none).
 - Don't invent `asset` names — only reference assets that already exist.
 - Don't change a part's `id` or `type` between profiles.
 - Don't add fields not described here, and don't include comments or trailing commas.
