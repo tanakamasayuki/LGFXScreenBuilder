@@ -274,7 +274,7 @@ function renderInspector() {
       h += `<div class="two">${row('w', t('field.width'), 'number', e.w)}${row('h', t('field.height'), 'number', e.h)}</div>`;
     }
     if (def.type === 'Rect') {
-      h += `<div class="two">${row('r', t('field.radius'), 'number', e.r || 0)}${row('fill', t('field.fill'), 'checkbox', e.fill !== false)}</div>`;
+      h += `<div class="two">${row('r', t('field.cornerRadius'), 'number', e.r || 0)}${row('fill', t('field.fill'), 'checkbox', e.fill !== false)}</div>`;
       h += `<div class="field"><label>${t('field.color')}</label><input type="color" data-k="color" value="${e.color}"></div>`;
     }
     if (def.type === 'Image') {
