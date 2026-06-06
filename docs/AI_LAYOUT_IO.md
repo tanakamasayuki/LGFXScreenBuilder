@@ -21,7 +21,7 @@ remove, or rename parts.
 ## 1. What one layout describes
 
 A layout is **one screen (a "scene") across all device profiles**. A *profile* is a
-target device size (e.g. a 320×240 board vs a 135×240 board). The same screen is laid
+target device size (e.g. a 320×240 display vs a 135×240 display). The same screen is laid
 out independently for each profile, because a layout that fits a wide screen does not
 fit a tall one.
 

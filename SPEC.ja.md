@@ -48,7 +48,7 @@ LGFXScreenBuilder は、LovyanGFX および M5GFX を利用する Arduino 向け
 
 1. ユーザーが GitHub Pages 上のオーサリングツールを開く。
 2. プロファイル（対象デバイス／画面サイズ・回転）を作成する。
-3. 画像、フォント、色などのアセットを登録する。
+3. 画像アセットや色を登録し、利用するフォントを採用する。
 4. シーンを作成する。
 5. シーン上に Text、Image、Rect などのパーツを配置する。
 6. 必要に応じてプロファイル別の座標や表示設定を上書きする。
@@ -117,8 +117,8 @@ void setup() {
   screen.show(Scene::Boot{});
 
   Scene::Main main;
-  main.header.battery = 82;
-  main.body.temperature = "24.5C";
+  main.battery = 82;
+  main.temperature = "24.5C";
   screen.show(main);
 }
 ```
@@ -142,8 +142,8 @@ void setup() {
   screen.show(Scene::Boot{});
 
   Scene::Main main;
-  main.header.battery = 82;
-  main.body.temperature = "24.5C";
+  main.battery = 82;
+  main.temperature = "24.5C";
   screen.show(main);
 }
 ```
@@ -179,11 +179,12 @@ Arduino ランタイム内部では、LovyanGFX と M5GFX の共通描画 API �
 上位モード:
 
 - Design: シーン、レイヤー、パーツ配置、プロパティ編集
-- Assets: 画像、フォント、出力形式の管理
+- Assets: 画像アセット、色、画像出力形式の管理
+- Fonts: プリセットフォントの採用、プロファイルごとの有効化、フォント情報とプレビューの確認
 - Export: Arduino 向け生成物、生成 API、アセット出力設定、ダウンロード
 - Devices: プロファイル（画面サイズ・回転・順序・レイアウト）と対象ライブラリの管理
 
-Design を中心に、Assets と Export を同じ 3 ペイン構成の中で扱う。プレビュー対象プロファイルの切り替えは Design のキャンバス上部にタブとして配置する。Profiles は、プロファイルや機種別レイアウトを編集する独立モードとして扱う。
+Design を中心に、Assets、Fonts、Export を同じ 3 ペイン構成の中で扱う。プレビュー対象プロファイルの切り替えは Design のキャンバス上部にタブとして配置する。Devices は、プロファイルや機種別レイアウトを編集する独立モードとして扱う。
 
 ### 8.1 シーン管理
 
@@ -211,7 +212,7 @@ Design を中心に、Assets と Export を同じ 3 ペイン構成の中で扱�
 
 Design モードでは `Parts` セクションに追加可能な Part を常時表示する。画面へ要素を追加する導線は `Parts` に統一し、Asset だけを特別扱いしない。
 
-Assets モードは素材の登録、フォント、出力形式の管理に使う。Design モードで Image を追加した場合は、右プロパティで参照 Asset を選択する。
+Assets モードは画像素材、色、画像出力形式の管理に使う。フォントは Fonts モードで採用、プレビュー、プロファイルごとの有効化を管理する。Design モードで Image を追加した場合は、右プロパティで参照 Asset を選択する。
 
 対応 Part は以下とする。
 
@@ -313,7 +314,7 @@ main.footerBattery = battery;
 
 ### 8.4 アセット管理
 
-画像、フォント、色などをプロジェクト内で管理できる。
+画像アセット、フォント、色などをプロジェクト内で管理できる。
 
 画像アセットの例:
 
@@ -481,7 +482,7 @@ LGFXScreenBuilder は静的な基本レイアウトを生成する。アニメ�
    - 該当 0 → 次へ。
 2. **最終受け皿**: サイズも一致しない（未知の画面サイズ等）場合は、プロファイル順で最初のものを使う。サイズが違っても描画は行う（論理座標の絶対描画で物理外はクリップ）。
 
-`screen.setProfile(Profile::<Id>)` による明示指定はこの自動解決をいつでも上書きできる（自作パネル＝`board_unknown`、意図的な別レイアウトの確認など）。
+`screen.setProfile(Profile::<Id>)` による明示指定はこの自動解決をいつでも上書きできる（自作パネル、意図的な別レイアウトの確認など）。
 
 **MCU チップ種別やボード種別による判定は行わない**。同サイズ・別機種のレイアウトを区別したい場合は、プロファイル順の調整または `setProfile()` で解決する。
 
@@ -498,13 +499,12 @@ LGFXScreenBuilder は静的な基本レイアウトを生成する。アニメ�
 - 座標（パーツ単位）
 - サイズ（パーツ単位）
 - 表示/非表示（パーツ単位）
-- アセット差し替え（パーツ単位）
 - フォントサイズ（パーツ単位）
 - 回転（プロファイル単位、§8.9.3）
 
 新規プロファイルは空から、または既存プロファイルのレイアウトを**コピーして開始**できる。コピー後は各プロファイル独立で、一方を編集しても他方へは波及しない。
 
-「デフォルトと値が違う項目を表示で示す」差分ハイライトは、保存ではなく表示上の補助であり、比較対象と同サイズのときのみ意味を持つため現在仕様では扱わない。
+「比較元と値が違う項目を表示で示す」差分ハイライトは、保存ではなく表示上の補助であり、比較対象と同サイズのときのみ意味を持つため現在仕様では扱わない。
 
 #### 8.9.7 外部ディスプレイ
 
@@ -520,7 +520,6 @@ Web オーサリングツール上で対象プロファイルを切り替え、�
 - セーフエリア
 - パーツ配置
 - 表示/非表示
-- アニメーションの簡易再生
 
 ### 8.11 名前空間管理
 
@@ -529,10 +528,10 @@ Web オーサリングツール上で対象プロファイルを切り替え、�
 例:
 
 ```text
-Main.header.title
-Main.header.battery
-Main.body.temperature
-Main.body.loading
+Main.title
+Main.battery
+Main.temperature
+Main.loading
 Settings.volume
 Settings.brightness
 ```
@@ -542,7 +541,7 @@ Settings.brightness
 - 一意な識別子
 - エディタ上の自動補完
 - Arduino 側 API の可読性向上
-- 大規模プロジェクトへの対応
+- シーン単位で整理されたプロジェクトへの対応
 
 生成コード（`Scene`・`Profile` など）は、グローバルを汚さないように**プロジェクト名の名前空間**で包む。プロジェクト名は名前空間になるため、C/C++ 識別子に限定する（§8.12）。`LGFXScreenBuilder` クラス本体はエントリポイントとしてグローバルに置く。
 
@@ -554,10 +553,10 @@ Arduino 側の利用例（プロジェクト名が `MyScreen` の場合）:
 using namespace MyScreen;          // 任意。先頭を省略するため
 
 Scene::Main main;
-main.header.title = "Main";
-main.header.battery = 82;
-main.body.temperature = "24.5C";
-main.body.loadingVisible = false;
+main.title = "Main";
+main.battery = 82;
+main.temperature = "24.5C";
+main.loadingVisible = false;
 
 screen.show(main);
 ```
@@ -600,7 +599,7 @@ Web オーサリングツールでは以下の補助機能を提供する。
 - 説明メモ（備考）の編集
 - 破壊的操作（削除など）の実行前確認（全画面共通の方針）
 
-「デフォルトと値が違う項目を表示で示す」差分ハイライトは現在仕様では扱わない（同サイズのプロファイル間でのみ意味があり、出番が限定的なため。§8.9.6）。
+「比較元と値が違う項目を表示で示す」差分ハイライトは現在仕様では扱わない（同サイズのプロファイル間でのみ意味があり、出番が限定的なため。§8.9.6）。
 
 UI 専用の共通項目として、一覧に並ぶ要素（シーン、パーツ、アセット、プロファイル）には `displayOrder` と `description`（備考）を持たせられる。`displayOrder` は UI 上の表示順を制御するために使い、同値の場合は ID 昇順で並べる。`description` は作業メモであり、任意・低優先の項目として扱い、Arduino 向け生成物には含めない（空なら出力しない）。
 
@@ -790,10 +789,10 @@ screen.show(Scene::Boot{});
 
 ```cpp
 Scene::Main main;
-main.header.title = "Main";
-main.header.battery = 82;
-main.body.temperature = "24.5C";
-main.body.wifiVisible = true;
+main.title = "Main";
+main.battery = 82;
+main.temperature = "24.5C";
+main.wifiVisible = true;
 
 screen.show(main);
 ```
@@ -801,8 +800,8 @@ screen.show(main);
 更新時も同じシーン構造体を渡す。
 
 ```cpp
-main.header.battery = 79;
-main.body.temperature = "25.1C";
+main.battery = 79;
+main.temperature = "25.1C";
 screen.update(main);
 ```
 
@@ -825,7 +824,6 @@ namespace lgfxsb {
   public:
     Renderer(lgfx::LGFX_Device& gfx, const Project& project) : _gfx(&gfx), _project(project) {}
     void begin();                  // display 初期化後の設定フック（プロファイル選択には触れない）
-    void play(const char* animationId);
   };
 }
 ```
@@ -841,8 +839,10 @@ namespace Scene {
   struct Boot { static constexpr SceneId id = SceneId::Boot; };
   struct Main {
     static constexpr SceneId id = SceneId::Main;
-    struct Header { const char* title = ""; int battery = 0; } header;
-    struct Body   { const char* temperature = ""; bool wifiVisible = true; } body;
+    const char* title = "";
+    int battery = 0;
+    const char* temperature = "";
+    bool wifiVisible = true;
   };
 }
 
@@ -885,16 +885,16 @@ void setup() {
   screen.show(Scene::Boot{});
 
   Scene::Main main;
-  main.header.title     = "Main";
-  main.header.battery   = 82;
-  main.body.temperature = "24.5C";
+  main.title       = "Main";
+  main.battery     = 82;
+  main.temperature = "24.5C";
   screen.show(main);
 }
 
 void loop() {
   static Scene::Main main;
-  main.header.battery   = readBattery();
-  main.body.temperature = formatTemp(readTemp());
+  main.battery     = readBattery();
+  main.temperature = formatTemp(readTemp());
   screen.update(main);             // 値だけ差し替えて再描画
   delay(1000);
 }
@@ -1045,7 +1045,7 @@ LGFXScreenBuilder は、AI アシストしやすい静的な基本レイアウ�
 
 現在仕様では以下を扱わない。
 
-- 「デフォルトと値が違う項目」の差分ハイライト表示（同サイズ間のみ有効）
+- 「比較元と値が違う項目」の差分ハイライト表示（同サイズ間のみ有効）
 - シーン別の回転設定（回転はプロファイル単位）
 - 文字サイズの px 高さ逆引き入力（px 高さを入力してフォント＋倍率を自動選択。現在仕様は倍率指定＋px 補助表示。§8.7）
 - テキストボックス（Text に幅・高さを与え、クリップ／折り返し／箱内揃えを行う。現在仕様はアンカー＋datum の単一行のみ。§8.7）

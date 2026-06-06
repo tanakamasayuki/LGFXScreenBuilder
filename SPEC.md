@@ -48,7 +48,7 @@ The assumed skill set is as follows.
 
 1. The user opens the authoring tool on GitHub Pages.
 2. Creates a profile (target device / screen size / rotation).
-3. Registers assets such as images, fonts, and colors.
+3. Registers image assets and colors, and adopts fonts.
 4. Creates a scene.
 5. Places parts such as Text, Image, and Rect on the scene.
 6. Overrides per-profile coordinates and display settings as needed.
@@ -117,8 +117,8 @@ void setup() {
   screen.show(Scene::Boot{});
 
   Scene::Main main;
-  main.header.battery = 82;
-  main.body.temperature = "24.5C";
+  main.battery = 82;
+  main.temperature = "24.5C";
   screen.show(main);
 }
 ```
@@ -142,8 +142,8 @@ void setup() {
   screen.show(Scene::Boot{});
 
   Scene::Main main;
-  main.header.battery = 82;
-  main.body.temperature = "24.5C";
+  main.battery = 82;
+  main.temperature = "24.5C";
   screen.show(main);
 }
 ```
@@ -168,7 +168,7 @@ Drawing is resolved based on the currently selected profile (§8.9).
 - Drawing that extends outside the physical screen is left to the clipping of the drawing backend.
 - Rotation applies the rotation value (0–3) of the currently selected profile via `setRotation()` (§8.9.3).
 
-Even if the logical coordinate space (the profile's size) and the physical screen size differ, drawing is done with the top-left as the origin without scaling. For example, if a 135×240 profile is used on a board with a physical 320×240, the background is drawn over the full 320×240, while the parts are drawn in the top-left 135×240 region. If a profile larger than the physical screen is used, the overflowing portion is clipped. To preserve the meaning of the coordinates, no automatic scaling or automatic repositioning is performed (a layout engine is a non-goal).
+Even if the logical coordinate space (the profile's size) and the physical screen size differ, drawing is done with the top-left as the origin without scaling. For example, if a 135×240 profile is used on a physical 320×240 display, the background is drawn over the full 320×240, while the parts are drawn in the top-left 135×240 region. If a profile larger than the physical screen is used, the overflowing portion is clipped. To preserve the meaning of the coordinates, no automatic scaling or automatic repositioning is performed (a layout engine is a non-goal).
 
 ## 8. Functional Requirements
 
@@ -179,11 +179,12 @@ Rather than fully transitioning the entire screen, the authoring tool switches t
 Top-level modes:
 
 - Design: Scenes, layers, part placement, property editing
-- Assets: Management of images, fonts, and output formats
+- Assets: Management of image assets, colors, and image output format
+- Fonts: Adoption of preset fonts, per-profile enablement, and font information/preview
 - Export: Arduino output artifacts, generation API, asset output settings, downloads
 - Devices: Management of profiles (screen size, rotation, order, layout) and the target library
 
-Design is the core mode, and Assets and Export use the same 3-pane structure. Switching the preview target profile is placed as tabs at the top of the Design canvas. Profiles is an independent mode for editing profiles and device-specific layouts.
+Design is the core mode, and Assets, Fonts, and Export use the same 3-pane structure. Switching the preview target profile is placed as tabs at the top of the Design canvas. Devices is an independent mode for editing profiles and device-specific layouts.
 
 ### 8.1 Scene Management
 
@@ -211,7 +212,7 @@ The terminology is organized as follows.
 
 In Design mode, the `Parts` section always displays the Parts that can be added. The path for adding elements to the screen is unified into `Parts`, and Assets are not given special treatment alone.
 
-Assets mode is used to register material and manage fonts and output formats. When an Image is added in Design mode, the referenced Asset is selected in the property pane on the right.
+Assets mode is used to manage image material, colors, and image output format. Fonts are adopted, previewed, and enabled per profile in Fonts mode. When an Image is added in Design mode, the referenced Asset is selected in the property pane on the right.
 
 The supported Parts are as follows.
 
@@ -374,7 +375,7 @@ The tool handles the **preset fonts built into LovyanGFX / M5GFX**. The runtime 
 
 #### 8.7.2 Font catalog (how it is generated)
 
-The list (catalog) of available preset fonts is **generated offline and shipped as JSON**, and the browser tool only reads it (the same standing as the board list; no C++ is parsed at runtime).
+The list (catalog) of available preset fonts is **generated offline and shipped as JSON**, and the browser tool only reads it (no C++ is parsed at runtime).
 
 - **The set can differ per library, but at the pinned versions (LovyanGFX 1.2.21 / M5GFX 0.2.22) it is identical** (186 each, no name-set difference; both include the efont-family Japanese/Chinese/Korean). So **LovyanGFX is the representative single catalog**: parsing and host introspection are done **once on LovyanGFX** and reused for M5GFX/M5Unified (which also avoids the question of whether M5GFX builds on host). The generator **continuously diff-checks the name set against M5GFX** so a future bump that diverges is detected (ignore the extras if uncommon, or add them if needed). Shared fonts are declared under the same name in `namespace fonts::`.
 - **Attributes obtainable mechanically from the name** are classified first: type (`font_type_t` = glcd / bmp / rle / gfx / bdf / vlw / u8g2 …), family stem (FreeMono / FreeSans / FreeSerif / DejaVu / Orbitron / efont …), style (Bold / Oblique / Italic), nominal size, and script tendency (efont family = CJK).
@@ -452,7 +453,7 @@ A profile is a unit that defines a layout, and it has the following.
 - ID (a C/C++ identifier; in the generated code it becomes a `Profile::<Id>` constant)
 - Screen size (width/height at the default rotation)
 - Rotation (0–3). Orientation is expressed by this rotation (§8.9.3)
-What the user specifies is a profile, not a board. Profiles are stored as an ordered array, and that order is used as the UI display order, the same-size priority for `Profile::Auto`, and the final catch-all priority.
+What the user specifies is a profile, not a device. Profiles are stored as an ordered array, and that order is used as the UI display order, the same-size priority for `Profile::Auto`, and the final catch-all priority.
 
 Profile creation flow:
 
@@ -475,7 +476,7 @@ Orientation (portrait/landscape) is not made into a separate profile but express
 
 - A profile has a rotation (0–3). Orientation is expressed by this rotation.
 - The canvas width/height become the profile's screen size with width/height swapped by the rotation.
-- The runtime only applies the rotation of the currently selected profile via `setRotation()`, and does not carry per-board rotation logic.
+- The runtime only applies the rotation of the currently selected profile via `setRotation()`, and does not carry device-specific rotation logic.
 
 Changing rotation per scene (changing portrait/landscape per screen on the same device) is outside the current scope (§15).
 
@@ -489,15 +490,15 @@ The guiding idea is: "**what can be selected by size is selected automatically b
    - None match → next.
 2. **Final catch-all**: if no size matches either (e.g. an unknown screen size), use the first profile in profile order. It still renders even at a different size (absolute drawing in logical coordinates, clipped outside the physical bounds).
 
-An explicit `screen.setProfile(Profile::<Id>)` can override this auto resolution at any time (a self-built panel = `board_unknown`, intentionally checking a different layout, etc.).
+An explicit `screen.setProfile(Profile::<Id>)` can override this auto resolution at any time (a self-built panel, intentionally checking a different layout, etc.).
 
-**MCU chip type and board type are not used for detection**. To distinguish different same-size devices, resolve it via profile order or `setProfile()`.
+**MCU chip type and device type are not used for detection**. To distinguish different same-size devices, resolve it via profile order or `setProfile()`.
 
 Profile order is independent of layout saving. Because each profile fully holds its own layout (§8.2), reordering profiles does not affect any profile's layout.
 
 **Orientation (portrait/landscape) handling**: size match **distinguishes orientation**. Because it compares the post-rotation `width()`×`height()`, 135×240 (portrait) and 240×135 (landscape) are different sizes. Example: StickCPlus (portrait 135×240) and Cardputer (landscape 240×135) resolve to different profiles under auto-detection (a separate concern from the authoring "add resolution" menu, which groups orientation-independently).
 
-Rotation is a per-profile value (§8.9.3). To reuse a layout across orientations, create a separate profile per orientation and use "copy to start" (§8.9.6). A per-board rotation override is outside the current scope (§15).
+Rotation is a per-profile value (§8.9.3). To reuse a layout across orientations, create a separate profile per orientation and use "copy to start" (§8.9.6). Device-specific rotation override is outside the current scope (§15).
 
 #### 8.9.6 Per-Profile Layout
 
@@ -506,17 +507,16 @@ Each profile holds the following as its own layout, **independently as complete 
 - Coordinates (per part)
 - Size (per part)
 - Visibility (per part)
-- Asset replacement (per part)
 - Font size (per part)
 - Rotation (per profile, §8.9.3)
 
 A new profile can start from empty, or **start by copying** the layout of an existing profile. After copying, each profile is independent, and editing one does not propagate to the other.
 
-The diff highlight of "showing items whose value differs from the default in the display" is a display-only aid rather than something saved, and is meaningful only when the compared targets are the same size, so it is deferred (§15).
+The diff highlight of "showing items whose value differs from a comparison source" is a display-only aid rather than something saved, and is meaningful only when the compared targets are the same size, so it is outside the current scope (§15).
 
 #### 8.9.7 External Displays
 
-Small displays connected via I2C (M5UnitLCD / OLED / GLASS, etc.) are also detected as individual boards, so they are handled by the same model. One `LGFXScreenBuilder` instance handles one drawing target (gfx); driving the main screen and an external display simultaneously uses separate instances. Simultaneous driving of multiple screens is a future extension.
+Small displays connected via I2C (M5UnitLCD / OLED / GLASS, etc.) are handled by creating profiles that match their screen sizes, or by explicitly selecting a profile in user code. One `LGFXScreenBuilder` instance handles one drawing target (gfx); driving the main screen and an external display simultaneously uses separate instances. Simultaneous driving of multiple screens is outside the current scope.
 
 ### 8.10 Preview Switching
 
@@ -528,11 +528,10 @@ The preview lets you check the following.
 - Safe area
 - Part placement
 - Visibility
-- Simple animation playback
 
 ### 8.11 Namespace Management
 
-Parts are managed in a hierarchical namespace. In the Arduino-bound generated code, instead of handling string IDs directly, they can be used as structure fields per scene.
+Parts are managed by unique IDs within each Scene. In the Arduino-bound generated code, instead of handling string IDs directly, they can be used as structure fields per scene.
 
 Example:
 
@@ -550,7 +549,7 @@ The namespace achieves the following.
 - Unique identifiers
 - Auto-completion in the editor
 - Improved readability of the Arduino-side API
-- Support for large-scale projects
+- Support for projects organized by scene
 
 The generated code (`Scene`, `Profile`, etc.) is wrapped in a **project-name namespace** so as not to pollute the global scope. Because the project name becomes a namespace, it is limited to a C/C++ identifier (§8.12). The `LGFXScreenBuilder` class body itself is placed globally as an entry point.
 
@@ -608,7 +607,7 @@ The web authoring tool provides the following assistance features.
 - Editing of explanatory notes (remarks)
 - Pre-execution confirmation of destructive operations (such as deletion) (a policy common to all screens)
 
-The diff highlight of "showing items whose value differs from the default in the display" is deferred (it is meaningful only between profiles of the same size and has limited use; §8.9.6).
+The diff highlight of "showing items whose value differs from a comparison source" is outside the current scope (it is meaningful only between profiles of the same size and has limited use; §8.9.6).
 
 As a UI-only common item, elements that line up in a list (scenes, parts, assets, profiles) can have a `displayOrder` and a `description` (remarks). `displayOrder` is used to control the display order in the UI, and ties are sorted by ascending ID. `description` is a working note, treated as an optional, low-priority item, and is not included in the Arduino-bound output (if empty, it is not output).
 
@@ -676,7 +675,7 @@ Import (implemented): the Design screen's **"Paste AI JSON"** action opens a dia
 - **Profiles** are matched by `id`. A JSON profile not in the project is ignored (warning); a project profile missing from the JSON has its placements cloned from the canonical profile (warning).
 - **Validation:** part IDs must be C identifiers and types known; an `asset` name not in the project is cleared to null (warning). The scene draw order is re-normalized.
 
-Deferred: file-based import, and creating project profiles that the JSON references but the project lacks (profile creation stays a Profiles-mode action). Further refinements are worked out separately (§15).
+File-based import and automatic creation of project profiles referenced by the JSON are outside the current scope. Profile creation stays a Profiles-mode action (§15).
 
 ## 9. Project File
 
@@ -700,7 +699,6 @@ The project file includes the following.
 - Profile definitions (ID, size, default rotation, order)
 - Scene definitions
 - Part definitions
-- Animation definitions
 - Asset definitions
 - Font definitions
 - Output settings
@@ -799,10 +797,10 @@ A scene with data is drawn by assigning values to the generated structure.
 
 ```cpp
 Scene::Main main;
-main.header.title = "Main";
-main.header.battery = 82;
-main.body.temperature = "24.5C";
-main.body.wifiVisible = true;
+main.title = "Main";
+main.battery = 82;
+main.temperature = "24.5C";
+main.wifiVisible = true;
 
 screen.show(main);
 ```
@@ -810,8 +808,8 @@ screen.show(main);
 On update, the same scene structure is passed.
 
 ```cpp
-main.header.battery = 79;
-main.body.temperature = "25.1C";
+main.battery = 79;
+main.temperature = "25.1C";
 screen.update(main);
 ```
 
@@ -829,12 +827,11 @@ namespace lgfxsb {
   protected:
     lgfx::LGFX_Device* _gfx = nullptr;   // base of LGFX / M5GFX / M5.Display
     const Project& _project;
-    uint8_t _profile = 0;          // 0 = Auto (actual resolution is deferred to draw time)
+    uint8_t _profile = 0;          // 0 = Auto (actual resolution is applied at draw time)
     void renderScene(/* sceneref */, uint8_t profile);
   public:
     Renderer(lgfx::LGFX_Device& gfx, const Project& project) : _gfx(&gfx), _project(project) {}
     void begin();                  // configuration hook after display init (does not touch profile selection)
-    void play(const char* animationId);
   };
 }
 ```
@@ -850,8 +847,10 @@ namespace Scene {
   struct Boot { static constexpr SceneId id = SceneId::Boot; };
   struct Main {
     static constexpr SceneId id = SceneId::Main;
-    struct Header { const char* title = ""; int battery = 0; } header;
-    struct Body   { const char* temperature = ""; bool wifiVisible = true; } body;
+    const char* title = "";
+    int battery = 0;
+    const char* temperature = "";
+    bool wifiVisible = true;
   };
 }
 
@@ -894,16 +893,16 @@ void setup() {
   screen.show(Scene::Boot{});
 
   Scene::Main main;
-  main.header.title     = "Main";
-  main.header.battery   = 82;
-  main.body.temperature = "24.5C";
+  main.title       = "Main";
+  main.battery     = 82;
+  main.temperature = "24.5C";
   screen.show(main);
 }
 
 void loop() {
   static Scene::Main main;
-  main.header.battery   = readBattery();
-  main.body.temperature = formatTemp(readTemp());
+  main.battery     = readBattery();
+  main.temperature = formatTemp(readTemp());
   screen.update(main);             // swap only the values and redraw
   delay(1000);
 }
@@ -911,16 +910,16 @@ void loop() {
 
 Normally, `setProfile()` is not called, and it is left to the default `Profile::Auto` (auto-detection by screen size).
 
-### 11.3 Profile Selection (Order-Independent, Deferred Resolution)
+### 11.3 Profile Selection (Order-Independent, Draw-Time Resolution)
 
-The order of `setProfile()` and `begin()` is not fixed. Because `setProfile()` only records the selection and does not touch the hardware, it can be called either before or after `begin()`, or to switch during execution. The actual resolution of `Profile::Auto` and the rotation (`setRotation`) are deferred and applied at draw time (`show` / `update`), so as long as the order `display.init()` → `show()` is observed, there is no need to be conscious of the order.
+The order of `setProfile()` and `begin()` is not fixed. Because `setProfile()` only records the selection and does not touch the hardware, it can be called either before or after `begin()`, or to switch during execution. The actual resolution of `Profile::Auto` and the rotation (`setRotation`) are applied at draw time (`show` / `update`), so as long as the order `display.init()` → `show()` is observed, there is no need to be conscious of the order.
 
 ```cpp
 screen.setProfile(Profile::Stick);   // override auto-detection (self-built panel, etc.); either before or after begin
 screen.setProfile(Profile::Auto);    // return to auto-detection
 ```
 
-`Profile::Auto` resolves by size match, then profile order (§8.9). What the user specifies is a profile, not a board. Because `auto` is a C/C++ reserved word, auto-detection is `Auto`. When multiple projects coexist, the `Screen` class becomes a distinct type, and passing another project's `Profile` / `Scene` is a type error (§8.11).
+`Profile::Auto` resolves by size match, then profile order (§8.9). What the user specifies is a profile, not a device. Because `auto` is a C/C++ reserved word, auto-detection is `Auto`. When multiple projects coexist, the `Screen` class becomes a distinct type, and passing another project's `Profile` / `Scene` is a type error (§8.11).
 
 M5GFX is integrated into the same API to the extent that it can be treated as a LovyanGFX derivative or compatible API.
 
@@ -1053,12 +1052,12 @@ LGFXScreenBuilder is responsible for creating AI-assistable static basic layouts
 
 The current scope excludes the following.
 
-- Diff highlight display of "items whose value differs from the default" (valid only between the same sizes)
+- Diff highlight display of "items whose value differs from a comparison source" (valid only between the same sizes)
 - Per-scene rotation setting (rotation is per profile)
 - Reverse-lookup input of text size px height (entering a px height to automatically select the font + multiplier; the current scope uses multiplier specification + px auxiliary display. §8.7)
 - Text box (giving Text a width and height to perform clipping/wrapping/in-box alignment; the current scope has only single-line anchor + datum. §8.7)
 - File-based AI layout import (clipboard paste import and export are implemented — "Paste AI JSON" / "Copy AI JSON"; opening a `.json` file is outside the current scope. §8.15)
-- Per-board rotation override (rotation is per profile. §8.9.4)
+- Device-specific rotation override (rotation is per profile. §8.9.4)
 - Animation in general (frame/fade/move/scale, playback and editing)
 - Additional Parts such as Icon/Gauge/Graph/Container/Button
 - Ellipse
