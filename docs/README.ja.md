@@ -11,7 +11,7 @@ python -m http.server 8000 --directory docs
 # http://localhost:8000/
 ```
 
-## 状況（MVP 基盤）
+## 状況
 
 - **Design** モードを実装: 二軸（左ペイン=シーン × 上タブ=プロファイル）。各プロファイルが
   シーンごとに独立レイアウトを持つ（SPEC §8.9.6）。キャンバス描画（Rect / Text は datum / Image は
@@ -22,16 +22,14 @@ python -m http.server 8000 --directory docs
   での親変更（グループ行→入れ子／パーツ行→兄弟／空き→ルート）。いずれも絶対位置を保持、
   グループはカスケード削除（§8.3.1）。
 - **Profiles** モード（SPEC §8.9）: 対象ライブラリバー、プロファイル一覧＋追加（解像度／
-  カスタム、現レイアウトをクローン）、サイズ／回転／備考＋リネーム・削除、ボード割り当て
-  （クリックでトグル、自動判定は1ボード=1プロファイル）、向き・サイズプレビュー、検証バナー
-  （寸法不一致・LovyanGFX で自動判定不可）。フォールバックは Export 時に選択。
-  ボード割り当てはプロファイル別 `board_t` テーブルとして出力され、`Profile::Auto` が
-  実機 `getBoard()` で解決する（対象ライブラリの `board_t` に無いボードは省略、§8.9.5）。
-- **Assets** モード（SPEC §8.4）: PNG/JPEG 取り込み（取り込み時に MVP 出力形式の RGB565 へ
+  カスタム、現レイアウトをクローン）、サイズ／回転／備考＋リネーム・削除、プロファイル順序変更、
+  向き・サイズプレビュー、同サイズの既知ボード参考一覧。`Profile::Auto` は画面サイズと
+  プロファイル順序で解決し、ボードは割り当てず参考情報として扱う。
+- **Assets** モード（SPEC §8.4）: PNG/JPEG 取り込み（取り込み時に標準出力形式の RGB565 へ
   デコード）、サムネイル一覧・プレビュー・リネーム/削除（使用箇所表示）。Image パーツはアセットを
   参照し、Design キャンバスでプレビュー表示。codegen が RGB565 データ＋`AssetDesc` テーブルを
   出力し、ランタイムが `pushImage` で描画（host backend で end-to-end 検証済み）。
-  スライス・スプライトシート・フォントは post-MVP。
+  画像スライス、スプライトシート、プロファイル別画像差し替えは現在仕様では扱わない。
 - **Fonts** モード（SPEC §8.7）: プリセットカタログ（`src/font-catalog.js`、`tests/manual/font_introspect/gen.py`
   がピン版 LovyanGFX から生成）を**実描画 px 高さ（最重要）**・文字種（ラテン/数字/日本語/簡体字/
   繁体字/韓国語）・等幅か可変幅か・スタイル・ファミリ・利用状態（採用中のみ）・検索で絞り込み（候補が全部見えるよう開いた
@@ -60,11 +58,11 @@ python -m http.server 8000 --directory docs
   （デバイス/サイズ/回転）・最初のシーンを指定。
 - **Export** モード（SPEC §10）: ファイル一覧（`<Project>.h` / `<Project>_example.ino`）＋
   コードプレビュー、対象フレームワーク選択（M5Unified / M5GFX / LovyanGFX）、プロファイル別
-  出力サブセット＋fallback 選択（enum/テーブルを選択分に限定、fallback は `defaultProfile` に記憶）、
-  検証チェック、ファイル単位ダウンロード。アセット出力・zip パッケージは post-MVP。
+  出力サブセット（enum/テーブルを選択分に限定）、検証チェック、ファイル単位ダウンロード。
 - **コード生成**（`src/codegen.js`）: `generateHeader(project, opts)`（§11 ファサード＋記述子、
-  プロファイル絞り込み/fallback 任意）＋ `generateSketch(project, framework)`（サンプル `.ino`）。
-  `tests/codegen_roundtrip` で end-to-end 検証済み。ツールバー「.h 出力」はワンクリックの近道として残置。
+  プロファイル絞り込み、テスト/画面キャプチャ用の `detail::kProfileInfo[]` / `detail::kSceneInfo[]`）
+  ＋ `generateSketch(project, framework)`（サンプル `.ino`）。`tests/codegen_roundtrip` で
+  end-to-end 検証済み。ツールバー「.h 出力」はワンクリックの近道として残置。
 - **AI レイアウト I/O**（`src/ailayout.js` ＋ `src/model.js` の `reconcileAiLayout`/`applyAiLayout`、
   SPEC §8.15）: 「AI用JSONコピー」で現在の画面（全プロファイル）を自己完結・モデル忠実な**minified** JSON でコピー、
   「AI結果を貼付」で編集済みレイアウトを取り込み（同名シーンは上書き・無ければ追加、Undo 対応・適用前プレビュー付き）。
@@ -77,8 +75,8 @@ python -m http.server 8000 --directory docs
 - `styles.css`
 - `src/model.js` — プロジェクトデータモデル＋サンプル＋変異/ヘルパ
 - `src/boards.js` — ボードカタログ（M5GFX board_t）＋対象ライブラリ補助
-- `src/profiles.js` — Profiles モード（プロファイル定義＋ボード割り当て）
-- `src/exporter.js` — Export モード（プレビュー＋出力サブセット/fallback＋ダウンロード）
+- `src/profiles.js` — Profiles モード（プロファイル定義・順序変更＋参考ボード表示）
+- `src/exporter.js` — Export モード（プレビュー＋出力サブセット＋ダウンロード）
 - `src/assets.js` — Assets モード（PNG 取り込み/RGB565 デコード・プレビュー・使用箇所）
 - `src/newproject.js` — 新規プロジェクトダイアログ（§9.1）
 - `src/fontsview.js` — Fonts モード（カタログ閲覧/採用＋プロファイル毎有効化）

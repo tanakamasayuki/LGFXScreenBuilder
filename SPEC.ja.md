@@ -774,11 +774,14 @@ Arduino 向けエクスポートでは、以下を生成する。
 - シーン ID 定義
 - シーンごとの型付きデータ構造体
 - 低レベル API 用のパーツ ID 定義
+- テスト・画面キャプチャ用のプロファイル一覧およびシーン一覧メタ情報
 - サンプル利用コード（`<Project>_example.ino`）
 
 サンプル利用コードは対象フレームワークに応じて生成する。LovyanGFX は `LGFX_AUTODETECT` と `display.init()`、M5Unified は `M5.begin()` と `M5.Display` を用いるなど、include と初期化が異なる（描画 API は共通）。
 
 出力対象のプロファイルは、全部または特定の機種だけを選んで生成できる。`enum class Profile` と生成データは選択したプロファイルだけに絞る。出力後もプロジェクト内のプロファイル順を保持し、`Profile::Auto` は出力対象に含まれるプロファイルの中で、§8.9.4 の優先順位に従って解決する。
+
+生成ヘッダには、通常描画で使う `lgfxsb::Project` とは別に、`detail::kProfileInfo[]` と `detail::kSceneInfo[]` を出力する。これは host テストや画面キャプチャで、全プロファイル × 全シーンを列挙するための補助メタ情報である。通常の利用コードでは参照しないため、描画ランタイムのデータ契約には含めない。
 
 生成するコード（ヘッダ・サンプル `.ino` など）に含めるコメントは、**英語のみ、または英語＋日本語の 2 言語（`// en:` / `// ja:` 形式）**とし、**日本語のみにはしない**。公開 Arduino ライブラリの利用者が英語圏でも読めるようにするためである（コメント言語の方針は §13 と共通）。
 
@@ -865,8 +868,11 @@ class Screen : public lgfxsb::Renderer {       // プロジェクト専用ファ
 public:
   explicit Screen(lgfx::LGFX_Device& gfx) : Renderer(gfx, project) {}   // 記述子を束縛
   void setProfile(Profile p);                  // この型だけ受ける（他プロジェクトは型エラー）
-  template <class TScene> void show(const TScene& s);     // 自プロジェクトのシーンに限定
-  template <class TScene> void update(const TScene& s);
+  void show(lgfxsb::SceneId id);                // テスト・キャプチャ用（プレビュー値で描画）
+  void show(const Scene::Boot& s);              // 自プロジェクトのシーン型ごとの overload
+  void update(const Scene::Boot& s);
+  void show(const Scene::Main& s);
+  void update(const Scene::Main& s);
 };
 
 } // namespace MyScreen
@@ -877,6 +883,8 @@ public:
 `gfx` の受け型は `lgfx::LGFX_Device`（`LovyanGFX` 基底クラスの派生）とする。ユーザーが渡す LovyanGFX autodetect の `LGFX`、`M5GFX`、`M5.Display` はいずれも `lgfx::LGFX_Device` 派生なので、同一 API で受けられる。
 
 `show` / `update` は、生成コードがシーン型ごとに**関数オーバーロード**として出力する（テンプレートではない）。生成された自プロジェクトのシーン型だけにオーバーロードが存在するため「自プロジェクトのシーンに限定」する性質は保たれ、未知の型を渡すとコンパイルエラーになる。テンプレート構文はユーザーにもライブラリ公開 API にも露出しない。
+
+`show(lgfxsb::SceneId id)` は、host テストや画面キャプチャで `detail::kSceneInfo[]` から列挙したシーンを描画するための補助 API とする。動的な Text 値は渡さず、生成時のプレビュー文字列で描画する。通常のアプリケーションコードでは、シーン構造体を渡す型付き overload を推奨する。
 
 ### 11.2 利用例
 
@@ -934,7 +942,7 @@ M5GFX は LovyanGFX 派生または互換 API として扱える範囲で同一 
 
 実機確認に加えて、host 環境で描画結果を PNG として出力できる仕組みを用意する。
 
-LovyanGFX の host 実行環境では `createPng()` を使って描画結果を PNG 化できるため、生成コードにはテスト用のスクリーンショット補助関数を含められる設計にする。
+LovyanGFX の host 実行環境では `createPng()` を使って描画結果を PNG 化できるため、生成コードにはテスト用に全プロファイルと全シーンを列挙するメタ情報を含める。
 
 想定用途:
 
@@ -943,18 +951,33 @@ LovyanGFX の host 実行環境では `createPng()` を使って描画結果を 
 - LovyanGFX/M5GFX 直接描画と LGFXVirtualCanvas 経由描画の比較
 - フォント近似プレビューと実描画結果の差分確認
 
-生成されるテスト補助 API の例:
+生成されるテスト・キャプチャ補助情報の例:
 
 ```cpp
-#if defined(LGFXSB_ENABLE_HOST_SCREENSHOT)
-bool saveScreenshot(LovyanGFX& gfx, const char* path);
+namespace MyScreen::detail {
+  struct ProfileInfo {
+    const char* name;
+    uint8_t index;
+    int16_t w, h;
+    uint8_t rotation;
+  };
 
-template <typename TScene>
-bool renderScreenshot(LovyanGFX& gfx, const TScene& scene, const char* path);
-#endif
+  struct SceneInfo {
+    const char* name;
+    lgfxsb::SceneId id;
+    uint16_t index;
+  };
+
+  static constexpr ProfileInfo kProfileInfo[];
+  static constexpr uint8_t kProfileInfoCount;
+  static constexpr SceneInfo kSceneInfo[];
+  static constexpr uint16_t kSceneInfoCount;
+}
 ```
 
-`renderScreenshot()` は対象シーンを描画した後、全画面を PNG として保存する。通常の Arduino 実機向けビルドでは無効化し、host テストまたは開発用ビルドでのみ有効にする。
+キャプチャコードは `detail::kProfileInfo[]` と `detail::kSceneInfo[]` を二重ループし、`screen.setProfile(static_cast<Profile>(profile.index + 1))` と `screen.show(scene.id)` で全組み合わせを描画できる。`profile.name` と `scene.name` は PNG ファイル名などに利用できる。ヘッダ名と名前空間を差し替えれば、同じキャプチャコードを別プロジェクトにも使える。
+
+これらの配列は `Screen` や `lgfxsb::Project` から参照しない。通常の Arduino 実機向けビルドでは未参照のままになり、最適化によりフラッシュへ残りにくい形にする。
 
 ## 13. ディレクトリ構成案
 
