@@ -72,19 +72,19 @@ outside `w`×`h` is clipped. Keep parts inside the screen.
 | field | meaning |
 |-------|---------|
 | `id` | unique within the scene; a C identifier (`[A-Za-z_]\w*`). Stable across profiles. |
-| `type` | `"Rect"`, `"Text"`, or `"Image"`. |
+| `type` | `"Rect"`, `"Line"`, `"Circle"`, `"Text"`, or `"Image"`. |
 | `visible` | `true` / `false`. A hidden part is kept but not drawn. |
 
 ### Field value types
 
 | field | JSON type | notes |
 |-------|-----------|-------|
-| `w`, `h`, `x`, `y`, `r` | **integer** | pixels. No fractional coordinates or sizes. `r` is the corner radius for Rect. |
+| `w`, `h`, `x`, `y`, `x2`, `y2`, `r` | **integer** | pixels. No fractional coordinates or sizes. `x2`/`y2` are the Line end point. `r` is the corner radius for Rect or radius for Circle. |
 | `rot` | **integer** | 0, 1, 2, or 3. |
 | `size` (Text) | **number** | a scale multiplier; **may be fractional** (e.g. `1`, `1.5`, `3.5`). |
 | `height` (font) | **integer or null** | approximate rendered pixel height at Text `size: 1`. |
 | `color` | **string** | `"#rrggbb"` (6 hex digits, lowercase). |
-| `visible`, `fill` | **boolean** | `true` / `false`. `fill` is used by Rect. |
+| `visible`, `fill` | **boolean** | `true` / `false`. `fill` is used by Rect and Circle. |
 | `id`, `type`, `datum`, `text`, `family`, `content` | **string** | — |
 | `asset`, `font`, `unit` | **string or null** | an asset name / font name / unit, or `null`. |
 | `scene`, `desc`, `spec`, `format` | **string** | — |
@@ -152,6 +152,16 @@ Use `r: 0` for square corners and `r > 0` for rounded corners. Use `fill: true`
 for `fillRect` / `fillRoundRect`, and `fill: false` for `drawRect` /
 `drawRoundRect` outline-only drawing. Outline thickness is the LovyanGFX/M5GFX
 default 1 px; do not add a stroke-width field.
+
+**Line** — a 1 px straight line.
+`x, y` is the start point · `x2, y2` is the end point · `color` is `"#rrggbb"`.
+This maps to LovyanGFX/M5GFX `drawLine(x, y, x2, y2, color)`. Do not add
+stroke-width, dash, arrow, or cap-style fields.
+
+**Circle** — a circle.
+`x, y` is the center point · `r` is the radius · `fill` is the draw mode ·
+`color` is `"#rrggbb"`.
+Use `fill: true` for `fillCircle`, and `fill: false` for `drawCircle`.
 
 **Text** — a single line of text. **Text has no width/height box.** There is no
 wrapping, clipping, ellipsis, or in-box alignment; keep the text short enough to fit, or
@@ -265,7 +275,8 @@ If a part should not appear on a certain profile, keep the part and set
 "make it richer", do not invent unsupported fields such as `radius`, `cornerRadius`,
 `stroke`, `strokeWidth`, `border`, `opacity`, `alpha`, `gradient`, `shadow`, `fontFamily`, `fontStyle`,
 `fontWeight`, `bold`, `italic`, `wrap`, or `align`. Approximate cards, dividers,
-highlights, and simple shadows by layering `Rect` and `Text` parts. Use `Image` only to
+highlights, simple shadows, and simple marks by layering `Rect`, `Line`, `Circle`,
+and `Text` parts. Use `Image` only to
 place an existing project asset; do not invent asset names, image slices, or per-profile
 asset replacements.
 

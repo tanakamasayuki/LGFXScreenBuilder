@@ -25,7 +25,8 @@ namespace lgfxsb
   {
     int16_t x, y;         // scene coordinates (Text: the anchor point)
     int16_t w, h;         // rectangle size for Rect/Image (unused for Text)
-    int16_t r;            // corner radius for Rect
+    int16_t x2, y2;       // Line end point
+    int16_t r;            // corner radius for Rect / radius for Circle
     uint8_t datum;        // Text datum (Datum)
     float size;           // Text size multiplier (equivalent to setTextSize)
     uint32_t color;       // 0xRRGGBB (Rect fill / Text color)

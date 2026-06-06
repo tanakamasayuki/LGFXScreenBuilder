@@ -13,6 +13,8 @@ namespace lgfxsb
   enum class PartType : uint8_t
   {
     Rect = 0,
+    Line,
+    Circle,
     Text,
     Image,
   };

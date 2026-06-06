@@ -24,6 +24,8 @@ export const AI_LAYOUT_DOC_URL =
 //   Text  -> x,y,datum,size,color,text,font  (no w/h; anchored by datum, §8.7;
 //                                              font = adopted font name or null=default)
 //   Rect  -> x,y,w,h,r,fill,color
+//   Line  -> x,y,x2,y2,color
+//   Circle -> x,y,r,fill,color
 //   Image -> x,y,w,h,asset                (asset = existing asset name or null)
 // `visible` is always emitted (defaults to true).
 function partEntry(def, pl) {
@@ -31,6 +33,10 @@ function partEntry(def, pl) {
   if (def.type === 'Text') {
     e.x = pl.x; e.y = pl.y; e.datum = pl.datum; e.size = pl.size;
     e.color = pl.color; e.text = pl.text; e.font = pl.font || null;
+  } else if (def.type === 'Line') {
+    e.x = pl.x; e.y = pl.y; e.x2 = pl.x2; e.y2 = pl.y2; e.color = pl.color;
+  } else if (def.type === 'Circle') {
+    e.x = pl.x; e.y = pl.y; e.r = pl.r || 1; e.fill = pl.fill !== false; e.color = pl.color;
   } else { // Rect / Image
     e.x = pl.x; e.y = pl.y; e.w = pl.w; e.h = pl.h;
     if (def.type === 'Rect') {

@@ -260,7 +260,7 @@ Each part has the following.
 - Referenced asset
 - Per-profile layout (§8.9)
 
-However, the items a part has differ by type. Text does not have a size (width/height); it is placed by an anchor point (`x` / `y`) + a datum + a text size (multiplier) (§8.7). Image / Rect have a rectangle size (`w` / `h`).
+However, the items a part has differ by type. Text does not have a size (width/height); it is placed by an anchor point (`x` / `y`) + a datum + a text size (multiplier) (§8.7). Image / Rect have a rectangle size (`w` / `h`). Line has a start point (`x` / `y`) and an end point (`x2` / `y2`). Circle has a center point (`x` / `y`) and radius (`r`).
 
 The generated structures (the data contract) are determined only by the part's ID and type. Coordinates, size, visibility state, style, preview strings, and per-profile layout are not included in the structures. As a result, the Arduino-side usage code (e.g., `main.title = "..."`) stays constant regardless of device or profile, and adding a profile later does not change the structure definitions. This is an invariant to avoid rework in multi-device support.
 
@@ -673,7 +673,7 @@ Format:
 - Value types are explicit in the contract: `w`/`h`/`x`/`y`/`rot`/`version` are integers; `size` is a number that may be fractional; `color` is `"#rrggbb"`; `visible` is boolean.
 - Top-level `fonts[]`: adopted fonts with `name`, `family`, `content` (`digits` / `latin` / `ja` / `cn` / `tw` / `ko`), nominal `size`/`unit`, and approximate rendered `height`. This is emitted as authoritative context for choosing existing fonts, but importing the JSON does not add or change font assets.
 - Each profile: `id`, `w`, `h`, `rot`, `fonts[]` (the adopted font names enabled for that profile; not editable), and `parts[]`.
-- Each part: `id`, `type`, `visible`, plus per-type placement (Text: `x`/`y` anchor, `datum`, `size` multiplier, `color`, `text`, `font` name (or null = default); Rect: `x`/`y`/`w`/`h`/`r`/`fill`/`color`; Image: `x`/`y`/`w`/`h`/`asset` name (shared across profiles)).
+- Each part: `id`, `type`, `visible`, plus per-type placement (Text: `x`/`y` anchor, `datum`, `size` multiplier, `color`, `text`, `font` name (or null = default); Rect: `x`/`y`/`w`/`h`/`r`/`fill`/`color`; Line: `x`/`y`/`x2`/`y2`/`color`; Circle: `x`/`y`/`r`/`fill`/`color`; Image: `x`/`y`/`w`/`h`/`asset` name (shared across profiles)).
 - **Stripped:** asset binaries (Data URLs / RGB565), namespace / project name, output settings, `targetLibrary`, animation/timing, and Arduino code.
 - **Invariant:** the `(id, type)` set is identical across all profiles (the data contract of §8.2). Everything else may differ per profile — coordinates, size, `color`, `visible`, and a Text's `datum`/`size`/`text`/`font`.
 - The AI layout format v1 intentionally excludes editable font *family/style* selection beyond the provided font context plus a Text's `font` name + `size` + `color`, profile-specific asset replacement, image slicing, and animation. The AI normally preserves `Image.asset` and adjusts only image position, size, and visibility.

@@ -47,41 +47,41 @@ static const lgfxsb::SceneDesc kScenes[] = {
   {2, "Settings", 7, 3},
 };
 
-// {x, y, w, h, r, datum, size, color, fill, visible, font}
+// {x, y, w, h, x2, y2, r, datum, size, color, fill, visible, font}
 static const lgfxsb::PartLayout kLayouts[] = {
   // ---- Profile: Core 320x240 rot0 ----
-  {110, 80, 100, 60, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Boot.logo
-  {160, 160, 0, 0, 0, (uint8_t)lgfxsb::Datum::MC, 2.0f, 0x9ce5ac, true, true, nullptr},  // Boot.boot
-  {0, 0, 320, 40, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Main.headerBand
-  {12, 10, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 2.0f, 0xffffff, true, true, nullptr},  // Main.title
-  {310, 12, 0, 0, 0, (uint8_t)lgfxsb::Datum::TR, 1.5f, 0x9ce5ac, true, true, nullptr},  // Main.battery
-  {18, 70, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 4.0f, 0xffffff, true, true, nullptr},  // Main.temp
-  {18, 150, 284, 54, 0, 0, 0.0f, 0x172126, true, true, nullptr},  // Main.panel
-  {0, 0, 320, 40, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Settings.header
-  {12, 10, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 2.0f, 0xffffff, true, true, nullptr},  // Settings.ttl
-  {18, 60, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 2.0f, 0xffffff, true, true, nullptr},  // Settings.row1
+  {110, 80, 100, 60, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Boot.logo
+  {160, 160, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MC, 2.0f, 0x9ce5ac, true, true, nullptr},  // Boot.boot
+  {0, 0, 320, 40, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Main.headerBand
+  {12, 10, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 2.0f, 0xffffff, true, true, nullptr},  // Main.title
+  {310, 12, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TR, 1.5f, 0x9ce5ac, true, true, nullptr},  // Main.battery
+  {18, 70, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 4.0f, 0xffffff, true, true, nullptr},  // Main.temp
+  {18, 150, 284, 54, 0, 0, 0, 0, 0.0f, 0x172126, true, true, nullptr},  // Main.panel
+  {0, 0, 320, 40, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Settings.header
+  {12, 10, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 2.0f, 0xffffff, true, true, nullptr},  // Settings.ttl
+  {18, 60, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 2.0f, 0xffffff, true, true, nullptr},  // Settings.row1
   // ---- Profile: Stick 135x240 rot0 ----
-  {30, 80, 75, 50, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Boot.logo
-  {69, 148, 0, 0, 0, (uint8_t)lgfxsb::Datum::MC, 1.5f, 0x9ce5ac, true, true, nullptr},  // Boot.boot
-  {0, 0, 135, 30, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Main.headerBand
-  {8, 7, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Main.title
-  {8, 180, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0x9ce5ac, true, true, nullptr},  // Main.battery
-  {10, 60, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 3.5f, 0xffffff, true, true, nullptr},  // Main.temp
-  {10, 110, 115, 60, 0, 0, 0.0f, 0x172126, true, true, nullptr},  // Main.panel
-  {0, 0, 135, 30, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Settings.header
-  {8, 7, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Settings.ttl
-  {10, 40, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Settings.row1
+  {30, 80, 75, 50, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Boot.logo
+  {69, 148, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MC, 1.5f, 0x9ce5ac, true, true, nullptr},  // Boot.boot
+  {0, 0, 135, 30, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Main.headerBand
+  {8, 7, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Main.title
+  {8, 180, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0x9ce5ac, true, true, nullptr},  // Main.battery
+  {10, 60, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 3.5f, 0xffffff, true, true, nullptr},  // Main.temp
+  {10, 110, 115, 60, 0, 0, 0, 0, 0.0f, 0x172126, true, true, nullptr},  // Main.panel
+  {0, 0, 135, 30, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Settings.header
+  {8, 7, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Settings.ttl
+  {10, 40, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Settings.row1
   // ---- Profile: Cardputer 240x135 rot0 ----
-  {80, 30, 80, 40, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Boot.logo
-  {120, 88, 0, 0, 0, (uint8_t)lgfxsb::Datum::MC, 1.5f, 0x9ce5ac, true, true, nullptr},  // Boot.boot
-  {0, 0, 240, 26, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Main.headerBand
-  {8, 5, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Main.title
-  {232, 6, 0, 0, 0, (uint8_t)lgfxsb::Datum::TR, 1.25f, 0x9ce5ac, true, true, nullptr},  // Main.battery
-  {12, 40, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 3.0f, 0xffffff, true, true, nullptr},  // Main.temp
-  {12, 86, 216, 40, 0, 0, 0.0f, 0x172126, true, false, nullptr},  // Main.panel
-  {0, 0, 240, 26, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Settings.header
-  {8, 5, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Settings.ttl
-  {12, 36, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Settings.row1
+  {80, 30, 80, 40, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Boot.logo
+  {120, 88, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MC, 1.5f, 0x9ce5ac, true, true, nullptr},  // Boot.boot
+  {0, 0, 240, 26, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Main.headerBand
+  {8, 5, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Main.title
+  {232, 6, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TR, 1.25f, 0x9ce5ac, true, true, nullptr},  // Main.battery
+  {12, 40, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 3.0f, 0xffffff, true, true, nullptr},  // Main.temp
+  {12, 86, 216, 40, 0, 0, 0, 0, 0.0f, 0x172126, true, false, nullptr},  // Main.panel
+  {0, 0, 240, 26, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Settings.header
+  {8, 5, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Settings.ttl
+  {12, 36, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Settings.row1
 };
 
 static const lgfxsb::ProfileDesc kProfiles[] = {

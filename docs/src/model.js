@@ -10,7 +10,7 @@
 // Each profile holds a complete, independent layout per scene (no base/override; §8.9.6).
 // The generated struct depends only on part id/type (§8.2); placement lives here.
 
-export const PART_TYPES = ['Rect', 'Text', 'Image'];
+export const PART_TYPES = ['Rect', 'Line', 'Circle', 'Text', 'Image'];
 
 // 9-point datum codes, ordering matches lgfxsb::Datum / LovyanGFX textdatum_t.
 // Display labels are localized via i18n (datum.<code>).
@@ -27,8 +27,11 @@ export const orient = (w, h) => (w > h ? 'landscape' : h > w ? 'portrait' : 'squ
 // that layouts are authored in. Use this for canvases/previews, not p.w/p.h.
 export const dispDims = (p) => ((p.rotation & 1) ? { w: p.h, h: p.w } : { w: p.w, h: p.h });
 
-// Placement factories. Rect/Image carry w/h; Text carries datum/size (no box; §8.7).
+// Placement factories. Rect/Image carry w/h; Line carries x2/y2; Circle carries r.
+// Text carries datum/size (no box; §8.7).
 const rect = (x, y, w, h, color, visible = true, r = 0, fill = true) => ({ x, y, w, h, r, fill, color, visible });
+const line = (x, y, x2, y2, color, visible = true) => ({ x, y, x2, y2, color, visible });
+const circle = (x, y, r, color, visible = true, fill = true) => ({ x, y, r, fill, color, visible });
 const text = (x, y, datum, size, color, content, visible = true) =>
   ({ x, y, datum, size, color, text: content, visible });
 
@@ -323,6 +326,8 @@ function defaultPlacement(type, profile) {
   if (type === 'Text') return text(cx, cy, 'MC', 1.5, '#ffffff', 'Text');
   const w = Math.min(80, profile.w - 8), h = Math.min(48, profile.h - 8);
   const x = cx - (w >> 1), y = cy - (h >> 1);
+  if (type === 'Line') return line(x, y, x + w, y, '#ffffff');
+  if (type === 'Circle') return circle(cx, cy, Math.max(4, Math.min(w, h) >> 1), '#1e2a30');
   if (type === 'Image') return { x, y, w, h, visible: true };
   return rect(x, y, w, h, '#1e2a30'); // Rect
 }
@@ -433,6 +438,20 @@ function aiPlacement(type, p) {
   if (type === 'Rect') return {
     x, y, w, h,
     r: Math.max(0, toInt(p.r, 0)),
+    fill: p.fill !== false,
+    color: toColor(p.color, '#1e2a30'),
+    visible,
+  };
+  if (type === 'Line') return {
+    x, y,
+    x2: toInt(p.x2, x + 40),
+    y2: toInt(p.y2, y),
+    color: toColor(p.color, '#ffffff'),
+    visible,
+  };
+  if (type === 'Circle') return {
+    x, y,
+    r: Math.max(1, toInt(p.r, 12)),
     fill: p.fill !== false,
     color: toColor(p.color, '#1e2a30'),
     visible,

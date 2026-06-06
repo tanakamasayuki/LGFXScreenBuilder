@@ -125,8 +125,34 @@ function renderCanvas() {
     } else {
       d.style.left = ax + 'px';
       d.style.top = ay + 'px';
-      d.style.width = e.w * scale + 'px';
-      d.style.height = e.h * scale + 'px';
+      if (def.type === 'Line') {
+        const x2 = (e.x2 || e.x) * scale, y2 = (e.y2 || e.y) * scale;
+        const dx = x2 - ax, dy = y2 - ay;
+        const len = Math.max(1, Math.hypot(dx, dy));
+        d.style.width = len + 'px';
+        d.style.height = Math.max(1, scale) + 'px';
+        d.style.background = e.color;
+        d.style.transformOrigin = '0 50%';
+        d.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
+      } else if (def.type === 'Circle') {
+        const rr = Math.max(1, e.r || 1) * scale;
+        d.style.left = ax - rr + 'px';
+        d.style.top = ay - rr + 'px';
+        d.style.width = rr * 2 + 'px';
+        d.style.height = rr * 2 + 'px';
+        d.style.borderRadius = '50%';
+        if (e.fill === false) {
+          d.style.background = 'transparent';
+          d.style.border = `${Math.max(1, scale)}px solid ${e.color}`;
+          d.style.boxSizing = 'border-box';
+        } else {
+          d.style.background = e.color;
+          d.style.border = '0';
+        }
+      } else {
+        d.style.width = e.w * scale + 'px';
+        d.style.height = e.h * scale + 'px';
+      }
       if (def.type === 'Rect') {
         d.style.borderRadius = Math.max(0, e.r || 0) * scale + 'px';
         if (e.fill === false) {
@@ -223,9 +249,18 @@ function renderInspector() {
       (e.font && fontDetailUrl(e.font)
         ? ` <a class="font-detail" href="${fontDetailUrl(e.font)}" target="_blank" rel="noopener" title="${t('font.detailTitle')}">${t('font.detail')} ↗</a>` : '') +
       `</div>`;
+  } else if (def.type === 'Line') {
+    h += `<div class="two">${row('x', t('field.x1'), 'number', e.x)}${row('y', t('field.y1'), 'number', e.y)}</div>`;
+    h += `<div class="two">${row('x2', t('field.x2'), 'number', e.x2)}${row('y2', t('field.y2'), 'number', e.y2)}</div>`;
+    h += `<div class="field"><label>${t('field.color')}</label><input type="color" data-k="color" value="${e.color}"></div>`;
   } else {
     h += `<div class="two">${row('x', t('field.x'), 'number', e.x)}${row('y', t('field.y'), 'number', e.y)}</div>`;
-    h += `<div class="two">${row('w', t('field.width'), 'number', e.w)}${row('h', t('field.height'), 'number', e.h)}</div>`;
+    if (def.type === 'Circle') {
+      h += `<div class="two">${row('r', t('field.radius'), 'number', e.r || 1)}${row('fill', t('field.fill'), 'checkbox', e.fill !== false)}</div>`;
+      h += `<div class="field"><label>${t('field.color')}</label><input type="color" data-k="color" value="${e.color}"></div>`;
+    } else {
+      h += `<div class="two">${row('w', t('field.width'), 'number', e.w)}${row('h', t('field.height'), 'number', e.h)}</div>`;
+    }
     if (def.type === 'Rect') {
       h += `<div class="two">${row('r', t('field.radius'), 'number', e.r || 0)}${row('fill', t('field.fill'), 'checkbox', e.fill !== false)}</div>`;
       h += `<div class="field"><label>${t('field.color')}</label><input type="color" data-k="color" value="${e.color}"></div>`;
@@ -287,9 +322,11 @@ function renderStatus() {
   const pr = curProfile();
   const e = store.ui.selected ? curPlacement(store.ui.selected) : null;
   if (e) {
-    const detail = 'w' in e
+    const detail = 'x2' in e
+      ? `x1:${e.x}, y1:${e.y}, x2:${e.x2}, y2:${e.y2}`
+      : ('w' in e
       ? `x:${e.x}, y:${e.y}, w:${e.w}, h:${e.h}`
-      : `x:${e.x}, y:${e.y}, datum:${e.datum}, ×${e.size}`;
+      : ('text' in e ? `x:${e.x}, y:${e.y}, datum:${e.datum}, ×${e.size}` : `x:${e.x}, y:${e.y}, r:${e.r}`));
     $('st-sel').textContent = t('status.selected', { scene: store.ui.sceneId, id: store.ui.selected, detail });
   } else {
     $('st-sel').textContent = t('status.none', { scene: store.ui.sceneId });
@@ -318,7 +355,7 @@ export function initDesign() {
     if (!id) { update((st) => { st.ui.selected = null; }); return; }
     update((st) => { st.ui.selected = id; });
     const e = curPlacement(id);
-    drag = { id, sx: ev.clientX, sy: ev.clientY, ox: e.x, oy: e.y };
+    drag = { id, sx: ev.clientX, sy: ev.clientY, ox: e.x, oy: e.y, ox2: e.x2, oy2: e.y2 };
     scr.setPointerCapture(ev.pointerId);
     ev.preventDefault();
   });
@@ -326,8 +363,14 @@ export function initDesign() {
     if (!drag) return;
     if (!drag.moved) { checkpoint(); drag.moved = true; } // one undo step per drag
     const e = curPlacement(drag.id);
-    e.x = drag.ox + Math.round((ev.clientX - drag.sx) / scale);
-    e.y = drag.oy + Math.round((ev.clientY - drag.sy) / scale);
+    const dx = Math.round((ev.clientX - drag.sx) / scale);
+    const dy = Math.round((ev.clientY - drag.sy) / scale);
+    e.x = drag.ox + dx;
+    e.y = drag.oy + dy;
+    if ('x2' in e) {
+      e.x2 = drag.ox2 + dx;
+      e.y2 = drag.oy2 + dy;
+    }
     renderCanvas(); renderParts(); renderInspector(); renderStatus();
   });
   scr.addEventListener('pointerup', () => { if (drag) { drag = null; renderInspector(); } });
@@ -340,7 +383,8 @@ export function initDesign() {
     if (store.ui.selected !== null) update((st) => { st.ui.selected = null; });
   });
 
-  // Keymap (§8.14): arrows move ±1, Ctrl ×10, Shift = resize (Rect/Image only).
+  // Keymap (§8.14): arrows move ±1, Ctrl ×10, Shift resizes Rect/Image,
+  // moves the Line end point, or changes Circle radius.
   document.addEventListener('keydown', (ev) => {
     if (store.ui.mode !== 'design' || !store.ui.selected) return;
     const tag = document.activeElement && document.activeElement.tagName;
@@ -352,9 +396,16 @@ export function initDesign() {
     const e = curPlacement(store.ui.selected);
     checkpoint(); // one undo step per nudge
     if (ev.shiftKey) {
-      if (!('w' in e)) return; // Text has no box
-      e.w = Math.max(2, e.w + dir[0] * step);
-      e.h = Math.max(2, e.h + dir[1] * step);
+      if ('x2' in e) {
+        e.x2 += dir[0] * step;
+        e.y2 += dir[1] * step;
+      } else if ('r' in e && !('w' in e)) {
+        e.r = Math.max(1, e.r + (dir[0] + dir[1]) * step);
+      } else if (!('w' in e)) return; // Text has no box
+      else {
+        e.w = Math.max(2, e.w + dir[0] * step);
+        e.h = Math.max(2, e.h + dir[1] * step);
+      }
     } else {
       e.x += dir[0] * step;
       e.y += dir[1] * step;

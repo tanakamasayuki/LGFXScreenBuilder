@@ -127,6 +127,17 @@ namespace lgfxsb
         }
         break;
 
+      case PartType::Line:
+        _gfx->drawLine(ox, oy, lo.x2, lo.y2, color565(lo.color));
+        break;
+
+      case PartType::Circle:
+        if (lo.fill)
+          _gfx->fillCircle(ox, oy, lo.r, color565(lo.color));
+        else
+          _gfx->drawCircle(ox, oy, lo.r, color565(lo.color));
+        break;
+
       case PartType::Text:
       {
         const char *content = pd.text ? pd.text : "";

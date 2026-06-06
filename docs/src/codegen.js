@@ -6,7 +6,7 @@
 // English-only per SPEC §10/§13.
 import { sceneById, placement, DATUMS, profileFonts } from './model.js';
 
-const PART_ENUM = { Rect: 'Rect', Text: 'Text', Image: 'Image' };
+const PART_ENUM = { Rect: 'Rect', Line: 'Line', Circle: 'Circle', Text: 'Text', Image: 'Image' };
 const hex = (css) => '0x' + (css || '#000000').replace('#', '').padStart(6, '0').toLowerCase();
 const cstr = (s) => '"' + String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
 
@@ -85,7 +85,7 @@ export function generateHeader(project, opts = {}) {
   s += `};\n\n`;
 
   // layouts [profile][part]
-  s += `// {x, y, w, h, r, datum, size, color, fill, visible, font}\n`;
+  s += `// {x, y, w, h, x2, y2, r, datum, size, color, fill, visible, font}\n`;
   s += `static const lgfxsb::PartLayout kLayouts[] = {\n`;
   profiles.forEach((pr) => {
     // Only fonts enabled for this profile may be referenced — that is the
@@ -96,15 +96,18 @@ export function generateHeader(project, opts = {}) {
       const e = placement(pr, f.sceneId, f.part.id) || {};
       const isText = f.part.type === 'Text';
       const x = e.x || 0, y = e.y || 0;
-      const w = isText ? 0 : (e.w || 0), h = isText ? 0 : (e.h || 0);
-      const r = f.part.type === 'Rect' ? (e.r || 0) : 0;
+      const w = (isText || f.part.type === 'Line' || f.part.type === 'Circle') ? 0 : (e.w || 0);
+      const h = (isText || f.part.type === 'Line' || f.part.type === 'Circle') ? 0 : (e.h || 0);
+      const x2 = f.part.type === 'Line' ? (e.x2 || 0) : 0;
+      const y2 = f.part.type === 'Line' ? (e.y2 || 0) : 0;
+      const r = (f.part.type === 'Rect' || f.part.type === 'Circle') ? (e.r || 0) : 0;
       const datum = isText ? `(uint8_t)lgfxsb::Datum::${e.datum || 'TL'}` : '0';
       const size = isText ? (e.size || 1) : 0;
-      const color = (f.part.type === 'Rect') ? hex(e.color) : (isText ? hex(e.color) : '0');
-      const fill = (f.part.type !== 'Rect' || e.fill !== false) ? 'true' : 'false';
+      const color = (f.part.type === 'Image') ? '0' : hex(e.color);
+      const fill = ((f.part.type === 'Rect' || f.part.type === 'Circle') && e.fill === false) ? 'false' : 'true';
       const vis = (e.visible === false) ? 'false' : 'true';
       const font = (isText && e.font && enabled.has(e.font)) ? `&lgfx::v1::fonts::${e.font}` : 'nullptr';
-      s += `  {${x}, ${y}, ${w}, ${h}, ${r}, ${datum}, ${fmtFloat(size)}, ${color}, ${fill}, ${vis}, ${font}},  // ${f.sceneId}.${f.part.id}\n`;
+      s += `  {${x}, ${y}, ${w}, ${h}, ${x2}, ${y2}, ${r}, ${datum}, ${fmtFloat(size)}, ${color}, ${fill}, ${vis}, ${font}},  // ${f.sceneId}.${f.part.id}\n`;
     });
   });
   s += `};\n\n`;

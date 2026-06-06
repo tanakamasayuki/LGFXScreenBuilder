@@ -58,19 +58,19 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 | field | 意味 |
 |-------|------|
 | `id` | scene 内で一意な C 識別子（`[A-Za-z_]\w*`）。profile 間で安定していること。 |
-| `type` | `"Rect"`、`"Text"`、`"Image"` のいずれか。 |
+| `type` | `"Rect"`、`"Line"`、`"Circle"`、`"Text"`、`"Image"` のいずれか。 |
 | `visible` | `true` / `false`。非表示 part は保持されるが描画されない。 |
 
 ### 値の型
 
 | field | JSON type | notes |
 |-------|-----------|-------|
-| `w`, `h`, `x`, `y`, `r` | **integer** | px。小数座標や小数サイズは不可。`r` は Rect の角丸半径。 |
+| `w`, `h`, `x`, `y`, `x2`, `y2`, `r` | **integer** | px。小数座標や小数サイズは不可。`x2`/`y2` は Line の終点。`r` は Rect の角丸半径または Circle の半径。 |
 | `rot` | **integer** | 0、1、2、3。 |
 | `size` (Text) | **number** | 拡大率。**小数可**（例: `1`, `1.5`, `3.5`）。 |
 | `height` (font) | **integer or null** | Text `size: 1` のおおよその描画高さ（px）。 |
 | `color` | **string** | `"#rrggbb"`（6 桁 hex、小文字）。 |
-| `visible`, `fill` | **boolean** | `true` / `false`。`fill` は Rect で使う。 |
+| `visible`, `fill` | **boolean** | `true` / `false`。`fill` は Rect と Circle で使う。 |
 | `id`, `type`, `datum`, `text`, `family`, `content` | **string** | — |
 | `asset`, `font`, `unit` | **string or null** | asset 名 / font 名 / 単位、または `null`。 |
 | `scene`, `desc`, `spec`, `format` | **string** | — |
@@ -128,6 +128,14 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 **Rect** — 矩形または角丸矩形。
 `x, y` は左上 · `w, h` はサイズ · `r` は角丸半径 · `fill` は描画モード · `color` は `"#rrggbb"`。
 `r: 0` は通常の角、`r > 0` は角丸です。`fill: true` は `fillRect` / `fillRoundRect`、`fill: false` は `drawRect` / `drawRoundRect` の枠だけ描画です。枠線の太さは LovyanGFX/M5GFX 既定の 1px とし、stroke-width 系フィールドは追加しません。
+
+**Line** — 1 px の直線。
+`x, y` は始点 · `x2, y2` は終点 · `color` は `"#rrggbb"` です。
+LovyanGFX/M5GFX の `drawLine(x, y, x2, y2, color)` に対応します。stroke-width、dash、arrow、cap-style 系フィールドは追加しません。
+
+**Circle** — 円。
+`x, y` は中心点 · `r` は半径 · `fill` は描画モード · `color` は `"#rrggbb"` です。
+`fill: true` は `fillCircle`、`fill: false` は `drawCircle` に対応します。
 
 **Text** — 1 行テキスト。**Text には幅/高さの box がありません。** 折り返し、クリップ、省略、box 内アラインメントはありません。収まる長さにするか、profile ごとに `text`/`size` を変えます。
 `x, y` は **アンカーポイント**です。`datum` はテキストのどの点をアンカーに置くかを表します。
@@ -216,7 +224,7 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 
 ある profile で part を表示したくない場合は、part を残して `"visible": false` にします。その profile から削除してはいけません。
 
-**ここで定義した part type と field だけを使います。** 「もっとリッチに」などの見た目改善依頼でも、`radius`, `cornerRadius`, `stroke`, `strokeWidth`, `border`, `opacity`, `alpha`, `gradient`, `shadow`, `fontFamily`, `fontStyle`, `fontWeight`, `bold`, `italic`, `wrap`, `align` など未対応フィールドを作ってはいけません。カード、区切り線、ハイライト、簡単な影は `Rect` と `Text` の重ね合わせで近似します。`Image` は既存 project asset を配置する場合だけ使い、asset 名、画像スライス、プロファイル別 asset 差し替えを捏造してはいけません。
+**ここで定義した part type と field だけを使います。** 「もっとリッチに」などの見た目改善依頼でも、`radius`, `cornerRadius`, `stroke`, `strokeWidth`, `border`, `opacity`, `alpha`, `gradient`, `shadow`, `fontFamily`, `fontStyle`, `fontWeight`, `bold`, `italic`, `wrap`, `align` など未対応フィールドを作ってはいけません。カード、区切り線、ハイライト、簡単な影、簡単なマークは `Rect`、`Line`、`Circle`、`Text` の重ね合わせで近似します。`Image` は既存 project asset を配置する場合だけ使い、asset 名、画像スライス、プロファイル別 asset 差し替えを捏造してはいけません。
 
 `font` フィールドは対応済み Text フィールドです。この制限は他の text styling フィールドについてのものです。依頼で明示されない限り `font` はそのまま保持します。変更する場合も、同じ profile の `fonts` リストにあるフォントだけを使い、フォント名を捏造してはいけません。
 
