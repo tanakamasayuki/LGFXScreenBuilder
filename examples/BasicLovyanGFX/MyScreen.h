@@ -90,6 +90,32 @@ static const lgfxsb::ProfileDesc kProfiles[] = {
   {240, 135, 0},
 };
 
+struct ProfileInfo {
+  const char* name;
+  uint8_t index;
+  int16_t w, h;
+  uint8_t rotation;
+};
+
+struct SceneInfo {
+  const char* name;
+  lgfxsb::SceneId id;
+  uint16_t index;
+};
+
+static constexpr ProfileInfo kProfileInfo[] = {
+  {"Core", 0, 320, 240, 0},
+  {"Stick", 1, 135, 240, 0},
+  {"Cardputer", 2, 240, 135, 0},
+};
+static constexpr uint8_t kProfileInfoCount = 3;
+
+static constexpr SceneInfo kSceneInfo[] = {
+  {"Boot", Scene::Boot::id, 0},
+  {"Main", Scene::Main::id, 1},
+  {"Settings", Scene::Settings::id, 2},
+};
+static constexpr uint16_t kSceneInfoCount = 3;
 
 } // namespace detail
 
@@ -106,6 +132,7 @@ class Screen : public lgfxsb::Renderer {
  public:
   explicit Screen(lgfx::LGFX_Device& gfx) : lgfxsb::Renderer(gfx, project) {}
   void setProfile(Profile p) { _profile = static_cast<uint8_t>(p); }
+  void show(lgfxsb::SceneId id) { renderScene(id, nullptr, 0); }
   void show(const Scene::Boot& s) {
     lgfxsb::Value v[2];
     v[1] = lgfxsb::Value::text(s.boot);

@@ -118,6 +118,32 @@ export function generateHeader(project, opts = {}) {
   });
   s += `};\n\n`;
 
+  // Optional test/capture metadata. These tables are not referenced by the
+  // renderer, so ordinary sketches do not need to keep them in flash.
+  s += `struct ProfileInfo {\n`;
+  s += `  const char* name;\n`;
+  s += `  uint8_t index;\n`;
+  s += `  int16_t w, h;\n`;
+  s += `  uint8_t rotation;\n`;
+  s += `};\n\n`;
+  s += `struct SceneInfo {\n`;
+  s += `  const char* name;\n`;
+  s += `  lgfxsb::SceneId id;\n`;
+  s += `  uint16_t index;\n`;
+  s += `};\n\n`;
+  s += `static constexpr ProfileInfo kProfileInfo[] = {\n`;
+  profiles.forEach((pr, i) => {
+    s += `  {${cstr(pr.id)}, ${i}, ${pr.w}, ${pr.h}, ${pr.rotation}},\n`;
+  });
+  s += `};\n`;
+  s += `static constexpr uint8_t kProfileInfoCount = ${profiles.length};\n\n`;
+  s += `static constexpr SceneInfo kSceneInfo[] = {\n`;
+  project.scenes.forEach((sc, i) => {
+    s += `  {${cstr(sc.id)}, Scene::${sc.id}::id, ${i}},\n`;
+  });
+  s += `};\n`;
+  s += `static constexpr uint16_t kSceneInfoCount = ${project.scenes.length};\n\n`;
+
   // Image assets: RGB565 pixel arrays + descriptor table (§8.4). const goes to
   // flash on ESP32, so PROGMEM is not required.
   const assets = project.assets || [];
@@ -145,6 +171,7 @@ export function generateHeader(project, opts = {}) {
   s += `class Screen : public lgfxsb::Renderer {\n public:\n`;
   s += `  explicit Screen(lgfx::LGFX_Device& gfx) : lgfxsb::Renderer(gfx, project) {}\n`;
   s += `  void setProfile(Profile p) { _profile = static_cast<uint8_t>(p); }\n`;
+  s += `  void show(lgfxsb::SceneId id) { renderScene(id, nullptr, 0); }\n`;
   project.scenes.forEach((sc) => {
     const texts = sc.parts.map((p, k) => ({ p, k })).filter((x) => x.p.type === 'Text');
     if (texts.length === 0) {
