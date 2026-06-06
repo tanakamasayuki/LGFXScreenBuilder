@@ -65,12 +65,12 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 
 | field | JSON type | notes |
 |-------|-----------|-------|
-| `w`, `h`, `x`, `y` | **integer** | px。小数座標や小数サイズは不可。 |
+| `w`, `h`, `x`, `y`, `r` | **integer** | px。小数座標や小数サイズは不可。`r` は Rect の角丸半径。 |
 | `rot` | **integer** | 0、1、2、3。 |
 | `size` (Text) | **number** | 拡大率。**小数可**（例: `1`, `1.5`, `3.5`）。 |
 | `height` (font) | **integer or null** | Text `size: 1` のおおよその描画高さ（px）。 |
 | `color` | **string** | `"#rrggbb"`（6 桁 hex、小文字）。 |
-| `visible` | **boolean** | `true` / `false`。 |
+| `visible`, `fill` | **boolean** | `true` / `false`。`fill` は Rect で使う。 |
 | `id`, `type`, `datum`, `text`, `family`, `content` | **string** | — |
 | `asset`, `font`, `unit` | **string or null** | asset 名 / font 名 / 単位、または `null`。 |
 | `scene`, `desc`, `spec`, `format` | **string** | — |
@@ -125,8 +125,9 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 
 ### 型ごとのフィールド
 
-**Rect** — 塗りつぶし矩形。
-`x, y` は左上 · `w, h` はサイズ · `color` は `"#rrggbb"`。
+**Rect** — 矩形または角丸矩形。
+`x, y` は左上 · `w, h` はサイズ · `r` は角丸半径 · `fill` は描画モード · `color` は `"#rrggbb"`。
+`r: 0` は通常の角、`r > 0` は角丸です。`fill: true` は `fillRect` / `fillRoundRect`、`fill: false` は `drawRect` / `drawRoundRect` の枠だけ描画です。枠線の太さは LovyanGFX/M5GFX 既定の 1px とし、stroke-width 系フィールドは追加しません。
 
 **Text** — 1 行テキスト。**Text には幅/高さの box がありません。** 折り返し、クリップ、省略、box 内アラインメントはありません。収まる長さにするか、profile ごとに `text`/`size` を変えます。
 `x, y` は **アンカーポイント**です。`datum` はテキストのどの点をアンカーに置くかを表します。
@@ -164,33 +165,33 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
       "id": "Core", "w": 320, "h": 240, "rot": 0,
       "fonts": [ "Font4", "efontJA_16" ],
       "parts": [
-        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 320, "h": 40, "color": "#1e2a30", "visible": true },
+        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 320, "h": 40, "r": 0, "fill": true, "color": "#1e2a30", "visible": true },
         { "id": "title", "type": "Text", "x": 12, "y": 10, "datum": "TL", "size": 2, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
         { "id": "battery", "type": "Text", "x": 310, "y": 12, "datum": "TR", "size": 1.5, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
         { "id": "temp", "type": "Text", "x": 18, "y": 70, "datum": "TL", "size": 4, "color": "#ffffff", "text": "24.5C", "font": null, "visible": true },
-        { "id": "panel", "type": "Rect", "x": 18, "y": 150, "w": 284, "h": 54, "color": "#172126", "visible": true }
+        { "id": "panel", "type": "Rect", "x": 18, "y": 150, "w": 284, "h": 54, "r": 8, "fill": true, "color": "#172126", "visible": true }
       ]
     },
     {
       "id": "Stick", "w": 135, "h": 240, "rot": 0,
       "fonts": [ "Font4" ],
       "parts": [
-        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 135, "h": 30, "color": "#1e2a30", "visible": true },
+        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 135, "h": 30, "r": 0, "fill": true, "color": "#1e2a30", "visible": true },
         { "id": "title", "type": "Text", "x": 8, "y": 7, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
         { "id": "battery", "type": "Text", "x": 8, "y": 180, "datum": "TL", "size": 1.5, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
         { "id": "temp", "type": "Text", "x": 10, "y": 60, "datum": "TL", "size": 3.5, "color": "#ffffff", "text": "24.5", "font": null, "visible": true },
-        { "id": "panel", "type": "Rect", "x": 10, "y": 110, "w": 115, "h": 60, "color": "#172126", "visible": true }
+        { "id": "panel", "type": "Rect", "x": 10, "y": 110, "w": 115, "h": 60, "r": 6, "fill": true, "color": "#172126", "visible": true }
       ]
     },
     {
       "id": "Cardputer", "w": 240, "h": 135, "rot": 0,
       "fonts": [ "Font4" ],
       "parts": [
-        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 240, "h": 26, "color": "#1e2a30", "visible": true },
+        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 240, "h": 26, "r": 0, "fill": true, "color": "#1e2a30", "visible": true },
         { "id": "title", "type": "Text", "x": 8, "y": 5, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
         { "id": "battery", "type": "Text", "x": 232, "y": 6, "datum": "TR", "size": 1.25, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
         { "id": "temp", "type": "Text", "x": 12, "y": 40, "datum": "TL", "size": 3, "color": "#ffffff", "text": "24.5C", "font": null, "visible": true },
-        { "id": "panel", "type": "Rect", "x": 12, "y": 86, "w": 216, "h": 40, "color": "#172126", "visible": false }
+        { "id": "panel", "type": "Rect", "x": 12, "y": 86, "w": 216, "h": 40, "r": 6, "fill": true, "color": "#172126", "visible": false }
       ]
     }
   ]
@@ -215,7 +216,7 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 
 ある profile で part を表示したくない場合は、part を残して `"visible": false` にします。その profile から削除してはいけません。
 
-**ここで定義した part type と field だけを使います。** 「もっとリッチに」などの見た目改善依頼でも、`radius`, `cornerRadius`, `stroke`, `border`, `opacity`, `alpha`, `gradient`, `shadow`, `fontFamily`, `fontStyle`, `fontWeight`, `bold`, `italic`, `wrap`, `align` など未対応フィールドを作ってはいけません。カード、区切り線、ハイライト、簡単な影は `Rect` と `Text` の重ね合わせで近似します。`Image` は既存 project asset を参照する場合だけ使います。
+**ここで定義した part type と field だけを使います。** 「もっとリッチに」などの見た目改善依頼でも、`radius`, `cornerRadius`, `stroke`, `strokeWidth`, `border`, `opacity`, `alpha`, `gradient`, `shadow`, `fontFamily`, `fontStyle`, `fontWeight`, `bold`, `italic`, `wrap`, `align` など未対応フィールドを作ってはいけません。カード、区切り線、ハイライト、簡単な影は `Rect` と `Text` の重ね合わせで近似します。`Image` は既存 project asset を参照する場合だけ使います。
 
 `font` フィールドは対応済み Text フィールドです。この制限は他の text styling フィールドについてのものです。依頼で明示されない限り `font` はそのまま保持します。変更する場合も、同じ profile の `fonts` リストにあるフォントだけを使い、フォント名を捏造してはいけません。
 

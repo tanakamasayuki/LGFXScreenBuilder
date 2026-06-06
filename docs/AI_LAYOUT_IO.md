@@ -79,12 +79,12 @@ outside `w`×`h` is clipped. Keep parts inside the screen.
 
 | field | JSON type | notes |
 |-------|-----------|-------|
-| `w`, `h`, `x`, `y` | **integer** | pixels. No fractional coordinates or sizes. |
+| `w`, `h`, `x`, `y`, `r` | **integer** | pixels. No fractional coordinates or sizes. `r` is the corner radius for Rect. |
 | `rot` | **integer** | 0, 1, 2, or 3. |
 | `size` (Text) | **number** | a scale multiplier; **may be fractional** (e.g. `1`, `1.5`, `3.5`). |
 | `height` (font) | **integer or null** | approximate rendered pixel height at Text `size: 1`. |
 | `color` | **string** | `"#rrggbb"` (6 hex digits, lowercase). |
-| `visible` | **boolean** | `true` / `false`. |
+| `visible`, `fill` | **boolean** | `true` / `false`. `fill` is used by Rect. |
 | `id`, `type`, `datum`, `text`, `family`, `content` | **string** | — |
 | `asset`, `font`, `unit` | **string or null** | an asset name / font name / unit, or `null`. |
 | `scene`, `desc`, `spec`, `format` | **string** | — |
@@ -145,8 +145,13 @@ special visual cases:
 
 ### Per-type fields
 
-**Rect** — a filled rectangle.
-`x, y` top-left corner · `w, h` size · `color` `"#rrggbb"`.
+**Rect** — a rectangle or rounded rectangle.
+`x, y` top-left corner · `w, h` size · `r` corner radius · `fill` draw mode ·
+`color` `"#rrggbb"`.
+Use `r: 0` for square corners and `r > 0` for rounded corners. Use `fill: true`
+for `fillRect` / `fillRoundRect`, and `fill: false` for `drawRect` /
+`drawRoundRect` outline-only drawing. Outline thickness is the LovyanGFX/M5GFX
+default 1 px; do not add a stroke-width field.
 
 **Text** — a single line of text. **Text has no width/height box.** There is no
 wrapping, clipping, ellipsis, or in-box alignment; keep the text short enough to fit, or
@@ -194,33 +199,33 @@ The `Main` screen of the sample project, across three profiles:
       "id": "Core", "w": 320, "h": 240, "rot": 0,
       "fonts": [ "Font4", "efontJA_16" ],
       "parts": [
-        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 320, "h": 40, "color": "#1e2a30", "visible": true },
+        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 320, "h": 40, "r": 0, "fill": true, "color": "#1e2a30", "visible": true },
         { "id": "title", "type": "Text", "x": 12, "y": 10, "datum": "TL", "size": 2, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
         { "id": "battery", "type": "Text", "x": 310, "y": 12, "datum": "TR", "size": 1.5, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
         { "id": "temp", "type": "Text", "x": 18, "y": 70, "datum": "TL", "size": 4, "color": "#ffffff", "text": "24.5C", "font": null, "visible": true },
-        { "id": "panel", "type": "Rect", "x": 18, "y": 150, "w": 284, "h": 54, "color": "#172126", "visible": true }
+        { "id": "panel", "type": "Rect", "x": 18, "y": 150, "w": 284, "h": 54, "r": 8, "fill": true, "color": "#172126", "visible": true }
       ]
     },
     {
       "id": "Stick", "w": 135, "h": 240, "rot": 0,
       "fonts": [ "Font4" ],
       "parts": [
-        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 135, "h": 30, "color": "#1e2a30", "visible": true },
+        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 135, "h": 30, "r": 0, "fill": true, "color": "#1e2a30", "visible": true },
         { "id": "title", "type": "Text", "x": 8, "y": 7, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
         { "id": "battery", "type": "Text", "x": 8, "y": 180, "datum": "TL", "size": 1.5, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
         { "id": "temp", "type": "Text", "x": 10, "y": 60, "datum": "TL", "size": 3.5, "color": "#ffffff", "text": "24.5", "font": null, "visible": true },
-        { "id": "panel", "type": "Rect", "x": 10, "y": 110, "w": 115, "h": 60, "color": "#172126", "visible": true }
+        { "id": "panel", "type": "Rect", "x": 10, "y": 110, "w": 115, "h": 60, "r": 6, "fill": true, "color": "#172126", "visible": true }
       ]
     },
     {
       "id": "Cardputer", "w": 240, "h": 135, "rot": 0,
       "fonts": [ "Font4" ],
       "parts": [
-        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 240, "h": 26, "color": "#1e2a30", "visible": true },
+        { "id": "headerBand", "type": "Rect", "x": 0, "y": 0, "w": 240, "h": 26, "r": 0, "fill": true, "color": "#1e2a30", "visible": true },
         { "id": "title", "type": "Text", "x": 8, "y": 5, "datum": "TL", "size": 1.5, "color": "#ffffff", "text": "Main", "font": null, "visible": true },
         { "id": "battery", "type": "Text", "x": 232, "y": 6, "datum": "TR", "size": 1.25, "color": "#9ce5ac", "text": "82%", "font": null, "visible": true },
         { "id": "temp", "type": "Text", "x": 12, "y": 40, "datum": "TL", "size": 3, "color": "#ffffff", "text": "24.5C", "font": null, "visible": true },
-        { "id": "panel", "type": "Rect", "x": 12, "y": 86, "w": 216, "h": 40, "color": "#172126", "visible": false }
+        { "id": "panel", "type": "Rect", "x": 12, "y": 86, "w": 216, "h": 40, "r": 6, "fill": true, "color": "#172126", "visible": false }
       ]
     }
   ]
@@ -257,7 +262,7 @@ If a part should not appear on a certain profile, keep the part and set
 
 **Use only the part types and fields defined here.** For visual-polish requests such as
 "make it richer", do not invent unsupported fields such as `radius`, `cornerRadius`,
-`stroke`, `border`, `opacity`, `alpha`, `gradient`, `shadow`, `fontFamily`, `fontStyle`,
+`stroke`, `strokeWidth`, `border`, `opacity`, `alpha`, `gradient`, `shadow`, `fontFamily`, `fontStyle`,
 `fontWeight`, `bold`, `italic`, `wrap`, or `align`. Approximate cards, dividers,
 highlights, and simple shadows by layering `Rect` and `Text` parts. Use `Image` only to
 reference an existing project asset.

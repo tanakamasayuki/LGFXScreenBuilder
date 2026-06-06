@@ -221,9 +221,10 @@ Assets モードは素材の登録、画像スライス、フォント、出力�
 - Rect
 - Line
 - Circle
-- Ellipse
 
-Rect / Line / Circle / Ellipse は、AI アシストでも見栄えのよい静的レイアウトを作れるようにするための基本図形である。塗り、線幅、色など、LovyanGFX/M5GFX の基本描画 API に自然に対応する範囲に留める。角丸、影、グラデーション、複雑なパス、boolean 演算などの高度なベクター編集は提供しない。
+Rect / Line / Circle は、AI アシストでも見栄えのよい静的レイアウトを作れるようにするための基本図形である。LovyanGFX/M5GFX の基本描画 API に自然に対応する範囲に留める。Rect は `x` / `y` / `w` / `h` / `r` で矩形または角丸矩形を表し、`fill` で塗りつぶし系（`fillRect` / `fillRoundRect`）と枠だけの draw 系（`drawRect` / `drawRoundRect`）を切り替える。枠線の太さ、影、グラデーション、複雑なパス、boolean 演算などの高度なベクター編集は提供しない。
+
+楕円（Ellipse）は現在仕様では扱わない。画面レイアウト用途では RoundRect と Circle の利用頻度が高く、楕円を入れると種類とパラメータが増えるため、必要になった段階で追加を検討する。
 
 将来拡張候補は以下とする。
 
@@ -672,7 +673,7 @@ AI に渡す IF 契約書は単独の**英語のみ**ドキュメント [docs/AI
 - 値の型は契約書に明示: `w`/`h`/`x`/`y`/`rot`/`version` は整数、`size` は実数可（倍率）、`color` は `"#rrggbb"`、`visible` は真偽値。
 - トップレベル `fonts[]`: 採用済みフォントの `name`・`family`・`content`（`digits` / `latin` / `ja` / `cn` / `tw` / `ko`）・公称 `size`/`unit`・実描画高の目安 `height`。AI が既存フォントを選ぶための確定情報として出すが、JSON 取り込み時にフォント資産を追加・変更するものではない。
 - 各プロファイル: `id`・`w`・`h`・`rot`・`fonts[]`（そのプロファイルで利用可能な採用済みフォント名。編集対象ではない）・`parts[]`。
-- 各パーツ: `id`・`type`・`visible` ＋ 種別別の配置値（Text は `x`/`y` アンカー・`datum`・`size` 倍率・`color`・`text`・`font` 名（null=既定）、Rect は `x`/`y`/`w`/`h`/`color`、Image は `x`/`y`/`w`/`h`/`asset` 名（全プロファイル共有）。
+- 各パーツ: `id`・`type`・`visible` ＋ 種別別の配置値（Text は `x`/`y` アンカー・`datum`・`size` 倍率・`color`・`text`・`font` 名（null=既定）、Rect は `x`/`y`/`w`/`h`/`r`/`fill`/`color`、Image は `x`/`y`/`w`/`h`/`asset` 名（全プロファイル共有）。
 - **剥がすもの:** アセットのバイナリ（Data URL / RGB565）・名前空間／プロジェクト名・出力設定・`targetLibrary`・アニメーション/タイミング・Arduino コード。
 - **不変条件:** `(id, type)` の集合は全プロファイルで一致（§8.2 のデータ契約）。それ以外（座標・サイズ・`color`・`visible`・Text の `datum`/`size`/`text`/`font`）は機種毎に異なってよい。
 - AI レイアウト形式 v1 は、提供済みフォント文脈と Text の `font` 名＋`size`＋`color` を超える編集可能なフォント family/style 指定、プロファイル毎のアセット差し替え、アニメーションを意図的に対象外とする。
@@ -1049,7 +1050,7 @@ LGFXScreenBuilder は、AI アシストしやすい静的な基本レイアウ�
 - Web オーサリングツールの基本画面（3 ペイン＋モード切替、ja/en、起動フロー）
 - プロファイル作成（画面サイズ・デフォルト回転）＋ `Profile::Auto` 自動判定・プロファイル順序変更
 - シーン作成
-- Text/Image/Rect/Line/Circle/Ellipse パーツ配置（直接操作：追加/移動/リサイズ/レイヤー順）
+- Text/Image/Rect/Line/Circle パーツ配置（直接操作：追加/移動/リサイズ/レイヤー順）
 - Text のフォント選択、サイズ、色、datum、単一行表示
 - PNG 画像アセット登録（Data URL 埋め込み）
 - 画像アセットのスライス（大きな画像から静的 Image 用の領域を切り出す）
@@ -1073,6 +1074,7 @@ LGFXScreenBuilder は、AI アシストしやすい静的な基本レイアウ�
 - ボード単位の回転オーバーライド（1 プロファイルを向きの異なる複数ボードで共用。回転はプロファイル単位。§8.9.4）
 - アニメーション全般（フレーム/フェード/移動/拡縮、再生・編集）
 - Icon/Gauge/Graph/Container/Button などの複雑な Part
+- Ellipse（楕円）
 - ValueText/Value 系（数値表示専用：prefix/suffix/小数桁/単位）
 - カスタムフォント（TTF/OTF）登録・管理（現在仕様は LovyanGFX/M5GFX プリセットフォント）
 - スプライトシート（§8.6）

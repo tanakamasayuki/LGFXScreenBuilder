@@ -221,9 +221,10 @@ The supported Parts are as follows.
 - Rect
 - Line
 - Circle
-- Ellipse
 
-Rect / Line / Circle / Ellipse are basic shapes included so AI-assisted static layouts can look reasonably polished. They stay within the range that maps naturally to LovyanGFX/M5GFX basic drawing APIs, such as fill, stroke width, and color. Advanced vector editing such as rounded corners, shadows, gradients, complex paths, or boolean operations is not provided.
+Rect / Line / Circle are basic shapes included so AI-assisted static layouts can look reasonably polished. They stay within the range that maps naturally to LovyanGFX/M5GFX basic drawing APIs. Rect uses `x` / `y` / `w` / `h` / `r` to represent a rectangle or rounded rectangle, and `fill` switches between filled drawing (`fillRect` / `fillRoundRect`) and outline-only drawing (`drawRect` / `drawRoundRect`). Stroke width, shadows, gradients, complex paths, boolean operations, and other advanced vector editing features are not provided.
+
+Ellipse is outside the current scope. RoundRect and Circle cover the common UI layout cases, while Ellipse would add another type and parameter set, so it is considered only when a concrete need appears.
 
 Candidate future extensions are as follows.
 
@@ -680,7 +681,7 @@ Format:
 - Value types are explicit in the contract: `w`/`h`/`x`/`y`/`rot`/`version` are integers; `size` is a number that may be fractional; `color` is `"#rrggbb"`; `visible` is boolean.
 - Top-level `fonts[]`: adopted fonts with `name`, `family`, `content` (`digits` / `latin` / `ja` / `cn` / `tw` / `ko`), nominal `size`/`unit`, and approximate rendered `height`. This is emitted as authoritative context for choosing existing fonts, but importing the JSON does not add or change font assets.
 - Each profile: `id`, `w`, `h`, `rot`, `fonts[]` (the adopted font names enabled for that profile; not editable), and `parts[]`.
-- Each part: `id`, `type`, `visible`, plus per-type placement (Text: `x`/`y` anchor, `datum`, `size` multiplier, `color`, `text`, `font` name (or null = default); Rect: `x`/`y`/`w`/`h`/`color`; Image: `x`/`y`/`w`/`h`/`asset` name (shared across profiles)).
+- Each part: `id`, `type`, `visible`, plus per-type placement (Text: `x`/`y` anchor, `datum`, `size` multiplier, `color`, `text`, `font` name (or null = default); Rect: `x`/`y`/`w`/`h`/`r`/`fill`/`color`; Image: `x`/`y`/`w`/`h`/`asset` name (shared across profiles)).
 - **Stripped:** asset binaries (Data URLs / RGB565), namespace / project name, output settings, `targetLibrary`, animation/timing, and Arduino code.
 - **Invariant:** the `(id, type)` set is identical across all profiles (the data contract of §8.2). Everything else may differ per profile — coordinates, size, `color`, `visible`, and a Text's `datum`/`size`/`text`/`font`.
 - The AI layout format v1 intentionally excludes editable font *family/style* selection beyond the provided font context plus a Text's `font` name + `size` + `color`, profile-specific asset replacement, and animation.
@@ -1058,7 +1059,7 @@ LGFXScreenBuilder is responsible for creating AI-assistable static basic layouts
 - Basic screens of the web authoring tool (3 panes + mode switching, ja/en, startup flow)
 - Profile creation (screen size / default rotation), `Profile::Auto` auto-detection, and profile reordering
 - Scene creation
-- Text/Image/Rect/Line/Circle/Ellipse part placement (direct manipulation: add/move/resize/layer order)
+- Text/Image/Rect/Line/Circle part placement (direct manipulation: add/move/resize/layer order)
 - Text font selection, size, color, datum, and single-line display
 - PNG image asset registration (Data URL embedding)
 - JSON project save/load (single `.lgfxsb.json`, download method)
@@ -1080,6 +1081,7 @@ The current scope excludes the following.
 - Per-board rotation override (rotation is per profile. §8.9.4)
 - Animation in general (frame/fade/move/scale, playback and editing)
 - Additional Parts such as Icon/Gauge/Graph/Container/Button
+- Ellipse
 - ValueText/Value family (dedicated numeric display: prefix/suffix/decimal places/unit)
 - Custom font (TTF/OTF) registration and management (the current scope uses LovyanGFX/M5GFX preset fonts)
 - Asset slicing (§8.5)
