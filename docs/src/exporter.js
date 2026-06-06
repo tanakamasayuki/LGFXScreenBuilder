@@ -1,7 +1,5 @@
-// Export mode: preview generated artifacts, choose the output profile subset and
-// the fallback profile (§10), and download. The fallback is chosen here (not in
-// Profiles) and remembered as project.defaultProfile (§8.9.4/§9). Assets and zip
-// packaging are post-MVP, so only <Project>.h and <Project>_example.ino ship.
+// Export mode: preview generated artifacts, choose the output profile subset,
+// and download. The first included profile is the final Auto fallback (§8.9).
 import { store } from './store.js';
 import { generateHeader, generateSketch } from './codegen.js';
 import { isValidId } from './model.js';
@@ -12,7 +10,6 @@ const $ = (id) => document.getElementById(id);
 
 // Module-local UI state (not part of the persisted project).
 let included = null; // Set<profileId>
-let fallback = null; // profileId
 let selFile = null;
 let fwInit = false;
 
@@ -20,7 +17,7 @@ const fw = () => $('export-fw').value;
 const hfile = () => `${store.project.name || 'project'}.h`;
 const inofile = () => `${store.project.name || 'project'}_example.ino`;
 const files = () => [{ name: hfile(), meta: 'C++' }, { name: inofile(), meta: 'Sample' }];
-const opts = () => ({ profiles: [...included], defaultProfile: fallback });
+const opts = () => ({ profiles: [...included] });
 
 // Keep UI state consistent with the current project (profiles may have changed).
 function reconcile() {
@@ -28,12 +25,6 @@ function reconcile() {
   if (!included) included = new Set(ids);
   else for (const id of [...included]) if (!ids.includes(id)) included.delete(id);
   if (!included.size && ids.length) ids.forEach((id) => included.add(id));
-  if (!fallback || !included.has(fallback)) {
-    fallback = included.has(store.project.defaultProfile) ? store.project.defaultProfile : [...included][0] || null;
-  }
-  // Remember the chosen fallback as the project default (§9), but only when it
-  // is meaningful (more than one profile exported).
-  if (included.size > 1 && fallback) store.project.defaultProfile = fallback;
   const names = files().map((f) => f.name);
   if (!names.includes(selFile)) selFile = names[0];
 }
@@ -59,23 +50,19 @@ function renderFiles() {
 function renderProfSel() {
   const el = $('export-profsel');
   el.innerHTML = '';
-  const multi = included.size > 1;
   for (const p of store.project.profiles) {
     const inc = included.has(p.id);
     const row = document.createElement('div');
     row.className = 'profsel-row';
     let html = `<label style="flex:1"><input type="checkbox" class="inc" ${inc ? 'checked' : ''} style="width:auto;min-height:auto"> ${p.id} <span class="cnt">${p.w}×${p.h}</span></label>`;
-    if (multi && inc) html += `<label class="fb"><input type="radio" name="export-fb" class="fb-r" ${fallback === p.id ? 'checked' : ''} style="width:auto;min-height:auto"> ${t('export.fallback')}</label>`;
     row.innerHTML = html;
     row.querySelector('.inc').onchange = (e) => { if (e.target.checked) included.add(p.id); else included.delete(p.id); renderExport(); };
-    const r = row.querySelector('.fb-r');
-    if (r) r.onchange = () => { fallback = p.id; renderExport(); };
     el.appendChild(row);
   }
   const note = document.createElement('p');
   note.className = 'sub';
   note.style.margin = '6px 0 0';
-  note.textContent = included.size <= 1 ? t('export.fallbackSingle') : t('export.fallbackMulti');
+  note.textContent = t('export.autoNote');
   el.appendChild(note);
 }
 
@@ -98,7 +85,7 @@ function renderChecks() {
   ];
   if (included.size === 0) checks.push({ ok: false, t: t('check.selectProfile') });
   else if (included.size === 1) checks.push({ ok: true, t: t('check.single', { id: [...included][0] }) });
-  else checks.push({ ok: true, t: t('check.multi', { id: fallback }) });
+  else checks.push({ ok: true, t: t('check.multi', { id: [...included][0] }) });
 
   for (const c of checks) {
     const d = document.createElement('div');

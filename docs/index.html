@@ -16,7 +16,7 @@
     <h1>LGFXScreenBuilder</h1>
     <nav class="modes" id="modes">
       <button class="mode active" data-mode="design" data-i18n="mode.design">Design</button>
-      <button class="mode" data-mode="profiles" data-i18n="mode.profiles">Profiles</button>
+      <button class="mode" data-mode="profiles" data-i18n="mode.profiles">Devices</button>
       <button class="mode" data-mode="assets" data-i18n="mode.assets">Assets</button>
       <button class="mode" data-mode="fonts" data-i18n="mode.fonts">Fonts</button>
       <button class="mode" data-mode="export" data-i18n="mode.export">Export</button>
@@ -33,7 +33,7 @@
       <button class="mini" id="btn-export-h" data-i18n="btn.exportH">Export .h</button>
     </nav>
     <span class="grow"></span>
-    <span class="note" data-i18n="app.note">MVP foundation — Design</span>
+    <span class="note" data-i18n="app.note">Static layout editor</span>
     <label class="langsel">🌐
       <select id="lang">
         <option value="en">EN</option>
@@ -68,8 +68,6 @@
           <span class="toolsep"></span>
           <button class="icon" id="part-front" data-i18n-title="act.front">↑</button>
           <button class="icon" id="part-back" data-i18n-title="act.back">↓</button>
-          <button class="icon" id="part-group" data-i18n-title="act.group">⊞</button>
-          <button class="icon" id="part-ungroup" data-i18n-title="act.ungroup">⊟</button>
         </div>
         <div class="list" id="part-list"></div>
       </div>
@@ -122,7 +120,7 @@
       <aside class="left">
         <div class="section">
           <div class="sechead">
-            <h2 data-i18n="pane.profiles">Profiles</h2>
+            <h2 data-i18n="pane.profiles">Devices</h2>
             <span class="menu-wrap">
               <button class="icon" id="profile-add" data-i18n="profiles.add">+ Add ▾</button>
               <div class="menu" id="profile-add-menu"></div>

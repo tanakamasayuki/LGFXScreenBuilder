@@ -3,15 +3,14 @@
 // Shape (rich editor form; serialized to .lgfxsb.json, §9):
 //   project = {
 //     name, targetLibrary, background ('#rrggbb'),
-//     defaultProfile,                     // fallback chosen at export (§8.9.4); may be null
 //     profiles: [{ id, w, h, rotation, boards:[], layout }],
 //       layout: { [sceneId]: { [partId]: placement } }   // per profile, per scene, per part
-//     scenes:   [{ id, desc, parts:[{ id, type, parent, desc, asset }] }],
+//     scenes:   [{ id, desc, parts:[{ id, type, desc, asset }] }],
 //   }
 // Each profile holds a complete, independent layout per scene (no base/override; §8.9.6).
-// The generated struct depends only on part id/type/parent (§8.2); placement lives here.
+// The generated struct depends only on part id/type (§8.2); placement lives here.
 
-export const PART_TYPES = ['Group', 'Rect', 'Text', 'Image'];
+export const PART_TYPES = ['Rect', 'Text', 'Image'];
 
 // 9-point datum codes, ordering matches lgfxsb::Datum / LovyanGFX textdatum_t.
 // Display labels are localized via i18n (datum.<code>).
@@ -29,7 +28,7 @@ export const orient = (w, h) => (w > h ? 'landscape' : h > w ? 'portrait' : 'squ
 export const dispDims = (p) => ((p.rotation & 1) ? { w: p.h, h: p.w } : { w: p.w, h: p.h });
 
 // Placement factories. Rect/Image carry w/h; Text carries datum/size (no box; §8.7).
-const rect = (x, y, w, h, color, visible = true) => ({ x, y, w, h, color, visible });
+const rect = (x, y, w, h, color, visible = true, r = 0, fill = true) => ({ x, y, w, h, r, fill, color, visible });
 const text = (x, y, datum, size, color, content, visible = true) =>
   ({ x, y, datum, size, color, text: content, visible });
 
@@ -38,24 +37,24 @@ export function sampleProject() {
   const scenes = [
     {
       id: 'Boot', desc: '起動直後に一瞬だけ出すスプラッシュ', parts: [
-        { id: 'logo', type: 'Rect', parent: null, desc: '' },
-        { id: 'boot', type: 'Text', parent: null, desc: '起動メッセージ' },
+        { id: 'logo', type: 'Rect', desc: '' },
+        { id: 'boot', type: 'Text', desc: '起動メッセージ' },
       ],
     },
     {
       id: 'Main', desc: '', parts: [
-        { id: 'headerBand', type: 'Rect', parent: null, desc: '' },
-        { id: 'title', type: 'Text', parent: null, desc: '' },
-        { id: 'battery', type: 'Text', parent: null, desc: '' },
-        { id: 'temp', type: 'Text', parent: null, desc: 'メイン計測値' },
-        { id: 'panel', type: 'Rect', parent: null, desc: '' },
+        { id: 'headerBand', type: 'Rect', desc: '' },
+        { id: 'title', type: 'Text', desc: '' },
+        { id: 'battery', type: 'Text', desc: '' },
+        { id: 'temp', type: 'Text', desc: 'メイン計測値' },
+        { id: 'panel', type: 'Rect', desc: '' },
       ],
     },
     {
       id: 'Settings', desc: '', parts: [
-        { id: 'header', type: 'Rect', parent: null, desc: '' },
-        { id: 'ttl', type: 'Text', parent: null, desc: '' },
-        { id: 'row1', type: 'Text', parent: null, desc: '' },
+        { id: 'header', type: 'Rect', desc: '' },
+        { id: 'ttl', type: 'Text', desc: '' },
+        { id: 'row1', type: 'Text', desc: '' },
       ],
     },
   ];
@@ -130,7 +129,6 @@ export function sampleProject() {
     name: 'MyScreen',
     targetLibrary: 'M5Unified',
     background: '#000000',
-    defaultProfile: 'Core',
     profiles,
     scenes,
     assets: [], // image assets: { id, w, h, dataUrl (preview), rgb565: [] (export) }
@@ -183,7 +181,6 @@ export function newProject({ name, targetLibrary, profileId, w, h, rotation, boa
     name,
     targetLibrary: targetLibrary || 'M5Unified',
     background: '#000000',
-    defaultProfile: profileId,
     profiles: [profile],
     scenes: [{ id: sceneName, desc: '', parts: [] }],
     assets: [],
@@ -267,11 +264,10 @@ export function addProfile(project, { w, h, rotation }, cloneFromId) {
   return id;
 }
 
-// Remove a profile (never the last one). Fixes defaultProfile if it pointed here.
+// Remove a profile (never the last one).
 export function removeProfile(project, id) {
   if (project.profiles.length <= 1) return false;
   project.profiles = project.profiles.filter((p) => p.id !== id);
-  if (project.defaultProfile === id) project.defaultProfile = project.profiles[0] ? project.profiles[0].id : null;
   return true;
 }
 
@@ -281,7 +277,6 @@ export function renameProfile(project, oldId, newId) {
   if (!newId || newId === oldId || !isValidId(newId)) return oldId;
   if (project.profiles.some((p) => p.id === newId)) return oldId;
   profileById(project, oldId).id = newId;
-  if (project.defaultProfile === oldId) project.defaultProfile = newId;
   return newId;
 }
 
@@ -307,7 +302,7 @@ export function placement(profile, sceneId, partId) {
 }
 
 // --- structural mutations ------------------------------------------------
-// Invariant (§8.2/§8.9.6): a part def (id/type/parent) is shared across all
+// Invariant (§8.2/§8.9.6): a part def (id/type) is shared across all
 // profiles; its placement lives per profile, per scene. So adding/removing a
 // part or scene must touch every profile's layout in lockstep — that is why
 // these live here rather than scattered in the UI.
@@ -327,7 +322,6 @@ function uniqueId(base, taken) {
 // Default placement for a freshly added part, roughly centered on the profile.
 function defaultPlacement(type, profile) {
   const cx = Math.round(profile.w / 2), cy = Math.round(profile.h / 2);
-  if (type === 'Group') return { x: cx, y: cy, visible: true }; // logical origin only
   if (type === 'Text') return text(cx, cy, 'MC', 1.5, '#ffffff', 'Text');
   const w = Math.min(80, profile.w - 8), h = Math.min(48, profile.h - 8);
   const x = cx - (w >> 1), y = cy - (h >> 1);
@@ -335,62 +329,17 @@ function defaultPlacement(type, profile) {
   return rect(x, y, w, h, '#1e2a30'); // Rect
 }
 
-// --- hierarchy helpers (flat `parts` array + `parent` id; §8.3) ----------
-// The array is kept in pre-order (a group is immediately followed by its
-// descendants) so draw order = array order and a subtree is a contiguous block.
-
-// Build a forest of { part, children } preserving array order for siblings.
-function buildForest(scene) {
-  const byId = new Map(scene.parts.map((p) => [p.id, { part: p, children: [] }]));
-  const roots = [];
-  for (const p of scene.parts) {
-    const node = byId.get(p.id);
-    const parent = p.parent && byId.get(p.parent);
-    if (parent) parent.children.push(node); else roots.push(node);
-  }
-  return { roots, byId };
-}
-// Flatten a forest back to a pre-order parts array.
-function flattenForest(roots) {
-  const out = [];
-  const walk = (nodes) => { for (const n of nodes) { out.push(n.part); walk(n.children); } };
-  walk(roots);
-  return out;
-}
-// Re-normalize a scene's parts array to pre-order (siblings keep array order).
-const normalize = (scene) => flattenForest(buildForest(scene).roots);
-
-// id of a part plus all of its descendants (for cascade delete / cycle checks).
-function subtreeIds(scene, rootId) {
-  const out = [rootId], stack = [rootId];
-  while (stack.length) {
-    const cur = stack.pop();
-    for (const p of scene.parts) if (p.parent === cur) { out.push(p.id); stack.push(p.id); }
-  }
-  return out;
-}
-
-// Absolute origin of a part = sum of all ancestor groups' local x/y (mirrors
-// lgfxsb::Renderer::absOrigin). Cycle-guarded.
+// Absolute origin is always the scene root; retained as a small compatibility
+// helper for callers that previously supported groups.
 export function absOrigin(profile, sceneId, scene, part) {
-  let x = 0, y = 0, cur = part;
-  const seen = new Set();
-  while (cur && cur.parent && !seen.has(cur.id)) {
-    seen.add(cur.id);
-    const parent = scene.parts.find((p) => p.id === cur.parent);
-    if (!parent) break;
-    const pl = placement(profile, sceneId, parent.id);
-    if (pl) { x += pl.x || 0; y += pl.y || 0; }
-    cur = parent;
-  }
-  return { x, y };
+  return { x: 0, y: 0 };
 }
 
 // Add a part to a scene and create its placement in every profile. Returns id.
 export function addPart(project, sceneId, type) {
   const scene = sceneById(project, sceneId);
   const id = uniqueId(type.toLowerCase(), new Set(scene.parts.map((p) => p.id)));
-  scene.parts.push({ id, type, parent: null, desc: '' });
+  scene.parts.push({ id, type, desc: '' });
   for (const pr of project.profiles) {
     if (!pr.layout[sceneId]) pr.layout[sceneId] = {};
     pr.layout[sceneId][id] = defaultPlacement(type, pr);
@@ -398,133 +347,33 @@ export function addPart(project, sceneId, type) {
   return id;
 }
 
-// Remove a part and (if a group) its whole subtree, from the scene and from
-// every profile's layout (§8.3.1: deleting a group cascades to its children).
+// Remove a part from the scene and from every profile's layout.
 export function removePart(project, sceneId, partId) {
   const scene = sceneById(project, sceneId);
-  const ids = new Set(subtreeIds(scene, partId));
-  scene.parts = scene.parts.filter((p) => !ids.has(p.id));
+  scene.parts = scene.parts.filter((p) => p.id !== partId);
   for (const pr of project.profiles) {
     const s = pr.layout[sceneId];
-    if (s) for (const id of ids) delete s[id];
+    if (s) delete s[partId];
   }
 }
 
-// Reorder the selected part among its siblings. dir +1 = toward front (drawn
+// Reorder the selected part. dir +1 = toward front (drawn
 // later / shown higher in the layer panel), -1 = toward back. Subtree moves too.
 export function reorderPart(project, sceneId, id, dir) {
   const scene = sceneById(project, sceneId);
-  const { roots, byId } = buildForest(scene);
-  const node = byId.get(id);
-  if (!node) return;
-  const sibs = node.part.parent ? byId.get(node.part.parent).children : roots;
-  const i = sibs.indexOf(node), j = i + dir;
-  if (j < 0 || j >= sibs.length) return;
-  [sibs[i], sibs[j]] = [sibs[j], sibs[i]];
-  scene.parts = flattenForest(roots);
+  const i = scene.parts.findIndex((p) => p.id === id), j = i + dir;
+  if (i < 0 || j < 0 || j >= scene.parts.length) return;
+  [scene.parts[i], scene.parts[j]] = [scene.parts[j], scene.parts[i]];
 }
 
-// Wrap the given parts (which must be siblings) in a new Group, preserving each
-// part's absolute position in every profile (§8.3.1). Returns the new group id.
-export function groupParts(project, sceneId, ids) {
-  const scene = sceneById(project, sceneId);
-  const idset = new Set(ids);
-  const sel = scene.parts.filter((p) => idset.has(p.id));
-  if (!sel.length) return null;
-  const parent = sel[0].parent || null;
-  if (sel.some((p) => (p.parent || null) !== parent)) return null; // must be siblings
-  const gid = uniqueId('group', new Set(scene.parts.map((p) => p.id)));
-  for (const pr of project.profiles) {
-    const s = pr.layout[sceneId] || (pr.layout[sceneId] = {});
-    let ox = Infinity, oy = Infinity;
-    for (const m of sel) { const pl = s[m.id]; if (pl) { ox = Math.min(ox, pl.x || 0); oy = Math.min(oy, pl.y || 0); } }
-    if (!isFinite(ox)) { ox = 0; oy = 0; }
-    s[gid] = { x: ox, y: oy, visible: true };
-    for (const m of sel) { const pl = s[m.id]; if (pl) { pl.x = (pl.x || 0) - ox; pl.y = (pl.y || 0) - oy; } }
-  }
-  const firstIdx = scene.parts.findIndex((p) => idset.has(p.id));
-  scene.parts.splice(firstIdx, 0, { id: gid, type: 'Group', parent, desc: '' });
-  for (const m of sel) m.parent = gid;
-  scene.parts = normalize(scene);
-  return gid;
-}
-
-// Move a part to a new parent (null = scene root), preserving its absolute
-// position in every profile (§8.3.1). `anchorId` (optional) places the moved
-// part right after that sibling in draw order; otherwise it goes last among its
-// new siblings. Rejects cycles and non-Group containers. Returns true on change.
-export function reparentPart(project, sceneId, id, newParent, anchorId) {
-  newParent = newParent || null;
-  if (newParent === id) return false;
-  const scene = sceneById(project, sceneId);
-  const part = scene.parts.find((p) => p.id === id);
-  if (!part) return false;
-  const sub = new Set(subtreeIds(scene, id));
-  if (newParent && sub.has(newParent)) return false;           // no cycles
-  if (newParent) {
-    const np = scene.parts.find((p) => p.id === newParent);
-    if (!np || np.type !== 'Group') return false;              // only Group contains
-  }
-  // Recompute local coords so the absolute position is unchanged, per profile.
-  for (const pr of project.profiles) {
-    const s = pr.layout[sceneId];
-    if (!s) continue;
-    const pl = s[id];
-    if (!pl) continue;
-    const o = absOrigin(pr, sceneId, scene, part);             // ancestors of part
-    const childAbsX = o.x + (pl.x || 0), childAbsY = o.y + (pl.y || 0);
-    let baseX = 0, baseY = 0;
-    if (newParent) {
-      const np = scene.parts.find((p) => p.id === newParent);
-      const npo = absOrigin(pr, sceneId, scene, np);
-      const npl = s[newParent] || { x: 0, y: 0 };
-      baseX = npo.x + (npl.x || 0); baseY = npo.y + (npl.y || 0);
-    }
-    pl.x = childAbsX - baseX; pl.y = childAbsY - baseY;
-  }
-  part.parent = newParent;
-  // Reposition in the flat array; the subtree follows via normalize().
-  scene.parts = scene.parts.filter((p) => p.id !== id);
-  if (anchorId && anchorId !== id) {
-    const idx = scene.parts.findIndex((p) => p.id === anchorId);
-    if (idx >= 0) scene.parts.splice(idx + 1, 0, part); else scene.parts.push(part);
-  } else {
-    scene.parts.push(part);
-  }
-  scene.parts = normalize(scene);
-  return true;
-}
-
-// Dissolve a Group: promote children to the group's parent, preserving absolute
-// position in every profile, then delete the group (§8.3.1).
-export function ungroupPart(project, sceneId, groupId) {
-  const scene = sceneById(project, sceneId);
-  const g = scene.parts.find((p) => p.id === groupId);
-  if (!g || g.type !== 'Group') return;
-  const newParent = g.parent || null;
-  const kids = scene.parts.filter((p) => p.parent === groupId);
-  for (const pr of project.profiles) {
-    const s = pr.layout[sceneId];
-    if (!s) continue;
-    const go = s[groupId] || { x: 0, y: 0 };
-    for (const k of kids) { const pl = s[k.id]; if (pl) { pl.x = (pl.x || 0) + (go.x || 0); pl.y = (pl.y || 0) + (go.y || 0); } }
-    delete s[groupId];
-  }
-  for (const k of kids) k.parent = newParent;
-  scene.parts = normalize({ parts: scene.parts.filter((p) => p.id !== groupId) });
-}
-
-// Rename a part within a scene (updates parent refs and every profile's layout
-// key). No-op (returns oldId) on empty/duplicate/invalid id.
+// Rename a part within a scene (updates every profile's layout key). No-op
+// (returns oldId) on empty/duplicate/invalid id.
 export function renamePart(project, sceneId, oldId, newId) {
   newId = (newId || '').trim();
   if (!newId || newId === oldId || !isValidId(newId)) return oldId;
   const scene = sceneById(project, sceneId);
   if (scene.parts.some((p) => p.id === newId)) return oldId;
-  for (const p of scene.parts) {
-    if (p.id === oldId) p.id = newId;
-    if (p.parent === oldId) p.parent = newId;
-  }
+  for (const p of scene.parts) if (p.id === oldId) p.id = newId;
   for (const pr of project.profiles) {
     const s = pr.layout[sceneId];
     if (s && oldId in s) { s[newId] = s[oldId]; delete s[oldId]; }
@@ -560,7 +409,7 @@ export function renameScene(project, oldId, newId) {
 
 // --- AI layout import (§8.15) --------------------------------------------
 // Fold a one-scene x all-profiles AI layout JSON (docs/AI_LAYOUT_IO.md) back
-// into the model. The model keeps ONE shared (id,type,parent)+order per scene
+// into the model. The model keeps ONE shared (id,type)+order per scene
 // plus a per-profile placement map, so part definitions are taken from a single
 // canonical profile and each project profile's placements are rebuilt from it.
 
@@ -582,9 +431,14 @@ function aiPlacement(type, p) {
       visible,
     };
   }
-  if (type === 'Group') return { x, y, visible };
   const w = Math.max(1, toInt(p.w, 1)), h = Math.max(1, toInt(p.h, 1));
-  if (type === 'Rect') return { x, y, w, h, color: toColor(p.color, '#1e2a30'), visible };
+  if (type === 'Rect') return {
+    x, y, w, h,
+    r: Math.max(0, toInt(p.r, 0)),
+    fill: p.fill !== false,
+    color: toColor(p.color, '#1e2a30'),
+    visible,
+  };
   return { x, y, w, h, visible }; // Image (asset lives on the part definition)
 }
 
@@ -600,11 +454,11 @@ export function reconcileAiLayout(project, obj) {
   if (!profs.length) errors.push('Layout has no profiles.');
   if (errors.length) return { errors, warnings };
 
-  // Canonical profile for definitions: defaultProfile if present, else the first.
-  const canonical = profs.find((p) => p.id === project.defaultProfile) || profs[0];
+  // Canonical profile for definitions: the first profile in the AI JSON.
+  const canonical = profs[0];
   const existingScene = sceneById(project, sceneId);
 
-  // Part definitions (id/type/parent/asset) from the canonical profile.
+  // Part definitions (id/type/asset) from the canonical profile.
   const partDefs = [], seen = new Set();
   for (const p of (canonical.parts || [])) {
     if (!isValidId(p.id)) { errors.push(`part id "${p.id}" is not a valid identifier.`); continue; }
@@ -617,25 +471,9 @@ export function reconcileAiLayout(project, obj) {
       else warnings.push(`asset "${p.asset}" (part ${p.id}) is not in the project — left empty.`);
     }
     const prev = existingScene && partDef(existingScene, p.id); // keep existing description
-    partDefs.push({ id: p.id, type: p.type, parent: p.parent == null ? null : String(p.parent), desc: (prev && prev.desc) || '', asset });
+    partDefs.push({ id: p.id, type: p.type, desc: (prev && prev.desc) || '', asset });
   }
   if (errors.length) return { errors, warnings };
-
-  // Validate parents (must reference a Group in the set) and break cycles.
-  const byId = new Map(partDefs.map((d) => [d.id, d]));
-  for (const d of partDefs) {
-    if (d.parent == null) continue;
-    const par = byId.get(d.parent);
-    if (!par) { warnings.push(`part "${d.id}": parent "${d.parent}" not found — moved to root.`); d.parent = null; }
-    else if (par.type !== 'Group') { warnings.push(`part "${d.id}": parent "${d.parent}" is not a Group — moved to root.`); d.parent = null; }
-  }
-  for (const d of partDefs) {
-    const chain = new Set(); let cur = d;
-    while (cur && cur.parent != null) {
-      if (chain.has(cur.id)) { warnings.push(`part "${d.id}": parent cycle — moved to root.`); d.parent = null; break; }
-      chain.add(cur.id); cur = byId.get(cur.parent);
-    }
-  }
 
   // Per-profile placements for every PROJECT profile.
   const aiById = new Map(profs.map((p) => [p.id, p]));
@@ -676,7 +514,6 @@ export function applyAiLayout(project, obj) {
   if (scene) { scene.parts = r.partDefs; scene.desc = desc || scene.desc || ''; }
   else { scene = { id: r.sceneId, desc, parts: r.partDefs }; project.scenes.push(scene); }
   for (const pr of project.profiles) pr.layout[r.sceneId] = r.layouts[pr.id];
-  scene.parts = normalize(scene); // pre-order for draw order / codegen invariants
   return { ok: true, sceneId: r.sceneId, mode: r.mode, warnings: r.warnings };
 }
 

@@ -5,7 +5,7 @@ import { store, update, mutate, checkpoint } from './store.js';
 import {
   DATUMS, DATUM_FX, DATUM_FY, orient, dispDims, pxOf, sceneById, profileById, partDef, placement,
   addPart, removePart, renamePart, addScene, removeScene, renameScene,
-  absOrigin, reorderPart, groupParts, ungroupPart, reparentPart, assetById, profileFonts,
+  absOrigin, reorderPart, assetById, profileFonts,
   reconcileAiLayout, applyAiLayout,
 } from './model.js';
 import { loadMetrics, metricsFor, approxCss, approxWeight, fontByName, fontDetailUrl } from './fonts.js';
@@ -46,8 +46,6 @@ const curPlacement = (partId) => placement(curProfile(), store.ui.sceneId, partI
 const orientText = (w, h) => t('orient.' + orient(w, h));
 
 let scale = 1; // canvas px per logical px (fit * zoom)
-let dragId = null; // part id being dragged in the layer tree
-
 // --- left: scene list ----------------------------------------------------
 function renderScenes() {
   const el = $('scene-list');
@@ -69,9 +67,8 @@ function renderTabs() {
   for (const p of store.project.profiles) {
     const tab = document.createElement('div');
     tab.className = 'tab' + (p.id === store.ui.profileId ? ' active' : '');
-    const def = store.project.defaultProfile === p.id ? '<span class="defbadge">default</span>' : '';
     const d = dispDims(p); // show the effective (rotated) screen, matching the canvas
-    tab.innerHTML = `<span class="t1">${p.id}${def}</span>` +
+    tab.innerHTML = `<span class="t1">${p.id}</span>` +
       `<span class="t2">${d.w}×${d.h} · ${orientText(d.w, d.h)} · rot${p.rotation}</span>`;
     tab.onclick = () => update((st) => { st.ui.profileId = p.id; });
     el.appendChild(tab);
@@ -94,10 +91,9 @@ function renderCanvas() {
 
   const scene = curScene();
   for (const def of scene.parts) {
-    if (def.type === 'Group') continue; // logical node: no visual, select via layer panel
     const e = curPlacement(def.id);
     if (!e) continue;
-    const o = absOrigin(pr, store.ui.sceneId, scene, def); // parent-group origin
+    const o = absOrigin(pr, store.ui.sceneId, scene, def);
     const ax = (o.x + e.x) * scale, ay = (o.y + e.y) * scale;
     const d = document.createElement('div');
     d.className = 'part ' + def.type.toLowerCase() +
@@ -131,7 +127,17 @@ function renderCanvas() {
       d.style.top = ay + 'px';
       d.style.width = e.w * scale + 'px';
       d.style.height = e.h * scale + 'px';
-      if (def.type === 'Rect') d.style.background = e.color;
+      if (def.type === 'Rect') {
+        d.style.borderRadius = Math.max(0, e.r || 0) * scale + 'px';
+        if (e.fill === false) {
+          d.style.background = 'transparent';
+          d.style.border = `${Math.max(1, scale)}px solid ${e.color}`;
+          d.style.boxSizing = 'border-box';
+        } else {
+          d.style.background = e.color;
+          d.style.border = '0';
+        }
+      }
       if (def.type === 'Image' && def.asset) {
         const a = assetById(store.project, def.asset);
         if (a) { d.style.backgroundImage = `url("${a.dataUrl}")`; d.style.backgroundSize = '100% 100%'; d.classList.remove('image'); }
@@ -148,48 +154,21 @@ function renderParts() {
   $('parts-title').textContent = t('parts.title', { scene: store.ui.sceneId });
   const scene = curScene();
   const sel = store.ui.selected;
-  const selDef = sel ? partDef(scene, sel) : null;
   $('part-del').disabled = !sel;
   $('part-front').disabled = !sel;
   $('part-back').disabled = !sel;
-  $('part-group').disabled = !sel;
-  $('part-ungroup').disabled = !(selDef && selDef.type === 'Group');
 
-  // Tree, front-on-top: within each sibling list the last-drawn part shows first.
-  const childrenOf = (pid) => scene.parts.filter((p) => (p.parent || null) === pid);
-  const emit = (pid, depth) => {
-    const sibs = childrenOf(pid);
-    for (let i = sibs.length - 1; i >= 0; i--) {
-      const def = sibs[i];
-      const e = curPlacement(def.id);
-      const hidden = def.type !== 'Group' && !(e && e.visible);
-      const it = document.createElement('div');
-      it.className = 'pitem' + (def.id === sel ? ' active' : '');
-      it.style.paddingLeft = (8 + depth * 14) + 'px';
-      const tag = def.type === 'Group' ? '▾ ' : '';
-      it.innerHTML = `<span>${tag}${def.id}${hidden ? t('list.hidden') : ''}</span><span class="ty">${def.type}</span>`;
-      it.onclick = () => update((st) => { st.ui.selected = def.id; });
-      // Drag-drop reparent (§8.3.1): onto a group = nest; onto a part = sibling.
-      it.draggable = true;
-      it.dataset.id = def.id;
-      it.ondragstart = (ev) => { dragId = def.id; if (ev.dataTransfer) ev.dataTransfer.effectAllowed = 'move'; };
-      it.ondragend = () => { dragId = null; el.querySelectorAll('.dropok').forEach((n) => n.classList.remove('dropok')); };
-      it.ondragover = (ev) => { if (dragId && dragId !== def.id) { ev.preventDefault(); it.classList.add('dropok'); } };
-      it.ondragleave = () => it.classList.remove('dropok');
-      it.ondrop = (ev) => {
-        ev.preventDefault(); ev.stopPropagation();
-        it.classList.remove('dropok');
-        if (!dragId || dragId === def.id) return;
-        const id = dragId; dragId = null;
-        const newParent = def.type === 'Group' ? def.id : (def.parent || null);
-        const anchor = def.type === 'Group' ? null : def.id;
-        mutate((st) => { reparentPart(st.project, st.ui.sceneId, id, newParent, anchor); st.ui.selected = id; });
-      };
-      el.appendChild(it);
-      if (def.type === 'Group') emit(def.id, depth + 1);
-    }
-  };
-  emit(null, 0);
+  // Front-on-top: the last-drawn part shows first in the layer list.
+  for (let i = scene.parts.length - 1; i >= 0; i--) {
+    const def = scene.parts[i];
+    const e = curPlacement(def.id);
+    const hidden = !(e && e.visible);
+    const it = document.createElement('div');
+    it.className = 'pitem' + (def.id === sel ? ' active' : '');
+    it.innerHTML = `<span>${def.id}${hidden ? t('list.hidden') : ''}</span><span class="ty">${def.type}</span>`;
+    it.onclick = () => update((st) => { st.ui.selected = def.id; });
+    el.appendChild(it);
+  }
 }
 
 // Read-only value row (plain text, not an editable input).
@@ -244,13 +223,13 @@ function renderInspector() {
       (e.font && fontDetailUrl(e.font)
         ? ` <a class="font-detail" href="${fontDetailUrl(e.font)}" target="_blank" rel="noopener" title="${t('font.detailTitle')}">${t('font.detail')} ↗</a>` : '') +
       `</div>`;
-  } else if (def.type === 'Group') {
-    h += `<div class="two">${row('x', t('field.x'), 'number', e.x)}${row('y', t('field.y'), 'number', e.y)}</div>`;
-    h += `<p class="sub">${t('hint.group')}</p>`;
   } else {
     h += `<div class="two">${row('x', t('field.x'), 'number', e.x)}${row('y', t('field.y'), 'number', e.y)}</div>`;
     h += `<div class="two">${row('w', t('field.width'), 'number', e.w)}${row('h', t('field.height'), 'number', e.h)}</div>`;
-    if (def.type === 'Rect') h += `<div class="field"><label>${t('field.color')}</label><input type="color" data-k="color" value="${e.color}"></div>`;
+    if (def.type === 'Rect') {
+      h += `<div class="two">${row('r', t('field.radius'), 'number', e.r || 0)}${row('fill', t('field.fill'), 'checkbox', e.fill !== false)}</div>`;
+      h += `<div class="field"><label>${t('field.color')}</label><input type="color" data-k="color" value="${e.color}"></div>`;
+    }
     if (def.type === 'Image') {
       const assets = store.project.assets || [];
       h += `<div class="field"><label>${t('field.asset')}</label><select id="p-asset">` +
@@ -259,7 +238,7 @@ function renderInspector() {
         `</select></div>`;
     }
   }
-  if (def.type !== 'Group') h += row('visible', t('field.visible'), 'checkbox', e.visible);
+  h += row('visible', t('field.visible'), 'checkbox', e.visible);
   h += `<div class="field"><label>${t('field.descPart')}</label><textarea id="p-desc" rows="2">${def.desc || ''}</textarea></div>`;
   el.innerHTML = h;
 
@@ -268,7 +247,7 @@ function renderInspector() {
     const ev = type === 'checkbox' ? 'change' : 'input';
     inp.addEventListener(ev, () => {
       const v = type === 'checkbox' ? inp.checked : (type === 'number' ? (+inp.value || 0) : inp.value);
-      e[k] = (k === 'font' && v === '') ? null : v; // empty font = default
+      e[k] = k === 'font' && v === '' ? null : (k === 'r' ? Math.max(0, v) : v); // empty font = default
       if (k === 'size') { const hint = $('px-hint'); if (hint) hint.textContent = t('units.pxApprox', { px: pxOf(v) }); }
       // keep focus: rerender canvas/list/status but not the inspector
       renderCanvas(); renderParts(); renderStatus();
@@ -429,27 +408,6 @@ export function initDesign() {
   // Reorder among siblings (↑ = toward front, ↓ = toward back; §8.3).
   $('part-front').onclick = () => { if (store.ui.selected) mutate((st) => reorderPart(st.project, st.ui.sceneId, st.ui.selected, +1)); };
   $('part-back').onclick = () => { if (store.ui.selected) mutate((st) => reorderPart(st.project, st.ui.sceneId, st.ui.selected, -1)); };
-
-  // Group the selection / ungroup the selected group (§8.3.1, absolute position kept).
-  $('part-group').onclick = () => {
-    if (!store.ui.selected) return;
-    mutate((st) => { const g = groupParts(st.project, st.ui.sceneId, [st.ui.selected]); if (g) st.ui.selected = g; });
-  };
-  $('part-ungroup').onclick = () => {
-    const sel = store.ui.selected;
-    if (!sel) return;
-    mutate((st) => { ungroupPart(st.project, st.ui.sceneId, sel); st.ui.selected = null; });
-  };
-
-  // Drop on the empty area of the layer list = move to scene root (§8.3.1).
-  const list = $('part-list');
-  list.addEventListener('dragover', (ev) => { if (dragId) ev.preventDefault(); });
-  list.addEventListener('drop', (ev) => {
-    ev.preventDefault();
-    if (!dragId) return;
-    const id = dragId; dragId = null;
-    mutate((st) => { reparentPart(st.project, st.ui.sceneId, id, null); st.ui.selected = id; });
-  });
 
   // Inspector inline edits: checkpoint once per focused-field edit session, in
   // capture phase so the snapshot is taken before the field's own handler mutates.

@@ -1,7 +1,7 @@
 // Assets mode: import image assets (PNG/JPEG), preview them, and manage their
-// ids/usage (§8.4). On import an image is decoded to RGB565 (the MVP export
-// format, Header/PROGMEM) and kept alongside its data URL for preview; codegen
-// emits the RGB565 data (Slice 2). Slices, spritesheets, and fonts are post-MVP.
+// ids/usage (§8.4). On import an image is decoded to RGB565 for Header/PROGMEM
+// output and kept alongside its data URL for preview. Slices and spritesheets
+// are outside the current scope.
 import { store, update, mutate, checkpoint } from './store.js';
 import { assetById, addAsset, removeAsset, renameAsset, assetUsage } from './model.js';
 import { t } from './i18n.js';

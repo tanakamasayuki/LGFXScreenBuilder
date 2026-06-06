@@ -7,7 +7,7 @@
 // Shape (1 scene x all profiles):
 //   { format, version, scene, desc, background?, profiles: [
 //       { id, w, h, rot, parts: [ <part> ... ] } ] }
-// A <part> mirrors model.js placement factories. The part SET (id/type/parent)
+// A <part> mirrors model.js placement factories. The part SET (id/type)
 // is identical across every profile (data contract §8.2); only placement
 // differs per profile.
 
@@ -23,20 +23,21 @@ export const AI_LAYOUT_DOC_URL =
 // One part entry. Field set per type matches model.js:
 //   Text  -> x,y,datum,size,color,text,font  (no w/h; anchored by datum, §8.7;
 //                                              font = adopted font name or null=default)
-//   Group -> x,y                          (logical origin only)
-//   Rect  -> x,y,w,h,color
+//   Rect  -> x,y,w,h,r,fill,color
 //   Image -> x,y,w,h,asset                (asset = existing asset name or null)
 // `visible` is always emitted (defaults to true).
 function partEntry(def, pl) {
-  const e = { id: def.id, type: def.type, parent: def.parent || null };
+  const e = { id: def.id, type: def.type };
   if (def.type === 'Text') {
     e.x = pl.x; e.y = pl.y; e.datum = pl.datum; e.size = pl.size;
     e.color = pl.color; e.text = pl.text; e.font = pl.font || null;
-  } else if (def.type === 'Group') {
-    e.x = pl.x; e.y = pl.y;
   } else { // Rect / Image
     e.x = pl.x; e.y = pl.y; e.w = pl.w; e.h = pl.h;
-    if (def.type === 'Rect') e.color = pl.color;
+    if (def.type === 'Rect') {
+      e.r = pl.r || 0;
+      e.fill = pl.fill !== false;
+      e.color = pl.color;
+    }
     if (def.type === 'Image') e.asset = def.asset || null;
   }
   e.visible = pl.visible !== false;

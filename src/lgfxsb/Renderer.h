@@ -19,13 +19,13 @@ namespace lgfxsb
     uint8_t _profile = 0; // 0 = Auto (actual resolution deferred to draw time; 1+ = enum Profile value = index + 1)
 
     // Resolve the selected profile to a concrete index (§8.9.4). Auto order:
-    // 1) explicit board match, 2) orientation-sensitive size match, 3) default.
+    // 1) explicit board match, 2) orientation-sensitive size match, 3) first profile.
     uint8_t resolveProfileIndex() const
     {
       if (_profile != 0)
       {
         uint8_t idx = _profile - 1;
-        return (idx < _project.profileCount) ? idx : _project.defaultProfile;
+        return (idx < _project.profileCount) ? idx : 0;
       }
 
       // 1) Explicit board match (highest priority): lets a specific device get a
@@ -48,7 +48,6 @@ namespace lgfxsb
       const int16_t nativeW = static_cast<int16_t>((rot & 1) ? ph : pw);
       const int16_t nativeH = static_cast<int16_t>((rot & 1) ? pw : ph);
       int firstSize = -1;
-      bool defaultMatches = false;
       for (uint8_t pi = 0; pi < _project.profileCount; ++pi)
       {
         const ProfileDesc &pr = _project.profiles[pi];
@@ -56,15 +55,13 @@ namespace lgfxsb
         {
           if (firstSize < 0)
             firstSize = pi;
-          if (pi == _project.defaultProfile)
-            defaultMatches = true;
         }
       }
-      if (firstSize >= 0) // prefer default when it shares the size, else first declared
-        return defaultMatches ? _project.defaultProfile : static_cast<uint8_t>(firstSize);
+      if (firstSize >= 0)
+        return static_cast<uint8_t>(firstSize);
 
       // 3) No size match either: fall back so something always renders.
-      return _project.defaultProfile;
+      return 0;
     }
 
     const SceneDesc *findScene(SceneId id) const
@@ -78,21 +75,6 @@ namespace lgfxsb
     const PartLayout &layoutOf(uint8_t profileIndex, uint16_t partIndex) const
     {
       return _project.layouts[profileIndex * _project.partCount + partIndex];
-    }
-
-    // Walk the parent chain to compute a part's absolute origin (inclusive of itself).
-    void absOrigin(uint16_t partIndex, uint8_t profileIndex, int &ox, int &oy) const
-    {
-      ox = 0;
-      oy = 0;
-      int cur = static_cast<int>(partIndex);
-      while (cur >= 0)
-      {
-        const PartLayout &lo = layoutOf(profileIndex, static_cast<uint16_t>(cur));
-        ox += lo.x;
-        oy += lo.y;
-        cur = _project.parts[cur].parent;
-      }
     }
 
     uint16_t color565(uint32_t rgb) const
@@ -121,15 +103,12 @@ namespace lgfxsb
         const PartDesc &pd = _project.parts[gpi];
         const PartLayout &lo = layoutOf(pi, gpi);
         const Value v = (k < valueCount) ? values[k] : Value();
-        drawPart(pd, lo, gpi, pi, v);
+        drawPart(pd, lo, v);
       }
     }
 
-    void drawPart(const PartDesc &pd, const PartLayout &lo, uint16_t gpi, uint8_t pi, const Value &v)
+    void drawPart(const PartDesc &pd, const PartLayout &lo, const Value &v)
     {
-      if (pd.type == PartType::Group)
-        return; // containers are not drawn
-
       // Visibility: base on layout.visible, overridden by a Bool value if present.
       bool visible = lo.visible;
       if (v.kind == Value::Kind::Bool)
@@ -137,13 +116,26 @@ namespace lgfxsb
       if (!visible)
         return;
 
-      int ox = 0, oy = 0;
-      absOrigin(gpi, pi, ox, oy);
+      const int ox = lo.x;
+      const int oy = lo.y;
 
       switch (pd.type)
       {
       case PartType::Rect:
-        _gfx->fillRect(ox, oy, lo.w, lo.h, color565(lo.color));
+        if (lo.fill)
+        {
+          if (lo.r > 0)
+            _gfx->fillRoundRect(ox, oy, lo.w, lo.h, lo.r, color565(lo.color));
+          else
+            _gfx->fillRect(ox, oy, lo.w, lo.h, color565(lo.color));
+        }
+        else
+        {
+          if (lo.r > 0)
+            _gfx->drawRoundRect(ox, oy, lo.w, lo.h, lo.r, color565(lo.color));
+          else
+            _gfx->drawRect(ox, oy, lo.w, lo.h, color565(lo.color));
+        }
         break;
 
       case PartType::Text:

@@ -9,11 +9,10 @@ namespace lgfxsb
 
   using SceneId = uint16_t;
 
-  // Part type. Group is a non-drawing container (§8.3).
+  // Drawable part type (§8.2).
   enum class PartType : uint8_t
   {
-    Group = 0,
-    Rect,
+    Rect = 0,
     Text,
     Image,
   };

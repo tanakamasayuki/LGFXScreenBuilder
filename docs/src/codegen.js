@@ -7,8 +7,7 @@
 import { sceneById, placement, DATUMS, profileFonts } from './model.js';
 import { boardEnum } from './boards.js';
 
-const PART_ENUM = { Group: 'Group', Rect: 'Rect', Text: 'Text', Image: 'Image' };
-const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const PART_ENUM = { Rect: 'Rect', Text: 'Text', Image: 'Image' };
 const hex = (css) => '0x' + (css || '#000000').replace('#', '').padStart(6, '0').toLowerCase();
 const cstr = (s) => '"' + String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
 
@@ -21,36 +20,15 @@ function flatten(project) {
     for (const p of sc.parts) flat.push({ sceneId: sc.id, part: p, gi: flat.length });
     sceneRange[sc.id] = { start, count: sc.parts.length };
   }
-  // resolve parent (part id within the same scene) to a global index, else -1
-  const giOf = (sceneId, partId) => flat.find((f) => f.sceneId === sceneId && f.part.id === partId)?.gi ?? -1;
-  for (const f of flat) f.parentGi = f.part.parent ? giOf(f.sceneId, f.part.parent) : -1;
   return { flat, sceneRange };
 }
 
-// Access path of a part from its scene struct root, via group ancestors.
-function pathOf(scene, part) {
-  const segs = [part.id];
-  let cur = part;
-  while (cur.parent) {
-    const parent = scene.parts.find((p) => p.id === cur.parent);
-    if (!parent) break;
-    segs.unshift(parent.id);
-    cur = parent;
-  }
-  return segs.join('.');
-}
-
-// Build the typed scene struct body (nested by Group; Text -> const char* field).
-function structBody(scene, parentId, indent, defProfile) {
+// Build the typed scene struct body (Text -> const char* field).
+function structBody(scene, indent, defProfile) {
   const pad = '  '.repeat(indent);
   let out = '';
   for (const p of scene.parts) {
-    if ((p.parent || null) !== (parentId || null)) continue;
-    if (p.type === 'Group') {
-      out += `${pad}struct ${cap(p.id)} {\n`;
-      out += structBody(scene, p.id, indent + 1, defProfile);
-      out += `${pad}} ${p.id};\n`;
-    } else if (p.type === 'Text') {
+    if (p.type === 'Text') {
       const lo = placement(defProfile, scene.id, p.id);
       out += `${pad}const char* ${p.id} = ${cstr(lo ? lo.text : '')};\n`;
     }
@@ -58,17 +36,15 @@ function structBody(scene, parentId, indent, defProfile) {
   return out;
 }
 
-// opts (all optional): { profiles: [ids to include], defaultProfile: id }. When a
-// subset is given, the enum and all descriptor tables are restricted to it and
-// the fallback index is relative to that subset (§10).
+// opts (all optional): { profiles: [ids to include] }. When a subset is given,
+// the enum and all descriptor tables are restricted to it (§10).
 export function generateHeader(project, opts = {}) {
   const name = project.name;
   const { flat, sceneRange } = flatten(project);
   const profiles = (opts.profiles && opts.profiles.length)
     ? project.profiles.filter((p) => opts.profiles.includes(p.id))
     : project.profiles;
-  const defProfile = profiles.find((p) => p.id === (opts.defaultProfile || project.defaultProfile)) || profiles[0];
-  const defIndex = Math.max(0, profiles.indexOf(defProfile));
+  const defProfile = profiles[0];
 
   let s = '';
   s += `#pragma once\n\n`;
@@ -83,7 +59,7 @@ export function generateHeader(project, opts = {}) {
   s += `namespace Scene {\n`;
   project.scenes.forEach((sc, i) => {
     s += `  struct ${sc.id} {\n    static constexpr lgfxsb::SceneId id = ${i};\n`;
-    s += structBody(sc, null, 2, defProfile);
+    s += structBody(sc, 2, defProfile);
     s += `  };\n`;
   });
   s += `}\n\n`;
@@ -98,7 +74,7 @@ export function generateHeader(project, opts = {}) {
       ? cstr((placement(defProfile, f.sceneId, p.id) || {}).text || '')
       : 'nullptr';
     const ai = (p.type === 'Image' && p.asset) ? assetIndexOf(p.asset) : -1;
-    s += `  {${cstr(p.id)}, lgfxsb::PartType::${PART_ENUM[p.type]}, ${f.parentGi}, ${text}, ${ai}},  // ${f.gi} ${f.sceneId}.${p.id}\n`;
+    s += `  {${cstr(p.id)}, lgfxsb::PartType::${PART_ENUM[p.type]}, ${text}, ${ai}},  // ${f.gi} ${f.sceneId}.${p.id}\n`;
   });
   s += `};\nstatic constexpr uint16_t kPartCount = ${flat.length};\n\n`;
 
@@ -110,7 +86,7 @@ export function generateHeader(project, opts = {}) {
   s += `};\n\n`;
 
   // layouts [profile][part]
-  s += `// {x, y, w, h, datum, size, color, visible, font}\n`;
+  s += `// {x, y, w, h, r, datum, size, color, fill, visible, font}\n`;
   s += `static const lgfxsb::PartLayout kLayouts[] = {\n`;
   profiles.forEach((pr) => {
     // Only fonts enabled for this profile may be referenced — that is the
@@ -122,12 +98,14 @@ export function generateHeader(project, opts = {}) {
       const isText = f.part.type === 'Text';
       const x = e.x || 0, y = e.y || 0;
       const w = isText ? 0 : (e.w || 0), h = isText ? 0 : (e.h || 0);
+      const r = f.part.type === 'Rect' ? (e.r || 0) : 0;
       const datum = isText ? `(uint8_t)lgfxsb::Datum::${e.datum || 'TL'}` : '0';
       const size = isText ? (e.size || 1) : 0;
       const color = (f.part.type === 'Rect') ? hex(e.color) : (isText ? hex(e.color) : '0');
+      const fill = (f.part.type !== 'Rect' || e.fill !== false) ? 'true' : 'false';
       const vis = (e.visible === false) ? 'false' : 'true';
       const font = (isText && e.font && enabled.has(e.font)) ? `&lgfx::v1::fonts::${e.font}` : 'nullptr';
-      s += `  {${x}, ${y}, ${w}, ${h}, ${datum}, ${fmtFloat(size)}, ${color}, ${vis}, ${font}},  // ${f.sceneId}.${f.part.id}\n`;
+      s += `  {${x}, ${y}, ${w}, ${h}, ${r}, ${datum}, ${fmtFloat(size)}, ${color}, ${fill}, ${vis}, ${font}},  // ${f.sceneId}.${f.part.id}\n`;
     });
   });
   s += `};\n\n`;
@@ -166,7 +144,7 @@ export function generateHeader(project, opts = {}) {
 
   // Project descriptor
   s += `static const lgfxsb::Project project = {\n`;
-  s += `  detail::kProfiles, ${profiles.length}, /*defaultProfile*/ ${defIndex},\n`;
+  s += `  detail::kProfiles, ${profiles.length},\n`;
   s += `  detail::kScenes, ${project.scenes.length},\n`;
   s += `  detail::kParts, detail::kPartCount,\n`;
   s += `  detail::kLayouts,\n`;
@@ -184,7 +162,7 @@ export function generateHeader(project, opts = {}) {
     } else {
       s += `  void show(const Scene::${sc.id}& s) {\n    lgfxsb::Value v[${sc.parts.length}];\n`;
       texts.forEach(({ p, k }) => {
-        s += `    v[${k}] = lgfxsb::Value::text(s.${pathOf(sc, p)});\n`;
+        s += `    v[${k}] = lgfxsb::Value::text(s.${p.id});\n`;
       });
       s += `    renderScene(Scene::${sc.id}::id, v, ${sc.parts.length});\n  }\n`;
     }
@@ -209,7 +187,7 @@ export function generateSketch(project, framework, opts = {}) {
   framework = framework || project.targetLibrary || 'M5Unified';
   const profs = (opts.profiles && opts.profiles.length)
     ? project.profiles.filter((p) => opts.profiles.includes(p.id)) : project.profiles;
-  const defProfile = profs.find((p) => p.id === (opts.defaultProfile || project.defaultProfile)) || profs[0];
+  const defProfile = profs[0];
 
   let inc, decl, init, loopPre = '';
   if (framework === 'M5GFX') {
@@ -243,10 +221,10 @@ export function generateSketch(project, framework, opts = {}) {
   if (demo) {
     const v = varOf(demo);
     setupBody += `\n  Scene::${demo.id} ${v};\n`;
-    for (const p of demo.parts.filter((x) => x.type === 'Text')) setupBody += `  ${v}.${pathOf(demo, p)} = ${preview(demo, p)};\n`;
+    for (const p of demo.parts.filter((x) => x.type === 'Text')) setupBody += `  ${v}.${p.id} = ${preview(demo, p)};\n`;
     setupBody += `  screen.show(${v});\n`;
     const t0 = demo.parts.find((p) => p.type === 'Text');
-    loopBody = `  static Scene::${demo.id} ${v};\n  ${v}.${pathOf(demo, t0)} = ${preview(demo, t0)};\n  screen.update(${v});  // values only; layout is fixed\n  delay(1000);\n`;
+    loopBody = `  static Scene::${demo.id} ${v};\n  ${v}.${t0.id} = ${preview(demo, t0)};\n  screen.update(${v});  // values only; layout is fixed\n  delay(1000);\n`;
   }
 
   let s = '';

@@ -1,4 +1,4 @@
-// Profiles mode: define profiles (size / default rotation / board assignment)
+// Devices mode: define profiles (size / default rotation / board assignment)
 // and the project's target library (§8.9). Each profile holds an independent
 // layout per scene; the fallback ("default") is chosen at export, not here.
 // Ported from the validated profiles probe.
