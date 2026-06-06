@@ -4,7 +4,7 @@
 
 LGFXScreenBuilder is a project for creating the screen data of Arduino applications that use LovyanGFX and M5GFX with a browser-based authoring tool, and outputting it in a form usable as an Arduino library.
 
-This project does not provide a GUI framework itself. Instead, it provides a mechanism for designing and managing screen layouts, assets, scenes, and animation definitions, and treating them on the embedded side as a lightweight drawing runtime.
+This project does not provide a GUI framework itself. Instead, it provides a mechanism for designing and managing screen layouts, assets, and scenes, and treating them on the embedded side as a lightweight static drawing runtime.
 
 Instead of building screens directly in code, developers design screens with an HTML-based authoring tool that runs on GitHub Pages, and incorporate the generated data into their Arduino projects.
 
@@ -12,9 +12,10 @@ Instead of building screens directly in code, developers design screens with an 
 
 - Make it possible to create screen layouts for LovyanGFX/M5GFX with a GUI.
 - Separate screen design from the application logic on the Arduino side.
-- Centrally manage scenes, parts, assets, and animations.
+- Centrally manage scenes, parts, and assets.
 - Provide a structure that can support multiple M5Stack-family devices and LovyanGFX-compatible devices.
 - Make it possible to easily load the generated output from an Arduino library and update the screen display simply by updating values.
+- Provide static layout JSON that is easy for AI assistants to understand and edit.
 - Make it possible to distribute and run the authoring tool using GitHub Pages alone.
 
 ## 3. Non-Goals
@@ -22,8 +23,10 @@ Instead of building screens directly in code, developers design screens with an 
 - Do not implement a general-purpose GUI framework like LVGL.
 - Do not provide a complex widget-tree management API on the Arduino side.
 - Do not require a web server or cloud storage features.
-- In the initial phase, do not require an advanced event system, layout engine, or two-way data binding.
-- Do not cover all display devices from the start.
+- Do not provide an advanced event system, layout engine, or two-way data binding.
+- Do not provide an animation engine, state-transition engine, or real-time graph drawing engine.
+- Sensor reading, value formatting, high-frequency updates, custom drawing, and application state management are responsibilities of user code.
+- Do not aim to cover every display device.
 
 ## 4. Intended Users
 
@@ -49,10 +52,9 @@ The assumed skill set is as follows.
 4. Creates a scene.
 5. Places parts such as Text, Image, and Rect on the scene.
 6. Overrides per-profile coordinates and display settings as needed.
-7. Configures animations and the display for state changes.
-8. Exports the data for Arduino.
-9. Uses the LGFXScreenBuilder library in an Arduino project and loads the generated data.
-10. In the application code, assigns values to the generated scene structures and draws them.
+7. Exports the data for Arduino.
+8. Uses the LGFXScreenBuilder library in an Arduino project and loads the generated data.
+9. In the application code, assigns values to the generated scene structures and draws them. Real-time graphs or custom drawing are implemented by user code directly with LovyanGFX/M5GFX.
 
 ## 6. System Configuration
 
@@ -76,7 +78,6 @@ The library provides the following.
 - Drawing parts
 - Updating part values
 - Toggling visibility
-- Playing basic animations
 - A drawing adapter that absorbs the differences between LovyanGFX and M5GFX
 
 ### 6.2 Web Authoring Tool
@@ -179,11 +180,11 @@ Rather than fully transitioning the entire screen, the authoring tool switches t
 Top-level modes:
 
 - Design: Scenes, layers, part placement, property editing
-- Assets: Management of images, fonts, sprite sheets, slices, and output formats
+- Assets: Management of images, fonts, slices, and output formats
 - Export: Arduino output artifacts, generation API, asset output settings, downloads
 - Devices: Management of profiles (screen size, rotation, assigned board, layout) and the target library
 
-In the MVP, Design is implemented as the core, and Assets and Export are gradually expanded within the same layout. Switching the preview target profile is placed as tabs at the top of the Design canvas. Devices is treated as an independent mode once editing of profiles and per-device layouts increases.
+Design is the core mode, and Assets and Export use the same 3-pane structure. Switching the preview target profile is placed as tabs at the top of the Design canvas. Profiles is an independent mode for editing profiles and device-specific layouts.
 
 ### 8.1 Scene Management
 
@@ -205,21 +206,26 @@ A screen is composed as a collection of parts.
 
 The terminology is organized as follows.
 
-- Asset: Material referenced by a Part, not something placed directly on the screen. Images, fonts, sprite sheets, color palettes, etc.
-- Part: A general term for the elements placed on a Scene. There are Parts that draw (Text, Image, Rect, etc.) and container Parts (Group) that group children without drawing.
+- Asset: Material referenced by a Part, not something placed directly on the screen. Images, fonts, color palettes, etc.
+- Part: A general term for the elements placed on a Scene. There are Parts that draw (Text, Image, Rect, Line, Circle, etc.) and container Parts (Group) that group children without drawing.
 - Group: A container Part that groups child Parts. It provides hierarchy, namespace, and a local-coordinate reference, and does not draw itself.
-- Component: A template for reusing multiple Parts. Not handled in the MVP; a future extension.
+- Component: A template for reusing multiple Parts. Not handled in the current specification; a future extension.
 
 A Group is also a kind of Part (a container Part) and is added from `Parts`. In Design mode, the `Parts` section always displays the Parts that can be added. The path for adding elements to the screen is unified into `Parts`, and Assets are not given special treatment alone.
 
-Assets mode is used to register material and manage slices, sprite sheets, fonts, and output formats. When an Image is added in Design mode, the referenced Asset is selected in the property pane on the right.
+Assets mode is used to register material and manage image slices, fonts, and output formats. When an Image is added in Design mode, the referenced Asset is selected in the property pane on the right.
 
-The Parts supported in the MVP are limited to the following.
+The supported Parts are as follows.
 
 - Text
 - Image
 - Rect
+- Line
+- Circle
+- Ellipse
 - Group
+
+Rect / Line / Circle / Ellipse are basic shapes included so AI-assisted static layouts can look reasonably polished. They stay within the range that maps naturally to LovyanGFX/M5GFX basic drawing APIs, such as fill, stroke width, and color. Advanced vector editing such as rounded corners, shadows, gradients, complex paths, or boolean operations is not provided.
 
 Candidate future extensions are as follows.
 
@@ -231,9 +237,9 @@ Candidate future extensions are as follows.
 
 `Text` is a general-purpose part that displays an arbitrary string. It can be used for fixed labels, status strings, or displaying numbers converted to strings. The name is `Text` rather than `Label`, prioritizing an expression that corresponds well to the drawing APIs of LovyanGFX/M5GFX.
 
-A part dedicated to numeric display is not added in the MVP. When you want to handle a prefix/suffix, decimal places, and units for temperature, voltage, battery level, etc., in the initial phase the user code assembles the string and passes it to `Text`.
+A part dedicated to numeric display is not added in the current specification. When you want to handle a prefix/suffix, decimal places, and units for temperature, voltage, battery level, etc., user code assembles the string and passes it to `Text`.
 
-In the future, a `ValueText` or `Value`-family part will be added as needed, configurable with the following.
+A `ValueText` or `Value`-family part is not handled in the current specification. If introduced, it would be considered separately with settings such as the following.
 
 - Numeric value
 - prefix
@@ -269,28 +275,25 @@ The editor uses local coordinates as the primary edited value, and displays abso
 
 Multiple parts can be grouped.
 
-The MVP Group is a container Part that provides hierarchy, namespace, and a local-coordinate reference (it does not draw itself).
+Group is a container Part that provides hierarchy, namespace, and a local-coordinate reference (it does not draw itself).
 
-What the MVP Group has:
+What Group has:
 
 - ID
 - Local coordinates
 - Child Parts
 - Drawing order
 
-The following are not handled in the MVP.
+Group does not have the following.
 
 - Visibility
 - Clipping
 - Background
 - Border
-- Animation
 
-In the future, the following will be operable on a per-group basis.
+The following are not handled in the current specification. If introduced, they are considered separately.
 
 - Move
-- Visibility
-- Animation
 - Clipping
 
 The `children` array of a scene and a group represents the drawing order. Drawing proceeds from the head of the array, and later parts are drawn in front. That is, the last-drawn part is displayed on top of the overlap.
@@ -368,21 +371,15 @@ Examples of image assets:
 
 Assets are given a unique ID.
 
-Image assets are designed so that multiple storage formats and drawing paths can be selected depending on the use case.
+Image assets are converted to a format close to the drawing target for Arduino output.
 
-Assumed asset types:
+Supported image output:
 
 - Flash direct-draw RAW
-- In-memory fast drawing
-- Compressed format
 
 Flash direct-draw RAW is pre-converted to a format close to the drawing target, such as RGB565, and draws data in PROGMEM or on the file system directly via the equivalent of `pushImage()`. Its expansion processing is light, and it is the standard format for ordinary UI parts and fixed images displayed frequently.
 
-In-memory fast drawing holds an already-expanded image in RAM/PSRAM at startup or at scene start, and uses it at high speed for repeated drawing and animation. Because RAM usage increases, it is explicitly selected per target asset.
-
-The compressed format holds compressed data such as PNG/JPEG and decodes it for drawing at the necessary timing. It is used for images where you want to reduce Flash usage, or images that are displayed only occasionally. Because the cost is high for frequent redrawing or tile-split drawing, it is not made the standard format.
-
-In the initial implementation, Flash direct-draw RAW is given top priority, and in-memory fast drawing and the compressed format are treated as extensible formats.
+In-memory fast drawing, compressed formats, and storage-destination variations (LittleFS/SPIFFS/SD/RAM/PSRAM) are not handled in the current specification. If needed, user code manages those images and draws them directly with LovyanGFX/M5GFX.
 
 ### 8.5 Slicing
 
@@ -401,7 +398,7 @@ dashboard.png
 
 ### 8.6 Sprite Sheet Support
 
-Images for frame animation can be managed as a sprite sheet.
+Sprite sheets are not handled as an independent feature in the current specification. Regions cut out by image slicing can be used as static Images, but frame animation and auto-play are not provided.
 
 Example:
 
@@ -425,13 +422,13 @@ The following can be managed.
 
 A Text part is placed by an **anchor point (`x` / `y`) + a datum**. Character drawing in LovyanGFX/M5GFX is based on `drawString(text, x, y)` + `setTextDatum(...)`, and `datum` determines where on the text (one of 9 points: top/middle/bottom vertically × left/center/right horizontally) x,y is aligned. As a result, **center alignment and right alignment relative to a point can be expressed with the datum alone**, and a Text part does not have a drawing rectangle (width/height). The editor's selection box is automatically computed from the measured text bounds. Image / Rect inherently require a rectangle (`w` / `h`), so they keep it as before.
 
-**Clipping (truncation/ellipsis), wrapping (multiple lines), and in-box alignment** for an arbitrary-width rectangle are deferred as a "text box" feature that gives Text a width and height (§15). The MVP sticks to the equivalent of a single-line `drawString`, and does not have automatic wrapping at the screen edge (the equivalent of `setTextWrap`).
+**Clipping (truncation/ellipsis), wrapping (multiple lines), and in-box alignment** for an arbitrary-width rectangle are not handled in the current specification. Text is equivalent to a single-line `drawString`, and does not have automatic wrapping at the screen edge (the equivalent of `setTextWrap`).
 
 The unit for specifying text size is the **multiplier as the canonical (stored) value**. Text enlargement in LovyanGFX/M5GFX is `setTextSize(float)` = a multiplier relative to the base font, which is the primary primitive, and the px height is a derived value (font-dependent) obtained as "base font height × multiplier". Therefore, by making the stored value the multiplier, the actual-device display matches the generated code (which directly outputs `setTextSize(n)`), avoiding silent size discrepancies.
 
-In addition to the multiplier input, the editor **displays the resulting px height as auxiliary information** (in the MVP, which assumes the default font, it can be computed accurately as `base height × multiplier`). The reverse-lookup input of "entering a px height and automatically selecting the font + multiplier" is deferred (§15).
+In addition to the multiplier input, the editor **displays the resulting px height as auxiliary information**. The reverse-lookup input of "entering a px height and automatically selecting the font + multiplier" is not handled in the current specification.
 
-In the initial phase, the font preview in the browser is an approximate display. The look is checked using fonts the browser can handle, such as web fonts, system fonts, and user-loaded TTF/OTF.
+The live font preview in the browser is an approximate display. The look is checked using fonts the browser can handle, such as web fonts, system fonts, and user-loaded TTF/OTF.
 
 For Arduino output, a font-reference scheme that is easy to handle with LovyanGFX/M5GFX is prioritized. Because the browser preview and the actual-device display may not match exactly, the spec treats it as an approximate preview.
 
@@ -439,7 +436,7 @@ If matching the actual-device display becomes necessary in the future, a scheme 
 
 #### 8.7.1 Font policy (presets first)
 
-The MVP handles only the **preset fonts built into LovyanGFX / M5GFX**. The runtime does not output any font payload; it merely references a font with `setFont(&fonts::<Name>)`. **Custom fonts** that generate glyph data for only the used characters from a PC font (TTF/OTF) are deferred (§15). Even when custom fonts are added, the intended scheme — like image assets — is to extract the used characters into data and use the same glyphs in the browser and on the device (consistent with the future direction at the end of this section).
+The tool handles the **preset fonts built into LovyanGFX / M5GFX**. The runtime does not output any font payload; it merely references a font with `setFont(&fonts::<Name>)`. **Custom fonts** that generate glyph data for only the used characters from a PC font (TTF/OTF) are not handled in the current specification. If custom fonts are added, the intended scheme — like image assets — is to extract the used characters into data and use the same glyphs in the browser and on the device (consistent with the future direction at the end of this section).
 
 #### 8.7.2 Font catalog (how it is generated)
 
@@ -497,22 +494,18 @@ rarely updated). This tool only **links** to it.
   names are stable enough to still match; an absent name falls back to the index / a 404.
 - The catalog site's own spec lives in the LGFXFontCatalog repo (`SPEC.ja.md` / `SPEC.md`).
 
-### 8.8 Animation
+### 8.8 Dynamic Drawing and Animation
 
-The following animations are candidates for support.
+LGFXScreenBuilder generates static base layouts. It does not provide an animation engine, state-transition engine, real-time graph engine, or drawing engine for high-frequency updates.
 
-- Frame animation
-- Show/hide toggling
-- Fade
-- Move
-- Scale
+When dynamic visuals are needed, user code is responsible for them:
 
-Animation can be executed at the following timings.
+- Update generated Text values.
+- Toggle Part visibility when needed.
+- Draw graphs, waveforms, meters, game-like visuals, and similar content directly with LovyanGFX/M5GFX.
+- Manage timers, state transitions, and animation progress in the application.
 
-- At scene start
-- At scene end
-- On state change
-- On explicit execution from the Arduino-side API
+This keeps the tool and AI layout JSON focused on static layouts and avoids making the specification unnecessarily complex.
 
 ### 8.9 Profiles (Multi-Device Support)
 
@@ -1231,7 +1224,7 @@ A Group extension that bundles several display states into one part and switches
   - **Animation (auto-play)**: each frame has a display duration (Wait, ms) and a loop on/off flag, playing back automatically like a GIF.
 - **Rendering model (pull-based)**: the runtime does not own a redraw loop. When the app draws (show / update) at whatever cadence it likes, the frame is **advanced by the time elapsed since the previous draw**. If a lot of time elapsed it advances several frames to stay wall-clock accurate, handling loop wrap-around. The engine keeps, per instance, the "current frame" and the "last timestamp (or accumulated elapsed)". Animation smoothness depends on the app's draw cadence.
 - **Reuse (template style)**: a frame group can be reused as a template. This is not a symbol/instance with references, propagation, or overrides — inserting it **deep-copies it so it is fully independent thereafter** (editing the copy does not affect others). Both built-in stock templates and user-defined templates are envisioned.
-- **Relation to sprites**: image slices (sub-rectangles of an asset; a separate post-MVP feature) are **placed by hand** into each frame. There is no automatic "frame number = slice number" mapping.
+- **Relation to sprites**: image slices (sub-rectangles of an asset) are **placed by hand** into each frame. There is no automatic "frame number = slice number" mapping.
 - **Implementation scope**: manual state switching can be implemented first and auto-play (Wait + loop) later; how far to implement is decided at implementation time.
 
 ### 16.2 Static text (fixed-text designation)
@@ -1255,14 +1248,3 @@ Possible uses:
 - Inspect adopted fonts, per-profile enabled fonts, font size/script/flash-cost information, and related font asset management data.
 
 This is not implemented for now. The format name, fields, and UI (for example, "Copy font context JSON") are undecided. If introduced, it should be a separate command and separate specification, not mixed into AI layout JSON with fields such as `fontRequests`.
-
-## 17. Success Criteria
-
-The success criteria for the initial release are as follows.
-
-- The authoring tool can be opened on GitHub Pages.
-- A screen can be created and saved as a project file.
-- Data for Arduino can be exported.
-- The sample can be built on both LovyanGFX and M5GFX.
-- Values can be assigned to the generated scene structures from the Arduino side, and text update and visibility toggling can be done.
-- Management of multiple screens becomes clearer than directly lining up existing `drawString()` and `drawPng()` calls.
