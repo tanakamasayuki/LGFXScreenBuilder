@@ -70,6 +70,8 @@ select.icon { padding: 0 4px; }
 .pitem.active { border-color: #8fcac5; background: #e1f2f0; }
 .pitem.dropok { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent) inset; }
 .sitem .cnt, .pitem .ty { color: var(--muted); font-size: 11px; }
+.profile-order { display: inline-flex; align-items: center; gap: 4px; }
+.profile-order .mini { min-height: 20px; padding: 0 5px; }
 
 .field { display: grid; gap: 4px; margin-bottom: 9px; }
 .field .lab { display: flex; justify-content: space-between; align-items: baseline; }
@@ -85,10 +87,6 @@ select.icon { padding: 0 4px; }
 /* --- Profiles view ----------------------------------------------------- */
 :root { --warn: #9a5b00; --warn-bg: #fdf2dd; }
 .view[hidden] { display: none; }
-.libbar { display: flex; align-items: center; gap: 10px; padding: 9px 14px; background: var(--accent-soft); border-bottom: 1px solid #9ed0cc; }
-.libbar-label { font-size: 13px; font-weight: 650; color: #075f5c; }
-.libbar select { min-height: 30px; border: 1px solid #9ed0cc; border-radius: 6px; padding: 2px 8px; background: var(--panel); color: var(--text); }
-.libbar-note { font-size: 12px; color: #075f5c; }
 .banner { padding: 6px 14px; font-size: 12px; }
 .banner:empty { display: none; }
 .banner.ok { color: var(--accent); }
@@ -102,7 +100,9 @@ select.icon { padding: 0 4px; }
 .chip button { min-height: 18px; width: 18px; padding: 0; border: 0; border-radius: 9px; line-height: 1; background: transparent; color: var(--muted); }
 .catalog { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
 .board { border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; cursor: pointer; background: var(--panel); text-align: left; }
+.board:disabled { opacity: 1; color: var(--text); cursor: default; }
 .board:hover { background: var(--soft); }
+.board:disabled:hover { background: var(--panel); }
 .board.assigned { border-color: #8fcac5; background: #e1f2f0; }
 .board.mismatch { border-color: #e3c887; background: var(--warn-bg); }
 .board .bn { font-size: 13px; }

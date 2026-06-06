@@ -271,6 +271,14 @@ export function removeProfile(project, id) {
   return true;
 }
 
+export function moveProfile(project, id, dir) {
+  const i = project.profiles.findIndex((p) => p.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= project.profiles.length) return false;
+  [project.profiles[i], project.profiles[j]] = [project.profiles[j], project.profiles[i]];
+  return true;
+}
+
 // Rename a profile (C identifier; becomes Profile::<Id>). No-op on dup/invalid.
 export function renameProfile(project, oldId, newId) {
   newId = (newId || '').trim();

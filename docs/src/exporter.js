@@ -110,7 +110,10 @@ export function renderExport() {
 }
 
 export function initExport() {
-  $('export-fw').addEventListener('change', renderExport);
+  $('export-fw').addEventListener('change', () => {
+    store.project.targetLibrary = $('export-fw').value;
+    renderExport();
+  });
   $('export-download').addEventListener('click', () => {
     if (!included.size || !selFile) return;
     const mime = selFile.endsWith('.h') ? 'text/x-c' : 'text/plain';

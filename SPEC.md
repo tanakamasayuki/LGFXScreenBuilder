@@ -182,7 +182,7 @@ Top-level modes:
 - Assets: Management of image assets, colors, and image output format
 - Fonts: Adoption of preset fonts, per-profile enablement, and font information/preview
 - Export: Arduino output artifacts, generation API, asset output settings, downloads
-- Devices: Management of profiles (screen size, rotation, order, layout) and the target library
+- Devices: Management of profiles (screen size, rotation, order, layout)
 
 Design is the core mode, and Assets, Fonts, and Export use the same 3-pane structure. Switching the preview target profile is placed as tabs at the top of the Design canvas. Devices is an independent mode for editing profiles and device-specific layouts.
 
@@ -697,7 +697,7 @@ The official save format of a project is `.lgfxsb.json`. The user explicitly sav
 Basic startup flow:
 
 - No startup chooser is shown: if a previous auto-save exists it is restored automatically, otherwise the sample project opens. Switching between continue / new / open is done explicitly via the toolbar New / Open.
-- When creating new, specify the target library (LovyanGFX / M5GFX / M5Unified, default M5Unified), the profile to create (screen size / rotation), the project name, and the first scene. Because the target library affects the generated samples and API assumptions, it is chosen first. Changes after creation are made on the Devices (Profiles) screen. M5GFX and M5Unified differ in the initialization of the generated sample (`display.begin()` / `M5.begin()`).
+- When creating new, specify the target library (LovyanGFX / M5GFX / M5Unified, default M5Unified), the profile to create (screen size / rotation), the project name, and the first scene. Because the target library affects the generated samples and API assumptions, it is chosen as an initial value during project creation. The output target library can be selected on the Export screen. M5GFX and M5Unified differ in the initialization of the generated sample (`display.begin()` / `M5.begin()`).
 - When an existing project is opened, the profile settings in the project file are used.
 
 A project can basically be saved as a single file.

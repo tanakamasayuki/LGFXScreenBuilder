@@ -1,10 +1,10 @@
 // Devices mode: define profiles (size / default rotation / order) and the
-// project's target library (§8.9). Each profile holds an independent layout per
-// scene. Known boards are shown only as size-reference labels.
+// profile order (§8.9). Each profile holds an independent layout per scene.
+// Known boards are shown only as size-reference labels.
 // Ported from the validated profiles probe.
 import { store, update, mutate, checkpoint } from './store.js';
 import {
-  orient, dispDims, profileById, addProfile, removeProfile, renameProfile,
+  orient, dispDims, profileById, addProfile, removeProfile, renameProfile, moveProfile,
 } from './model.js';
 import {
   dimKey, boardCatalog, commonResolutions,
@@ -12,20 +12,27 @@ import {
 import { t } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
-const lib = () => store.project.targetLibrary;
 const cur = () => profileById(store.project, store.ui.profileId);
 
 // --- left: profile list --------------------------------------------------
 function renderProfList() {
   const el = $('profile-list');
   el.innerHTML = '';
-  for (const p of store.project.profiles) {
+  store.project.profiles.forEach((p, i) => {
     const it = document.createElement('div');
     it.className = 'sitem' + (p.id === store.ui.profileId ? ' active' : '');
-    it.innerHTML = `<span>${p.id}</span><span class="cnt">${p.w}×${p.h}</span>`;
+    it.innerHTML = `<span>${p.id}</span><span class="profile-order"><button class="mini up" title="${t('profiles.up')}" ${i === 0 ? 'disabled' : ''}>↑</button><button class="mini down" title="${t('profiles.down')}" ${i === store.project.profiles.length - 1 ? 'disabled' : ''}>↓</button><span class="cnt">${p.w}×${p.h}</span></span>`;
     it.onclick = () => update((st) => { st.ui.profileId = p.id; });
+    it.querySelector('.up').onclick = (ev) => {
+      ev.stopPropagation();
+      mutate((st) => { moveProfile(st.project, p.id, -1); st.ui.profileId = p.id; });
+    };
+    it.querySelector('.down').onclick = (ev) => {
+      ev.stopPropagation();
+      mutate((st) => { moveProfile(st.project, p.id, +1); st.ui.profileId = p.id; });
+    };
     el.appendChild(it);
-  }
+  });
 }
 
 // --- center: orientation/size preview + matching board reference ----------
@@ -49,7 +56,7 @@ function renderProfCenter() {
   const cat = $('board-catalog');
   cat.innerHTML = '';
   let matched = 0;
-  for (const b of boardCatalog(lib())) {
+  for (const b of boardCatalog()) {
     const mism = dimKey(b.w, b.h) !== dimKey(p.w, p.h);
     if (mism) continue;
     matched++;
@@ -110,13 +117,8 @@ function renderBanner() {
   b.textContent = t('banner.ok');
 }
 
-function renderLibNote() {
-  $('lib-target').value = lib();
-  $('lib-note').textContent = t('libbar.note') + t('lib.note.' + lib());
-}
-
 export function renderProfiles() {
-  renderLibNote(); renderProfList(); renderProfCenter(); renderProfProps(); renderBanner();
+  renderProfList(); renderProfCenter(); renderProfProps(); renderBanner();
 }
 
 // --- interactions (attached once) ----------------------------------------
@@ -138,7 +140,6 @@ function renderAddMenu(menu, close) {
 }
 
 export function initProfiles() {
-  $('lib-target').addEventListener('change', () => mutate((st) => { st.project.targetLibrary = $('lib-target').value; }));
   // Inspector inline edits (size/rotation/note/id): one checkpoint per edit session.
   const props = $('prof-props');
   let armed = false;
