@@ -7,7 +7,7 @@ import { commonResolutions } from './boards.js';
 import { t } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
-const presets = commonResolutions(); // [{ w, h, boards: [] }]
+const presets = commonResolutions(); // [{ w, h, boards: [] }] boards are reference labels only
 
 function fillDeviceMenu() {
   const sel = $('np-device');
@@ -56,11 +56,9 @@ function create() {
   if (!isValidId(name)) { err.textContent = t('newproj.errName'); return; }
   if (!isValidId(profileId) || !isValidId(sceneName)) { err.textContent = t('newproj.errId'); return; }
   if (!(w > 0) || !(h > 0)) { err.textContent = t('newproj.errSize'); return; }
-  const dev = $('np-device').value;
-  const boards = dev === 'custom' ? [] : (presets[+dev] ? presets[+dev].boards : []);
   loadProject(newProject({
     name, targetLibrary: $('np-lib').value, profileId,
-    w, h, rotation: +$('np-rot').value, boards, sceneName,
+    w, h, rotation: +$('np-rot').value, sceneName,
   }));
   close();
 }

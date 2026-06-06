@@ -45,14 +45,11 @@ namespace lgfxsb
     uint16_t partCount;
   };
 
-  // Profile definition (§8.9). `boards` are the lgfx::board_t values targeted by
-  // auto-detection (stored as int).
+  // Profile definition (§8.9). Auto-detection is based on screen size only.
   struct ProfileDesc
   {
     int16_t w, h;
     uint8_t rotation;
-    const int16_t *boards;
-    uint8_t boardCount;
   };
 
   // Image asset: RGB565 pixels (row-major), referenced by PartDesc::assetIndex

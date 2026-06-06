@@ -1,9 +1,6 @@
 # en: LovyanGFX build profiles. The Native (SDL) profiles render the screen on a
-#     PC with no hardware. They are limited to boards LovyanGFX can drive itself;
-#     M5GFX/M5Unified-only boards (Dial, Tab5, …) live in examples/BasicM5Unified.
+#     PC with no hardware.
 # ja: LovyanGFX 用ビルドプロファイル。Native(SDL) は実機なしで PC 上に画面を描く。
-#     LovyanGFX が単体で扱えるボードに限定（M5GFX/M5Unified 専用の Dial・Tab5 等は
-#     examples/BasicM5Unified にある）。
 profiles:
   # Real hardware (ESP32, LovyanGFX autodetect).
 

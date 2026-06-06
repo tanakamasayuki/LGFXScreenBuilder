@@ -1,12 +1,10 @@
 # en: M5Unified build profiles (same generated MyScreen.h as BasicLovyanGFX; the
-#     sketch only differs in include + display init). M5Unified resolves the board
-#     via M5GFX board_t, so every current M5 board works here, including the
-#     M5GFX/M5Unified-only ones (Dial, Tab5). The Native (SDL) profiles render on a
-#     PC with no hardware. M5Unified depends on M5GFX, so both libraries are listed.
+#     sketch only differs in include + display init). The Native (SDL) profiles
+#     render on a PC with no hardware. M5Unified depends on M5GFX, so both
+#     libraries are listed.
 # ja: M5Unified 用ビルドプロファイル（生成物 MyScreen.h は BasicLovyanGFX と共通、
-#     スケッチは include と初期化のみ違う）。M5Unified は M5GFX の board_t で機種を
-#     判定するので、Dial・Tab5 など M5GFX/M5Unified 専用ボードも含め全 M5 機種が使える。
-#     Native(SDL) は実機なしで PC 上に描画。M5Unified は M5GFX 依存なので両方を列挙。
+#     スケッチは include と初期化のみ違う）。Native(SDL) は実機なしで PC 上に描画。
+#     M5Unified は M5GFX 依存なので両方を列挙。
 profiles:
   # Real hardware (ESP32, M5Unified autodetect via M5.begin()).
 

@@ -1,13 +1,13 @@
-// Devices mode: define profiles (size / default rotation / board assignment)
-// and the project's target library (§8.9). Each profile holds an independent
-// layout per scene; the fallback ("default") is chosen at export, not here.
+// Devices mode: define profiles (size / default rotation / order) and the
+// project's target library (§8.9). Each profile holds an independent layout per
+// scene. Known boards are shown only as size-reference labels.
 // Ported from the validated profiles probe.
 import { store, update, mutate, checkpoint } from './store.js';
 import {
-  orient, dispDims, profileById, addProfile, removeProfile, renameProfile, toggleBoard,
+  orient, dispDims, profileById, addProfile, removeProfile, renameProfile,
 } from './model.js';
 import {
-  BOARDS, LGFX_KNOWN, boardById, dimKey, boardDetectable, boardCatalog, commonResolutions,
+  dimKey, boardCatalog, commonResolutions,
 } from './boards.js';
 import { t } from './i18n.js';
 
@@ -22,13 +22,13 @@ function renderProfList() {
   for (const p of store.project.profiles) {
     const it = document.createElement('div');
     it.className = 'sitem' + (p.id === store.ui.profileId ? ' active' : '');
-    it.innerHTML = `<span>${p.id}</span><span class="cnt">${p.w}×${p.h} · ${t('profiles.boardsCount', { n: p.boards.length })}</span>`;
+    it.innerHTML = `<span>${p.id}</span><span class="cnt">${p.w}×${p.h}</span>`;
     it.onclick = () => update((st) => { st.ui.profileId = p.id; });
     el.appendChild(it);
   }
 }
 
-// --- center: orientation/size preview + board chips + catalog ------------
+// --- center: orientation/size preview + matching board reference ----------
 function renderProfCenter() {
   const p = cur();
   $('profile-title').textContent = p ? p.id : '';
@@ -46,46 +46,23 @@ function renderProfCenter() {
   $('prof-rot').textContent = `rotation ${p.rotation}`;
   $('prof-orient').textContent = t('orient.' + oc);
 
-  const chips = $('prof-chips');
-  chips.innerHTML = '';
-  if (!p.boards.length) chips.innerHTML = `<span class="sub">${t('profiles.unassigned')}</span>`;
-  for (const bid of p.boards) {
-    const b = boardById(bid);
-    const warn = (b && dimKey(b.w, b.h) !== dimKey(p.w, p.h)) || !boardDetectable(lib(), bid);
-    const c = document.createElement('span');
-    c.className = 'chip';
-    c.innerHTML = `<span${warn ? ' style="color:var(--warn)"' : ''}>${bid}${warn ? ' ⚠' : ''}</span><button title="×">×</button>`;
-    c.querySelector('button').onclick = () => mutate((st) => toggleBoard(st.project, p.id, bid));
-    chips.appendChild(c);
-  }
-
   const cat = $('board-catalog');
   cat.innerHTML = '';
-  if (lib() === 'LovyanGFX') {
-    const note = document.createElement('div');
-    note.className = 'sub'; note.style.gridColumn = '1/-1';
-    note.textContent = t('catalog.lgfxNote');
-    cat.appendChild(note);
-  }
-  const hideMis = $('hide-mismatch').checked;
-  let hidden = 0;
+  let matched = 0;
   for (const b of boardCatalog(lib())) {
-    const assigned = p.boards.includes(b.id);
     const mism = dimKey(b.w, b.h) !== dimKey(p.w, p.h);
-    if (hideMis && mism && !assigned) { hidden++; continue; }
-    const owner = store.project.profiles.find((x) => x.id !== p.id && x.boards.includes(b.id));
+    if (mism) continue;
+    matched++;
     const btn = document.createElement('button');
-    btn.className = 'board' + (assigned ? ' assigned' : '') + (assigned && mism ? ' mismatch' : '');
-    btn.innerHTML = `<div class="bn">${assigned ? '✓ ' : ''}${b.id}</div>` +
-      `<div class="bd">${b.w}×${b.h}${mism ? t('board.mismatch') : ''}</div>` +
-      (owner && !assigned ? `<div class="taken">${t('board.assignedTo', { owner: owner.id })}</div>` : '');
-    btn.onclick = () => mutate((st) => toggleBoard(st.project, p.id, b.id));
+    btn.className = 'board';
+    btn.disabled = true;
+    btn.innerHTML = `<div class="bn">${b.id}</div><div class="bd">${b.w}×${b.h}</div>`;
     cat.appendChild(btn);
   }
-  if (hidden) {
+  if (!matched) {
     const n = document.createElement('div');
     n.className = 'sub'; n.style.gridColumn = '1/-1';
-    n.textContent = t('catalog.hidden', { n: hidden });
+    n.textContent = t('catalog.noMatch');
     cat.appendChild(n);
   }
 }
@@ -126,21 +103,11 @@ function renderProfProps() {
   };
 }
 
-// --- banner: validation (size mismatch / undetectable on LovyanGFX) ------
+// --- banner: validation ---------------------------------------------------
 function renderBanner() {
   const b = $('prof-banner');
-  const msgs = [];
-  for (const p of store.project.profiles) {
-    for (const bid of p.boards) {
-      const bd = boardById(bid);
-      if (bd && dimKey(bd.w, bd.h) !== dimKey(p.w, p.h)) msgs.push(t('banner.mismatch', { profile: p.id, board: bid, w: bd.w, h: bd.h }));
-    }
-  }
-  if (lib() === 'LovyanGFX') {
-    for (const p of store.project.profiles) for (const bid of p.boards) if (!LGFX_KNOWN.has(bid)) msgs.push(t('banner.undetectable', { profile: p.id, board: bid }));
-  }
-  if (msgs.length) { b.className = 'banner bad'; b.textContent = '⚠ ' + msgs.join(' / '); }
-  else { b.className = 'banner ok'; b.textContent = t('banner.ok'); }
+  b.className = 'banner ok';
+  b.textContent = t('banner.ok');
 }
 
 function renderLibNote() {
@@ -179,7 +146,6 @@ export function initProfiles() {
   const armFire = () => { if (armed) { checkpoint(); armed = false; } };
   props.addEventListener('input', armFire, true);
   props.addEventListener('change', armFire, true);
-  $('hide-mismatch').addEventListener('change', () => renderProfCenter());
   const menu = $('profile-add-menu');
   const btn = $('profile-add');
   const close = () => menu.classList.remove('open');

@@ -14,12 +14,12 @@ namespace lgfxsb
   class Renderer
   {
   protected:
-    lgfx::LGFX_Device *_gfx = nullptr; // device type that has getBoard() (base of LGFX / M5GFX / M5.Display)
+    lgfx::LGFX_Device *_gfx = nullptr; // base of LGFX / M5GFX / M5.Display
     const Project &_project;
     uint8_t _profile = 0; // 0 = Auto (actual resolution deferred to draw time; 1+ = enum Profile value = index + 1)
 
     // Resolve the selected profile to a concrete index (§8.9.4). Auto order:
-    // 1) explicit board match, 2) orientation-sensitive size match, 3) first profile.
+    // 1) orientation-sensitive size match, 2) first profile.
     uint8_t resolveProfileIndex() const
     {
       if (_profile != 0)
@@ -28,18 +28,7 @@ namespace lgfxsb
         return (idx < _project.profileCount) ? idx : 0;
       }
 
-      // 1) Explicit board match (highest priority): lets a specific device get a
-      // dedicated layout even when devices share a size.
-      const int board = static_cast<int>(_gfx->getBoard());
-      for (uint8_t pi = 0; pi < _project.profileCount; ++pi)
-      {
-        const ProfileDesc &pr = _project.profiles[pi];
-        for (uint8_t bi = 0; bi < pr.boardCount; ++bi)
-          if (pr.boards[bi] == board)
-            return pi;
-      }
-
-      // 2) Size match against the panel's native (rotation-0) resolution, compared
+      // 1) Size match against the panel's native (rotation-0) resolution, compared
       // orientation-sensitively (135x240 != 240x135). Profile w/h are native dims;
       // a profile's own rotation is applied later at draw time, so we normalize the
       // current physical size back to native using the current rotation parity.
@@ -60,7 +49,7 @@ namespace lgfxsb
       if (firstSize >= 0)
         return static_cast<uint8_t>(firstSize);
 
-      // 3) No size match either: fall back so something always renders.
+      // 2) No size match either: fall back so something always renders.
       return 0;
     }
 

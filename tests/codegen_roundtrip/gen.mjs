@@ -8,9 +8,8 @@ import { generateHeader } from '../../docs/src/codegen.js';
 
 const dir = dirname(fileURLToPath(import.meta.url));
 const project = sampleProject();
-// The host backend is LovyanGFX (LGFX_AUTODETECT), so target LovyanGFX: codegen
-// then emits only board_t names that exist in LovyanGFX (Cardputer/DinMeter are
-// dropped), keeping the generated board tables compilable here.
+// The host backend is LovyanGFX (LGFX_AUTODETECT), so target LovyanGFX for the
+// generated example sketch include/init path.
 project.targetLibrary = 'LovyanGFX';
 // Exercise the rounded outline Rect path.
 for (const pr of project.profiles) {
@@ -36,4 +35,4 @@ for (const pr of project.profiles) {
 }
 
 writeFileSync(join(dir, 'MyScreen.h'), generateHeader(project));
-console.log('generated MyScreen.h (rounded Rect, LovyanGFX board tables, RGB565 asset, preset font)');
+console.log('generated MyScreen.h (rounded Rect, RGB565 asset, preset font)');

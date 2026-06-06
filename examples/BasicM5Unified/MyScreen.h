@@ -84,14 +84,10 @@ static const lgfxsb::PartLayout kLayouts[] = {
   {12, 36, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Settings.row1
 };
 
-static const int16_t kBoards_Core[] = { (int16_t)lgfx::board_t::board_M5Stack, (int16_t)lgfx::board_t::board_M5StackCore2, (int16_t)lgfx::board_t::board_M5StackCoreS3 };
-static const int16_t kBoards_Stick[] = { (int16_t)lgfx::board_t::board_M5StickCPlus, (int16_t)lgfx::board_t::board_M5StickCPlus2 };
-static const int16_t kBoards_Cardputer[] = { (int16_t)lgfx::board_t::board_M5Cardputer, (int16_t)lgfx::board_t::board_M5DinMeter };
-
 static const lgfxsb::ProfileDesc kProfiles[] = {
-  {320, 240, 0, kBoards_Core, 3},
-  {135, 240, 0, kBoards_Stick, 2},
-  {240, 135, 0, kBoards_Cardputer, 2},
+  {320, 240, 0},
+  {135, 240, 0},
+  {240, 135, 0},
 };
 
 

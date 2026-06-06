@@ -3,7 +3,7 @@
 // Shape (rich editor form; serialized to .lgfxsb.json, §9):
 //   project = {
 //     name, targetLibrary, background ('#rrggbb'),
-//     profiles: [{ id, w, h, rotation, boards:[], layout }],
+//     profiles: [{ id, w, h, rotation, layout }],
 //       layout: { [sceneId]: { [partId]: placement } }   // per profile, per scene, per part
 //     scenes:   [{ id, desc, parts:[{ id, type, desc, asset }] }],
 //   }
@@ -61,7 +61,7 @@ export function sampleProject() {
 
   const profiles = [
     {
-      id: 'Core', w: 320, h: 240, rotation: 0, boards: ['M5Stack', 'Core2', 'CoreS3'],
+      id: 'Core', w: 320, h: 240, rotation: 0,
       layout: {
         Boot: {
           logo: rect(110, 80, 100, 60, '#1e2a30'),
@@ -82,7 +82,7 @@ export function sampleProject() {
       },
     },
     {
-      id: 'Stick', w: 135, h: 240, rotation: 0, boards: ['StickCPlus', 'StickCPlus2'],
+      id: 'Stick', w: 135, h: 240, rotation: 0,
       layout: {
         Boot: {
           logo: rect(30, 80, 75, 50, '#1e2a30'),
@@ -103,7 +103,7 @@ export function sampleProject() {
       },
     },
     {
-      id: 'Cardputer', w: 240, h: 135, rotation: 0, boards: ['Cardputer', 'DinMeter'],
+      id: 'Cardputer', w: 240, h: 135, rotation: 0,
       layout: {
         Boot: {
           logo: rect(80, 30, 80, 40, '#1e2a30'),
@@ -175,8 +175,8 @@ export function assetUsage(project, id) {
 
 // Build a fresh project from the New-project dialog inputs (§9.1): one profile
 // and one empty scene. Ids are assumed pre-validated as C identifiers (§8.12).
-export function newProject({ name, targetLibrary, profileId, w, h, rotation, boards, sceneName }) {
-  const profile = { id: profileId, w, h, rotation, boards: boards ? [...boards] : [], fonts: [], layout: { [sceneName]: {} } };
+export function newProject({ name, targetLibrary, profileId, w, h, rotation, sceneName }) {
+  const profile = { id: profileId, w, h, rotation, fonts: [], layout: { [sceneName]: {} } };
   return {
     name,
     targetLibrary: targetLibrary || 'M5Unified',
@@ -260,7 +260,7 @@ export function addProfile(project, { w, h, rotation }, cloneFromId) {
   const src = cloneFromId ? profileById(project, cloneFromId) : null;
   const layout = src ? cloneLayout(src.layout) : {};
   for (const sc of project.scenes) if (!layout[sc.id]) layout[sc.id] = {};
-  project.profiles.push({ id, w, h, rotation: rotation == null ? 0 : rotation, boards: [], layout });
+  project.profiles.push({ id, w, h, rotation: rotation == null ? 0 : rotation, layout });
   return id;
 }
 
@@ -278,16 +278,6 @@ export function renameProfile(project, oldId, newId) {
   if (project.profiles.some((p) => p.id === newId)) return oldId;
   profileById(project, oldId).id = newId;
   return newId;
-}
-
-// Toggle a board on a profile. Auto-detect is one board per profile, so
-// assigning moves it off any other profile (§8.9.2).
-export function toggleBoard(project, profileId, boardId) {
-  const p = profileById(project, profileId);
-  if (!p) return;
-  if (p.boards.includes(boardId)) { p.boards = p.boards.filter((b) => b !== boardId); return; }
-  for (const x of project.profiles) if (x !== p) x.boards = x.boards.filter((b) => b !== boardId);
-  p.boards.push(boardId);
 }
 
 // --- lookups -------------------------------------------------------------
