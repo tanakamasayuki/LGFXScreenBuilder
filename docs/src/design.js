@@ -55,7 +55,7 @@ function renderScenes() {
     const it = document.createElement('div');
     it.className = 'sitem' + (s.id === store.ui.sceneId ? ' active' : '');
     it.innerHTML = `<span>${s.id}</span><span class="cnt">${t('cnt.parts', { n: s.parts.length })}</span>`;
-    it.onclick = () => update((st) => { st.ui.sceneId = s.id; st.ui.selected = null; });
+    it.onclick = () => { lineKeyMode = 'move'; update((st) => { st.ui.sceneId = s.id; st.ui.selected = null; }); };
     el.appendChild(it);
   }
 }
@@ -126,7 +126,7 @@ function renderCanvas() {
       d.style.left = ax + 'px';
       d.style.top = ay + 'px';
       if (def.type === 'Line') {
-        const x2 = (e.x2 || e.x) * scale, y2 = (e.y2 || e.y) * scale;
+        const x2 = (e.x2 ?? e.x) * scale, y2 = (e.y2 ?? e.y) * scale;
         const dx = x2 - ax, dy = y2 - ay;
         const len = Math.max(1, Math.hypot(dx, dy));
         d.style.width = len + 'px';
@@ -169,6 +169,18 @@ function renderCanvas() {
         if (a) { d.style.backgroundImage = `url("${a.dataUrl}")`; d.style.backgroundSize = '100% 100%'; d.classList.remove('image'); }
       }
       scr.appendChild(d);
+      if (def.type === 'Line' && def.id === store.ui.selected) {
+        const x2 = (e.x2 ?? e.x) * scale, y2 = (e.y2 ?? e.y) * scale;
+        for (const [handle, hx, hy] of [['p1', ax, ay], ['p2', x2, y2]]) {
+          const h = document.createElement('div');
+          h.className = 'line-handle';
+          h.dataset.id = def.id;
+          h.dataset.handle = handle;
+          h.style.left = hx + 'px';
+          h.style.top = hy + 'px';
+          scr.appendChild(h);
+        }
+      }
     }
   }
 }
@@ -192,7 +204,7 @@ function renderParts() {
     const it = document.createElement('div');
     it.className = 'pitem' + (def.id === sel ? ' active' : '');
     it.innerHTML = `<span>${def.id}${hidden ? t('list.hidden') : ''}</span><span class="ty">${def.type}</span>`;
-    it.onclick = () => update((st) => { st.ui.selected = def.id; });
+    it.onclick = () => { lineKeyMode = 'move'; update((st) => { st.ui.selected = def.id; }); };
     el.appendChild(it);
   }
 }
@@ -343,6 +355,7 @@ export function renderDesign() {
 
 // --- interactions (attached once) ---------------------------------------
 let drag = null;
+let lineKeyMode = 'move';
 export function initDesign() {
   const scr = $('canvas-screen');
 
@@ -352,10 +365,22 @@ export function initDesign() {
   scr.addEventListener('pointerdown', (ev) => {
     if (ev.button !== 0) return;
     const id = ev.target.dataset.id;
-    if (!id) { update((st) => { st.ui.selected = null; }); return; }
+    if (!id) { lineKeyMode = 'move'; update((st) => { st.ui.selected = null; }); return; }
     update((st) => { st.ui.selected = id; });
     const e = curPlacement(id);
-    drag = { id, sx: ev.clientX, sy: ev.clientY, ox: e.x, oy: e.y, ox2: e.x2, oy2: e.y2 };
+    let mode = ev.target.dataset.handle || 'move';
+    if ('x2' in e && mode === 'move') {
+      const r = scr.getBoundingClientRect();
+      const px = (ev.clientX - r.left) / scale;
+      const py = (ev.clientY - r.top) / scale;
+      const d1 = Math.hypot(px - e.x, py - e.y);
+      const d2 = Math.hypot(px - e.x2, py - e.y2);
+      const hit = Math.max(5, 8 / scale);
+      if (d2 <= hit && d2 <= d1) mode = 'p2';
+      else if (d1 <= hit) mode = 'p1';
+    }
+    lineKeyMode = 'x2' in e ? mode : 'move';
+    drag = { id, mode, sx: ev.clientX, sy: ev.clientY, ox: e.x, oy: e.y, ox2: e.x2, oy2: e.y2 };
     scr.setPointerCapture(ev.pointerId);
     ev.preventDefault();
   });
@@ -365,11 +390,22 @@ export function initDesign() {
     const e = curPlacement(drag.id);
     const dx = Math.round((ev.clientX - drag.sx) / scale);
     const dy = Math.round((ev.clientY - drag.sy) / scale);
-    e.x = drag.ox + dx;
-    e.y = drag.oy + dy;
     if ('x2' in e) {
-      e.x2 = drag.ox2 + dx;
-      e.y2 = drag.oy2 + dy;
+      if (drag.mode === 'p2') {
+        e.x2 = drag.ox2 + dx;
+        e.y2 = drag.oy2 + dy;
+      } else if (drag.mode === 'p1') {
+        e.x = drag.ox + dx;
+        e.y = drag.oy + dy;
+      } else {
+        e.x = drag.ox + dx;
+        e.y = drag.oy + dy;
+        e.x2 = drag.ox2 + dx;
+        e.y2 = drag.oy2 + dy;
+      }
+    } else {
+      e.x = drag.ox + dx;
+      e.y = drag.oy + dy;
     }
     renderCanvas(); renderParts(); renderInspector(); renderStatus();
   });
@@ -379,8 +415,11 @@ export function initDesign() {
   const stage = $('stage');
   stage.addEventListener('pointerdown', (ev) => {
     if (ev.button !== 0) return;
-    if (ev.target.closest('.part') || ev.target.id === 'canvas-screen') return;
-    if (store.ui.selected !== null) update((st) => { st.ui.selected = null; });
+    if (ev.target.closest('.part') || ev.target.closest('.line-handle') || ev.target.id === 'canvas-screen') return;
+    if (store.ui.selected !== null) {
+      lineKeyMode = 'move';
+      update((st) => { st.ui.selected = null; });
+    }
   });
 
   // Keymap (§8.14): arrows move ±1, Ctrl ×10, Shift resizes Rect/Image,
@@ -395,11 +434,21 @@ export function initDesign() {
     const step = (ev.ctrlKey || ev.metaKey) ? 10 : 1;
     const e = curPlacement(store.ui.selected);
     checkpoint(); // one undo step per nudge
-    if (ev.shiftKey) {
-      if ('x2' in e) {
+    if ('x2' in e) {
+      if (lineKeyMode === 'p2') {
         e.x2 += dir[0] * step;
         e.y2 += dir[1] * step;
-      } else if ('r' in e && !('w' in e)) {
+      } else if (lineKeyMode === 'p1') {
+        e.x += dir[0] * step;
+        e.y += dir[1] * step;
+      } else {
+        e.x += dir[0] * step;
+        e.y += dir[1] * step;
+        e.x2 += dir[0] * step;
+        e.y2 += dir[1] * step;
+      }
+    } else if (ev.shiftKey) {
+      if ('r' in e && !('w' in e)) {
         e.r = Math.max(1, e.r + (dir[0] + dir[1]) * step);
       } else if (!('w' in e)) return; // Text has no box
       else {
@@ -444,6 +493,7 @@ export function initDesign() {
 
   // Part add (of the picked type) / delete (the selected part).
   $('part-add').onclick = () => mutate((st) => {
+    lineKeyMode = 'move';
     st.ui.selected = addPart(st.project, st.ui.sceneId, $('part-type').value);
   });
   $('part-del').onclick = () => {
@@ -452,6 +502,7 @@ export function initDesign() {
     if (!confirm(t('confirm.delPart', { id: sel }))) return;
     mutate((st) => {
       removePart(st.project, st.ui.sceneId, sel);
+      lineKeyMode = 'move';
       st.ui.selected = null;
     });
   };
