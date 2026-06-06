@@ -228,7 +228,7 @@ Group も形状整合のため `visible` を持ちますが、描画しないの
 
 利用可能フォントでは依頼を満たせない場合、layout JSON を作る前または後に、人間へフォント追加を依頼して構いません。この依頼は layout JSON 形式の **外側**です。JSON にフォント追加要求フィールドを入れたり、該当 profile の `fonts` 配列にないフォント名を使ったりしてはいけません。必要な文字種がない、見た目が大きく違う、利用可能なネイティブ高さでは bitmap 拡大率が不自然になる、など必要な場合だけ新規フォントを依頼します。フォント追加は任意であり、却下されることがあります。フォントはストレージを消費するため、不要なフォントや同系統の重複フォントを依頼しないでください。
 
-**この形式には含まれず、追加してはいけないもの:** 提供済みフォント文脈と Text の `font` 名 + `size` + `color` を超える編集可能な font family/style 指定、animation/transition/keyframe/fade/duration/delay/timing、project-level data（`assets`、asset binary / Data URL、`boards`、`targetLibrary`、`defaultProfile`、project name/namespace、output settings、Arduino code）。これは `.lgfxsb.json` project file ではなく、Arduino 生成出力でもありません。**静的レイアウトだけ**を表します。
+**この形式には含まれず、追加してはいけないもの:** 提供済みフォント文脈と Text の `font` 名 + `size` + `color` を超える編集可能な font family/style 指定、animation/transition/keyframe/fade/duration/delay/timing、project-level data（`assets`、asset binary / Data URL、`targetLibrary`、project name/namespace、output settings、Arduino code）。これは `.lgfxsb.json` project file ではなく、Arduino 生成出力でもありません。**静的レイアウトだけ**を表します。
 
 ---
 

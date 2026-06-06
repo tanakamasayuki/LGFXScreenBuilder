@@ -182,7 +182,7 @@ Top-level modes:
 - Design: Scenes, layers, part placement, property editing
 - Assets: Management of images, fonts, slices, and output formats
 - Export: Arduino output artifacts, generation API, asset output settings, downloads
-- Devices: Management of profiles (screen size, rotation, assigned board, layout) and the target library
+- Devices: Management of profiles (screen size, rotation, order, layout) and the target library
 
 Design is the core mode, and Assets and Export use the same 3-pane structure. Switching the preview target profile is placed as tabs at the top of the Design canvas. Profiles is an independent mode for editing profiles and device-specific layouts.
 
@@ -473,7 +473,7 @@ Preview fidelity: **the preview at font adoption (selection) time shows the host
 
 - The generated code outputs `setFont(&fonts::<Name>)` + `setTextSize(<multiplier>)` when drawing Text (reference only; no font payload is emitted).
 - Only the fonts used by each included profile are referenced (the flash policy of §8.7.4).
-- Fonts not present in the target library's `fonts::` are **omitted + warned** (handled the same as board assignment, §8.9.5). This does not normally happen with the single representative catalog (LovyanGFX), but is kept as insurance against version skew.
+- Fonts not present in the target library's `fonts::` are **omitted + warned**. This does not normally happen with the single representative catalog (LovyanGFX), but is kept as insurance against version skew.
 
 #### 8.7.6 Link to the external font catalog
 
@@ -509,7 +509,7 @@ This keeps the tool and AI layout JSON focused on static layouts and avoids maki
 
 ### 8.9 Profiles (Multi-Device Support)
 
-Multi-device support is done not by directly tying a board to a layout, but through a unit called a profile (Profile). The design policy is "works cleanly on a single device, and does not break when devices are added later", and the data structure alone is first fixed in a form that can withstand future multi-device support.
+Multiple-device support is performed through the unit of a profile (Profile). A profile groups screen size, rotation, and layout. Devices with the same screen size can use the same profile.
 
 #### 8.9.1 What a Profile Is
 
@@ -518,25 +518,22 @@ A profile is a unit that defines a layout, and it has the following.
 - ID (a C/C++ identifier; in the generated code it becomes a `Profile::<Id>` constant)
 - Screen size (width/height at the default rotation)
 - Rotation (0–3). Orientation is expressed by this rotation (§8.9.3)
-- Assigned boards (targets of auto-detection; zero or more, multiple allowed)
-
-What the user specifies is a profile, not a board. A profile itself **does not have a default (fallback) flag**. The profile used as a fallback is chosen at output time (§8.9.4, §10).
+What the user specifies is a profile, not a board. Profiles are stored as an ordered array, and that order is used as the UI display order, the same-size priority for `Profile::Auto`, and the final catch-all priority.
 
 Profile creation flow:
 
 1. Create a profile by specifying the screen size (this size becomes the logical coordinate space of the layout).
-2. Add zero or more boards to be assigned by auto-detection.
-3. A profile with no boards added is not selected automatically and is used by specifying it explicitly in the program.
+2. Specify the rotation.
+3. If multiple profiles have the same size, adjust their order on the Profiles screen and place the one that `Profile::Auto` should prefer above the others.
+4. If automatic selection should not be used, specify the profile explicitly with `setProfile()` in user code.
 
-#### 8.9.2 Board Assignment
+#### 8.9.2 Profile Order
 
-One or more boards can be assigned to a single profile.
+Profile order can be changed on the Profiles screen.
 
-- For devices you want to keep separate (e.g., M5Stack Core2 and CoreS3 are both 320×240 but differ in things like button areas), make a profile with one board each.
-- For devices you want to group (e.g., M5StickC Plus and Plus2 differ only internally but use the screen and buttons the same way), assign multiple boards to one profile and share it. Because it is sharing rather than copying, fixing one is reflected in the other.
-- "Grouping by resolution" is expressed as one way of using this mechanism: putting boards of the same resolution into one profile.
-
-Boards within the same profile are assumed to have the same screen size and rotation. If you try to mix boards with different sizes or rotation behaviors, the authoring tool warns.
+- When multiple profiles match the same screen size, `Profile::Auto` selects the first one in profile order.
+- When no profile matches the screen size, `Profile::Auto` uses the first profile as the final catch-all.
+- To use different layouts for different devices with the same size, user code calls `setProfile()` and specifies the profile explicitly.
 
 #### 8.9.3 Rotation and Orientation
 
@@ -544,48 +541,29 @@ Orientation (portrait/landscape) is not made into a separate profile but express
 
 - A profile has a rotation (0–3). Orientation is expressed by this rotation.
 - The canvas width/height become the profile's screen size with width/height swapped by the rotation.
-- The runtime only applies the rotation of the currently selected profile via `setRotation()`, and does not carry per-board rotation logic. The problem of different default rotations per board is absorbed by the authoring tool, which has a per-board default-rotation table used as the initial value when creating a profile and assigning a board.
+- The runtime only applies the rotation of the currently selected profile via `setRotation()`, and does not carry per-board rotation logic.
 
-The feature to change rotation per scene (changing portrait/landscape per screen on the same device) is deferred (§15).
+Changing rotation per scene (changing portrait/landscape per screen on the same device) is outside the current scope (§15).
 
 #### 8.9.4 Profile Selection at Runtime
 
-The guiding idea is: "**what is determined by size is selected automatically by size match; you specify a board explicitly only when you want a different layout at the same size**". `Profile::Auto` (default) resolves in the following priority order.
+The guiding idea is: "**what can be selected by size is selected automatically by size match; when the same size needs a different layout, user code specifies the profile explicitly**". `Profile::Auto` (default) resolves in the following priority order.
 
-1. **Explicit board match (highest priority)**: if `getBoard()` is in some profile's `boards[]`, use that profile. This is where assigning a dedicated layout to a specific device works even when devices share a size (board assignment is meaningful only on the M5 family in practice, since M5GFX/M5Unified return a `board_t`; §8.9.5).
-2. **Size match**: choose among the profiles whose size equals the physical screen size (post-rotation `width()`×`height()`).
-   - Exactly one matches → use it. **The normal case** — with one profile per size, every device of that size lands here automatically (no board assignment needed).
-   - Multiple match (the same size split by board) → ① use the fallback profile (`defaultProfile`) if it is among them, ② otherwise use the **first declared**. That device is definitely of that size, so rendering it with a size-matching layout is correct. The authoring tool also **warns** when "multiple profiles share a size and cannot be disambiguated by board or by default", prompting you to designate a default.
+1. **Size match**: choose among the profiles whose size equals the physical screen size (post-rotation `width()`×`height()`).
+   - Exactly one matches → use it. **The normal case** — with one profile per size, every device of that size lands here automatically (no manual selection needed).
+   - Multiple match → use the first one in profile order. That device is definitely of that size, so rendering it with a size-matching layout is correct. The authoring tool shows when multiple same-size profiles exist and lets the user reorder them as needed.
    - None match → next.
-3. **Fallback (last resort)**: if no size matches either (e.g. an unknown screen size), use `defaultProfile`. It still renders even at a different size (absolute drawing in logical coordinates, clipped outside the physical bounds). If `defaultProfile` is unset, the first profile (index 0).
+2. **Final catch-all**: if no size matches either (e.g. an unknown screen size), use the first profile in profile order. It still renders even at a different size (absolute drawing in logical coordinates, clipped outside the physical bounds).
 
 An explicit `screen.setProfile(Profile::<Id>)` can override this auto resolution at any time (a self-built panel = `board_unknown`, intentionally checking a different layout, etc.).
 
-**MCU chip type is not used for detection** (it is cumbersome to judge, and when a distinction is needed `board_t` identifies the device sufficiently). For the rare case of distinguishing same-size, different-chip devices on bare LovyanGFX (e.g. the 320×240 Core2 vs CoreS3), resolve it via the default designation / `setProfile()` of step 2 above, or by an explicit board on the M5GFX/M5Unified target.
+**MCU chip type and board type are not used for detection**. To distinguish different same-size devices, resolve it via profile order or `setProfile()`.
 
-The fallback profile (= the default in the generated code) is **chosen at output time**, not by a flag on the profile side (§10). This is a build-level concern of "which profile in this output is the receptacle for undetermined boards", and one is specified from among the profiles included in the output target. In a single-device build (one output target), that profile itself is the receptacle, so no specification is needed. Only when there are multiple outputs is one chosen. The chosen value is remembered as `defaultProfile` (directly under the project, optional) in the project file and used as the initial selection for the next output (§9).
-
-The fallback specification is independent of layout saving. Because each profile fully holds its own layout (§8.2), changing the fallback selection does not affect any profile's layout.
+Profile order is independent of layout saving. Because each profile fully holds its own layout (§8.2), reordering profiles does not affect any profile's layout.
 
 **Orientation (portrait/landscape) handling**: size match **distinguishes orientation**. Because it compares the post-rotation `width()`×`height()`, 135×240 (portrait) and 240×135 (landscape) are different sizes. Example: StickCPlus (portrait 135×240) and Cardputer (landscape 240×135) resolve to different profiles under auto-detection (a separate concern from the authoring "add resolution" menu, which groups orientation-independently).
 
-Rotation is a per-profile value (§8.9.3), and a board assigned to a profile is drawn with that profile's rotation. So "use Cardputer with a portrait layout" is achieved by assigning Cardputer to a portrait profile (one with the appropriate rotation) — priority 1 board match plus that profile's rotation. However, **sharing one profile across multiple boards that need different rotations (per-board rotation) is not done in the MVP**. To reuse a layout across orientations, create a separate profile per orientation and use "copy to start" (§8.9.6). A per-board rotation override is a future extension (§15).
-
-#### 8.9.5 Premises of Board Detection
-
-Board detection uses `getBoard()` (`lgfx::board_t`) of M5GFX / M5Unified / LovyanGFX.
-
-- M5GFX / M5Unified can comprehensively detect current M5 boards (the Core family, the StickC family, Cardputer, Dial, DinMeter, Tab5, external I2C displays such as M5UnitLCD/OLED/GLASS, etc.).
-- Bare LovyanGFX (autodetect) can detect only the boards known to that library, and cannot detect newer M5 boards (Cardputer, Dial, etc.).
-- Either way, autodetect or M5 initialization is a premise, and a hand-written self-built LGFX configuration results in `board_unknown`.
-
-Therefore, the vocabulary of assigned boards is unified to M5GFX `board_t` names. In an environment with only bare LovyanGFX, undetectable boards are handled by resolution fallback, and boards that cannot be distinguished at the same resolution (e.g., Core2 and CoreS3) are specified by a compile-time hint.
-
-The boards the authoring tool offers as assignment candidates follow the project's **target library** (selected in §9). M5GFX / M5Unified offers all M5 boards as candidates, while bare LovyanGFX offers only the subset that library can detect (newer devices not included are created as profiles with no board assigned and manually specified with `setProfile()`).
-
-If a project that has boards assigned with M5GFX/M5Unified is later changed to LovyanGFX (e.g., Cardputer is already assigned), that assignment is **not automatically deleted but kept, and warned as "auto-detection not possible"**. On the actual device, it follows the fallback rules above: if the resolution matches, it falls back to that profile; if ambiguous at the same resolution, it is resolved by a compile-time hint or `setProfile()`. Seeing the warning, the user can choose to remove the assignment, switch to manual operation, etc.
-
-Note that narrowing by size (resolution) is not a future aid but a **first-class resolution rule**, already built into priority 2 of §8.9.4. **MCU chip type (ESP32 / ESP32-S3 etc.) is not used for detection** (it is cumbersome to judge, and where a distinction is needed `board_t` identifies the device sufficiently). For the case of forcing an automatic split of same-size, same-orientation, different-chip devices on bare LovyanGFX (e.g. the 320×240 Core2 vs CoreS3), resolve it via the default designation / `setProfile()` of §8.9.4, or by an explicit board on the M5GFX/M5Unified target.
+Rotation is a per-profile value (§8.9.3). To reuse a layout across orientations, create a separate profile per orientation and use "copy to start" (§8.9.6). A per-board rotation override is outside the current scope (§15).
 
 #### 8.9.6 Per-Profile Layout
 
@@ -750,7 +728,7 @@ Format:
 - Top-level `fonts[]`: adopted fonts with `name`, `family`, `content` (`digits` / `latin` / `ja` / `cn` / `tw` / `ko`), nominal `size`/`unit`, and approximate rendered `height`. This is emitted as authoritative context for choosing existing fonts, but importing the JSON does not add or change font assets.
 - Each profile: `id`, `w`, `h`, `rot`, `fonts[]` (the adopted font names enabled for that profile; not editable), and `parts[]`.
 - Each part: `id`, `type`, `parent`, `visible`, plus per-type placement (Text: `x`/`y` anchor, `datum`, `size` multiplier, `color`, `text`, `font` name (or null = default); Rect: `x`/`y`/`w`/`h`/`color`; Image: `x`/`y`/`w`/`h`/`asset` name (shared across profiles); Group: `x`/`y` origin only — a Group also carries `visible` for shape consistency but draws nothing).
-- **Stripped:** asset binaries (Data URLs / RGB565), board assignments, namespace / project name, output settings, `defaultProfile`, `targetLibrary`, animation/timing, and Arduino code.
+- **Stripped:** asset binaries (Data URLs / RGB565), namespace / project name, output settings, `targetLibrary`, animation/timing, and Arduino code.
 - **Invariant:** the `(id, type, parent)` set is identical across all profiles (the data contract of §8.2). Everything else may differ per profile — coordinates, size, `color`, `visible`, and a Text's `datum`/`size`/`text`/`font`.
 - The AI layout format v1 intentionally excludes editable font *family/style* selection beyond the provided font context plus a Text's `font` name + `size` + `color`, profile-specific asset replacement, and animation.
 - If the AI determines that the available fonts cannot satisfy the request, it may ask the human to add fonts before or after producing the JSON. This is an **out-of-band operation outside the AI layout JSON**: do not add font-request fields to the JSON, and do not invent or use font names that are not adopted/enabled. Because fonts have storage cost, requests should be limited to cases such as missing script coverage, a large visual-style mismatch, or no natural native height, and should avoid many near-duplicate fonts in the same family.
@@ -760,7 +738,7 @@ Export (implemented): the Design screen's **"Copy AI JSON"** action (`docs/src/a
 Import (implemented): the Design screen's **"Paste AI JSON"** action opens a dialog; the user pastes the JSON (minified or pretty) and sees a live preview (update vs add, part/profile counts, warnings) before applying. Import is wired through the undo system (`reconcileAiLayout` / `applyAiLayout` in `docs/src/model.js`). Reconciliation rules:
 
 - **Update vs add by scene ID:** if the JSON's `scene` matches an existing scene it is **overwritten**; otherwise it is **added** as a new scene.
-- **Part definitions** (the shared `(id, type, parent)` + order + `asset`) are taken from one **canonical profile** — the one matching `defaultProfile` if present, else the first; if other profiles' part sets differ, the canonical one wins (with a warning).
+- **Part definitions** (the shared `(id, type, parent)` + order + `asset`) are taken from one **canonical profile** — the first profile in profile order; if other profiles' part sets differ, the canonical one wins (with a warning).
 - **Profiles** are matched by `id`. A JSON profile not in the project is ignored (warning); a project profile missing from the JSON has its placements cloned from the canonical profile (warning).
 - **Validation:** part IDs must be C identifiers and types known; a `parent` that is missing / not a Group / cyclic is moved to root (warning); an `asset` name not in the project is cleared to null (warning). The scene is re-normalized to pre-order.
 
@@ -772,9 +750,8 @@ The official save format of a project is `.lgfxsb.json`. The user explicitly sav
 
 Basic startup flow:
 
-- **MVP behavior (decided)**: no startup chooser is shown — if a previous auto-save exists it is **restored automatically**, otherwise the sample project opens. Switching between continue / new / open is done explicitly via the toolbar New / Open (the startup chooser screen is intentionally not implemented).
-- (For reference / possible future) a startup screen offering restore / create-new / open (or create-new / open when there is no auto-save) is conceivable but is not adopted for the MVP.
-- When creating new, specify the target library (LovyanGFX / M5GFX / M5Unified, default M5Unified), the first profile (target device / screen size / rotation), the project name, and the first scene. Because the target library affects the board assignment candidates, the auto-detection behavior, and the generated samples, it is chosen first. Changes after creation are made on the Devices (Profiles) screen. M5GFX and M5Unified have the same board detection and candidates (all M5 boards), differing only in the initialization of the generated sample (`display.begin()` / `M5.begin()`). Only bare LovyanGFX has a subset of candidates.
+- No startup chooser is shown: if a previous auto-save exists it is restored automatically, otherwise the sample project opens. Switching between continue / new / open is done explicitly via the toolbar New / Open.
+- When creating new, specify the target library (LovyanGFX / M5GFX / M5Unified, default M5Unified), the profile to create (screen size / rotation), the project name, and the first scene. Because the target library affects the generated samples and API assumptions, it is chosen first. Changes after creation are made on the Devices (Profiles) screen. M5GFX and M5Unified differ in the initialization of the generated sample (`display.begin()` / `M5.begin()`).
 - When an existing project is opened, the profile settings in the project file are used.
 
 A project can basically be saved as a single file.
@@ -786,8 +763,7 @@ The rich project JSON can hold UI display order, descriptions, selection state, 
 The project file includes the following.
 
 - Meta information (including the project name and the target library. Because the project name becomes the namespace of the generated code, it is limited to a C/C++ identifier. §8.12)
-- Profile definitions (ID, size, default rotation, assigned boards)
-- The fallback profile `defaultProfile` (directly under the project, optional. Remembers the value chosen at output time. §8.9.4, §10)
+- Profile definitions (ID, size, default rotation, order)
 - Scene definitions
 - Part definitions
 - Group definitions
@@ -798,7 +774,7 @@ The project file includes the following.
 
 A part's layout is held keyed by the profile ID, as a **complete value per profile** (§8.2). There is no concept of a base or a diff. For a single profile, only one set. The generated structures are determined only by the part's ID, type, and parent-child relationships, and do not depend on profile or layout values.
 
-In the MVP, asset source data such as images and fonts is embedded in `.lgfxsb.json` as a Data URL. This makes it possible to carry the editing project as a single file.
+Asset source data such as images and fonts is embedded in `.lgfxsb.json` as a Data URL. This makes it possible to carry the editing project as a single file.
 
 Example:
 
@@ -816,7 +792,7 @@ Example:
 }
 ```
 
-In the future, a `.lgfxsb` zip package format will be added for large projects.
+The `.lgfxsb` zip package format is outside the current scope.
 
 ```text
 project.lgfxsb
@@ -838,9 +814,9 @@ The roles of saving and exporting are separated.
 
 Output file names are based on the project name (`<Project>.h` / `<Project>_assets.h` / `<Project>_example.ino` / `<Project>.zip`). This is aligned with the namespace of the generated code (§8.11) to avoid file collisions when multiple projects coexist.
 
-For supported browsers, overwrite saving via the File System Access API will be considered in the future. In the MVP, download saving is the basis.
+Saving is based on downloading `.lgfxsb.json`. Overwrite saving via the File System Access API is outside the current scope.
 
-Undo/Redo is managed with an in-memory history stack and is not included in the save file or the auto-save. In the MVP, it is a snapshot scheme of the project JSON, with the maximum history count limited.
+Undo/Redo is managed with an in-memory history stack and is not included in the save file or the auto-save. It uses a snapshot scheme of the project JSON, with the maximum history count limited.
 
 Auto-save targets only the latest state, and the Undo history is not persisted. For small state, localStorage is considered; for state including large assets, IndexedDB is considered.
 
@@ -866,39 +842,13 @@ The Arduino-bound export generates the following.
 
 The sample usage code is generated according to the target framework. LovyanGFX uses `LGFX_AUTODETECT` and `display.init()`, M5Unified uses `M5.begin()` and `M5.Display`, etc.—the includes and initialization differ (the drawing API is common).
 
-The output target profiles can be generated by selecting all or only specific devices. `enum class Profile` and the generated data are narrowed to only the selected profiles. **The fallback profile (default) is chosen on this output screen** (§8.9.4). A single-device build (one output target) needs no specification because that profile itself is the receptacle. Only when there are multiple outputs is one fallback chosen from among the output targets. The selection is remembered as `defaultProfile` (§9) and used as the initial value for the next output.
+The output target profiles can be generated by selecting all profiles or only specific profiles. `enum class Profile` and the generated data are narrowed to only the selected profiles. The generated output preserves the project profile order, and `Profile::Auto` resolves among the included profiles according to §8.9.4.
 
 Comments included in the generated code (headers, the sample `.ino`, etc.) must be **English-only, or bilingual English + Japanese (`// en:` / `// ja:` form)**, and **must not be Japanese-only**, so that users of the public Arduino library can read them in English-speaking contexts too (the comment-language policy is shared with §13).
 
-The output method for image assets can be selected from the following.
+Image assets use `Header/PROGMEM + RAW RGB565` as the standard output. As a result, a UI including images can be built by importing the export result from GitHub Pages into an Arduino project.
 
-- Header file embedding
-- PROGMEM placement
-- File output for SPIFFS/LittleFS
-- raw RGB565 data
-- PNG/JPEG reference
-
-In the initial phase, header file output, which is easy to handle in the Arduino IDE, is prioritized.
-
-For each asset, the storage destination and the drawing format can be specified separately.
-
-Storage destination candidates:
-
-- Header/PROGMEM
-- LittleFS/SPIFFS
-- SD
-- RAM/PSRAM cache
-
-Drawing format candidates:
-
-- RAW RGB565
-- RAW RGB888/RGBA8888
-- Palette/Indexed
-- PNG
-- JPEG
-- A custom compressed format added in the future
-
-In the MVP, `Header/PROGMEM + RAW RGB565` is the standard output. As a result, you can build a UI including images simply by importing the export result from GitHub Pages into an Arduino project.
+LittleFS/SPIFFS/SD, RAM/PSRAM caches, PNG/JPEG references, RGB888/RGBA, Palette/Indexed, custom compression, and other output variations are outside the current scope.
 
 ## 11. Proposed Arduino API Specification
 
@@ -940,11 +890,11 @@ Shared engine (on the library side; not used directly by the user):
 
 ```cpp
 namespace lgfxsb {
-  struct Project { /* profiles, boardMap, defaultProfile, scenes[], assets[] */ };
+  struct Project { /* profiles, scenes[], assets[] */ };
 
   class Renderer {
   protected:
-    lgfx::LGFX_Device* _gfx = nullptr;   // the device type that has getBoard() (base of LGFX / M5GFX / M5.Display)
+    lgfx::LGFX_Device* _gfx = nullptr;   // base of LGFX / M5GFX / M5.Display
     const Project& _project;
     uint8_t _profile = 0;          // 0 = Auto (actual resolution is deferred to draw time)
     void renderScene(/* sceneref */, uint8_t profile);
@@ -987,7 +937,7 @@ public:
 
 Because `Screen` binds the descriptor in its constructor, the user does not need to pass `project` every time. `setProfile()` names the `Profile` of the same namespace, so it is type-safe (passing another project's `Profile` is a compile error).
 
-The receiving type for `gfx` is `lgfx::LGFX_Device` (a subclass of the `LovyanGFX` base that has `getBoard()`, used for auto-detection). The LovyanGFX autodetect `LGFX`, `M5GFX`, and `M5.Display` that the user passes are all derived from `lgfx::LGFX_Device`, so they can be accepted by the same API.
+The receiving type for `gfx` is `lgfx::LGFX_Device` (a subclass of the `LovyanGFX` base). The LovyanGFX autodetect `LGFX`, `M5GFX`, and `M5.Display` that the user passes are all derived from `lgfx::LGFX_Device`, so they can be accepted by the same API.
 
 `show` / `update` are emitted by the generated code as **function overloads** per scene type (not templates). Because overloads exist only for the generated scene types of the project itself, the "limited to this project's scenes" property is preserved, and passing an unknown type is a compile error. The template syntax is exposed neither to the user nor to the library's public API.
 
@@ -1026,18 +976,18 @@ void loop() {
 }
 ```
 
-Normally, `setProfile()` is not called, and it is left to the default `Profile::Auto` (auto-detection by `getBoard()`).
+Normally, `setProfile()` is not called, and it is left to the default `Profile::Auto` (auto-detection by screen size).
 
 ### 11.3 Profile Selection (Order-Independent, Deferred Resolution)
 
-The order of `setProfile()` and `begin()` is not fixed. Because `setProfile()` only records the selection and does not touch the hardware, it can be called either before or after `begin()`, or to switch during execution. The actual resolution of `Profile::Auto` (`getBoard()`) and the rotation (`setRotation`) are deferred and applied at draw time (`show` / `update`), so as long as the order `display.init()` → `show()` is observed, there is no need to be conscious of the order.
+The order of `setProfile()` and `begin()` is not fixed. Because `setProfile()` only records the selection and does not touch the hardware, it can be called either before or after `begin()`, or to switch during execution. The actual resolution of `Profile::Auto` and the rotation (`setRotation`) are deferred and applied at draw time (`show` / `update`), so as long as the order `display.init()` → `show()` is observed, there is no need to be conscious of the order.
 
 ```cpp
 screen.setProfile(Profile::Stick);   // override auto-detection (self-built panel, etc.); either before or after begin
 screen.setProfile(Profile::Auto);    // return to auto-detection
 ```
 
-`Profile::Auto` resolves only assigned boards, and unassigned/unknown boards fall back to the default profile (§8.9). What the user specifies is a profile, not a board. Because `auto` is a C/C++ reserved word, auto-detection is `Auto`. When multiple projects coexist, the `Screen` class becomes a distinct type, and passing another project's `Profile` / `Scene` is a type error (§8.11).
+`Profile::Auto` resolves by size match, then profile order (§8.9). What the user specifies is a profile, not a board. Because `auto` is a C/C++ reserved word, auto-detection is `Auto`. When multiple projects coexist, the `Screen` class becomes a distinct type, and passing another project's `Profile` / `Scene` is a type error (§8.11).
 
 M5GFX is integrated into the same API to the extent that it can be treated as a LovyanGFX derivative or compatible API.
 
@@ -1149,15 +1099,15 @@ Requirements:
 - When a translation key is missing, fall back to `en`.
 - Accessibility wording other than display text, such as `placeholder`, `aria-label`, and `title`, is also a translation target.
 
-## 15. MVP Scope
+## 15. Current Scope
 
-For the first implementation, the following is the MVP.
+LGFXScreenBuilder is responsible for creating AI-assistable static basic layouts and generating drawing data that is convenient for Arduino code. The current scope is as follows.
 
 - Basic screens of the web authoring tool (3 panes + mode switching, ja/en, startup flow)
-- Profile creation (screen size / default rotation) + `Profile::Auto` auto-detection, board assignment, fallback selection at output time
+- Profile creation (screen size / default rotation), `Profile::Auto` auto-detection, and profile reordering
 - Scene creation
-- Text/Image/Rect/Group part placement (direct manipulation: add/move/resize/group/layer order)
-- Text with only the default font + size and color (custom font registration is out of scope)
+- Text/Image/Rect/Line/Circle/Ellipse/Group part placement (direct manipulation: add/move/resize/group/layer order)
+- Text font selection, size, color, datum, and single-line display
 - PNG image asset registration (Data URL embedding)
 - JSON project save/load (single `.lgfxsb.json`, download method)
 - Arduino header file output (Header/PROGMEM + RAW RGB565, single header)
@@ -1168,21 +1118,18 @@ For the first implementation, the following is the MVP.
 - ID validation / duplication detection
 - Basic sample
 
-In the MVP, implementation centers on a single profile. In line with the policy "works cleanly on a single device, and does not break when devices are added later", building out the layout for each of multiple profiles is outside the MVP scope.
+The current scope excludes the following.
 
-The MVP defers the following.
-
-- Layout editing of multiple profiles (independent per profile; new ones start by cloning)
 - Diff highlight display of "items whose value differs from the default" (valid only between the same sizes)
-- Per-scene rotation setting (the MVP has rotation only per profile)
-- Reverse-lookup input of text size px height (entering a px height to automatically select the font + multiplier; the MVP uses multiplier specification + px auxiliary display. §8.7)
-- Text box (giving Text a width and height to perform clipping/wrapping/in-box alignment; the MVP has only single-line anchor + datum. §8.7)
-- File-based AI layout import (clipboard paste import and export are both implemented — "Paste AI JSON" / "Copy AI JSON"; only opening a `.json` file is deferred. §8.15)
-- Per-board rotation override (sharing one profile across boards of different orientation. MVP: rotation is per-profile. §8.9.4)
+- Per-scene rotation setting (rotation is per profile)
+- Reverse-lookup input of text size px height (entering a px height to automatically select the font + multiplier; the current scope uses multiplier specification + px auxiliary display. §8.7)
+- Text box (giving Text a width and height to perform clipping/wrapping/in-box alignment; the current scope has only single-line anchor + datum. §8.7)
+- File-based AI layout import (clipboard paste import and export are implemented — "Paste AI JSON" / "Copy AI JSON"; opening a `.json` file is outside the current scope. §8.15)
+- Per-board rotation override (rotation is per profile. §8.9.4)
 - Animation in general (frame/fade/move/scale, playback and editing)
 - Additional Parts such as Icon/Gauge/Graph/Container/Button
 - ValueText/Value family (dedicated numeric display: prefix/suffix/decimal places/unit)
-- Custom font (TTF/OTF) registration and management (the MVP has only the default font + size/color)
+- Custom font (TTF/OTF) registration and management (the current scope uses LovyanGFX/M5GFX preset fonts)
 - Asset slicing (§8.5)
 - Sprite sheets (§8.6)
 - Asset storage-destination variations (LittleFS/SPIFFS/SD/RAM/PSRAM)

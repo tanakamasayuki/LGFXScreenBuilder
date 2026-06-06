@@ -288,7 +288,7 @@ unnecessary or near-duplicate fonts.
 **This format does not include**, and you must not add: editable font *family/style*
 selection beyond the provided font catalog context plus Text `font` name + `size` +
 `color`; animation/transition/keyframe/fade/duration/delay/timing; or any project-level
-data (`assets`, asset binaries / Data URLs, `boards`, `targetLibrary`, `defaultProfile`,
+data (`assets`, asset binaries / Data URLs, `targetLibrary`,
 project name/namespace, output settings, Arduino code). This is **not** the
 `.lgfxsb.json` project file and **not** Arduino generated output. Represent **static
 layouts only**.
