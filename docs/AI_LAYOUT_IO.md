@@ -276,6 +276,15 @@ text-styling fields. Preserve `font` as-is unless the request explicitly asks to
 to another font that appears in the same profile's `fonts` list, and never invent a
 new font name.
 
+If the available fonts cannot satisfy the request, you may ask the human to add fonts
+before or after producing the layout JSON. This request is **outside** the layout JSON
+format: do not add font request fields, and do not use font names that are not already
+listed in the relevant profile's `fonts` array. Request new fonts only when necessary,
+such as when the needed script is unavailable, the visual style would be substantially
+wrong, or all available native heights would require awkward bitmap scaling. Font
+additions are optional and may be rejected; fonts consume storage, so avoid requesting
+unnecessary or near-duplicate fonts.
+
 **This format does not include**, and you must not add: editable font *family/style*
 selection beyond the provided font catalog context plus Text `font` name + `size` +
 `color`; animation/transition/keyframe/fade/duration/delay/timing; or any project-level

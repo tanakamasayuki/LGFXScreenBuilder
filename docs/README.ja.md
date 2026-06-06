@@ -69,6 +69,7 @@ python -m http.server 8000 --directory docs
   SPEC §8.15）: 「AI用JSONコピー」で現在の画面（全プロファイル）を自己完結・モデル忠実な**minified** JSON でコピー、
   「AI結果を貼付」で編集済みレイアウトを取り込み（同名シーンは上書き・無ければ追加、Undo 対応・適用前プレビュー付き）。
   AI に画面の作成・修正を頼むとき [AI_LAYOUT_IO.md](AI_LAYOUT_IO.md)（AI 向け IF 契約書、英語）と一緒に渡す。
+  人間向けの参考訳は [AI_LAYOUT_IO.ja.md](AI_LAYOUT_IO.ja.md) に置くが、AI に渡す正本は英語版とする。
 
 ## 構成
 

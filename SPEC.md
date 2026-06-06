@@ -748,17 +748,19 @@ The tool exchanges the layout of a screen as a simple **JSON**, so that a screen
 
 **Scope and granularity (decided):** the unit is **one scene across all profiles** — the same screen laid out for every device size — so the AI can keep the per-device layouts consistent in one pass. The format is **model-faithful and round-trippable**: it mirrors the internal model values almost one-to-one (absolute pixel coordinates, datum, size multiplier, color), so a layout exported from the tool and edited by the AI can be reconstructed. Stable part IDs are what make round-trip editing safe.
 
-The AI-facing interface contract is a standalone, **English-only** document, [docs/AI_LAYOUT_IO.md](docs/AI_LAYOUT_IO.md), served verbatim on GitHub Pages (the file has no front matter, so Jekyll does not convert it). The canonical contract URL embedded in exported JSON (the `spec` field) is `https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.md` — the same `.md` URL throughout. (Per the doc-naming convention this contract is intentionally English-only, since it is read by an AI.)
+The AI-facing interface contract is a standalone, **English-only** document, [docs/AI_LAYOUT_IO.md](docs/AI_LAYOUT_IO.md), served verbatim on GitHub Pages (the file has no front matter, so Jekyll does not convert it). The canonical contract URL embedded in exported JSON (the `spec` field) is `https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.md` — the same `.md` URL throughout. A Japanese reference translation for humans is provided as [docs/AI_LAYOUT_IO.ja.md](docs/AI_LAYOUT_IO.ja.md), but the contract given to AIs and the `spec` URL remain the English version. (Per the doc-naming convention this contract is intentionally English-only, since it is read by an AI.)
 
 Format:
 
-- Top-level: `format`, `version`, `spec` (the URL of `docs/AI_LAYOUT_IO.md`, so an AI given only the JSON can fetch the contract), `scene` (Scene ID), `desc` (description), optional `background` (visual context), and `profiles[]`.
+- Top-level: `format`, `version`, `spec` (the URL of `docs/AI_LAYOUT_IO.md`, so an AI given only the JSON can fetch the contract), `scene` (Scene ID), `desc` (description), optional `background` (visual context), `fonts[]` (adopted-font context; not editable), and `profiles[]`.
 - Value types are explicit in the contract: `w`/`h`/`x`/`y`/`rot`/`version` are integers; `size` is a number that may be fractional; `color` is `"#rrggbb"`; `visible` is boolean.
-- Each profile: `id`, `w`, `h`, `rot`, and `parts[]`.
+- Top-level `fonts[]`: adopted fonts with `name`, `family`, `content` (`digits` / `latin` / `ja` / `cn` / `tw` / `ko`), nominal `size`/`unit`, and approximate rendered `height`. This is emitted as authoritative context for choosing existing fonts, but importing the JSON does not add or change font assets.
+- Each profile: `id`, `w`, `h`, `rot`, `fonts[]` (the adopted font names enabled for that profile; not editable), and `parts[]`.
 - Each part: `id`, `type`, `parent`, `visible`, plus per-type placement (Text: `x`/`y` anchor, `datum`, `size` multiplier, `color`, `text`, `font` name (or null = default); Rect: `x`/`y`/`w`/`h`/`color`; Image: `x`/`y`/`w`/`h`/`asset` name (shared across profiles); Group: `x`/`y` origin only — a Group also carries `visible` for shape consistency but draws nothing).
 - **Stripped:** asset binaries (Data URLs / RGB565), board assignments, namespace / project name, output settings, `defaultProfile`, `targetLibrary`, animation/timing, and Arduino code.
 - **Invariant:** the `(id, type, parent)` set is identical across all profiles (the data contract of §8.2). Everything else may differ per profile — coordinates, size, `color`, `visible`, and a Text's `datum`/`size`/`text`/`font`.
-- The AI layout format v1 intentionally excludes font *family/style* selection beyond the `font` name + `size` + `color`, profile-specific asset replacement, and animation.
+- The AI layout format v1 intentionally excludes editable font *family/style* selection beyond the provided font context plus a Text's `font` name + `size` + `color`, profile-specific asset replacement, and animation.
+- If the AI determines that the available fonts cannot satisfy the request, it may ask the human to add fonts before or after producing the JSON. This is an **out-of-band operation outside the AI layout JSON**: do not add font-request fields to the JSON, and do not invent or use font names that are not adopted/enabled. Because fonts have storage cost, requests should be limited to cases such as missing script coverage, a large visual-style mismatch, or no natural native height, and should avoid many near-duplicate fonts in the same family.
 
 Export (implemented): the Design screen's **"Copy AI JSON"** action (`docs/src/ailayout.js`) copies the current scene (all profiles) in this format to the clipboard as **minified JSON** (the clipboard is an AI input, so no whitespace — fewer tokens; the contract's worked example stays pretty for human readers). A file download is used as a fallback when the clipboard is unavailable.
 
@@ -1216,6 +1218,7 @@ The following are considered in the future.
 - Multi-language documentation
 - Frame group (animation / state management; §16.1)
 - Static text designation (fixed text not exposed as a value; §16.2)
+- Font context JSON (limited subset for AI / font asset management; §16.3)
 
 ### 16.1 Frame group (animation / state management)
 
@@ -1238,6 +1241,20 @@ Add a flag to a Text part to choose between fixed text (a literal) and a settabl
 - The current generated code emits every Text as a settable field, but fixed labels whose content is determined by ID should not be exposed as values — they should be embedded as literals in the generated code.
 - Add a `static` (fixed / not exposed — descriptor preview string only, not a struct field) vs `dynamic` (settable value) distinction on Text.
 - This is a tool-wide Text feature rather than frame-group-specific, and may be implemented independently, before frame groups.
+
+### 16.3 Font context JSON (for AI / font asset management)
+
+In the future, consider a limited JSON format for font asset management and pre-layout AI consultation, separate from the layout JSON.
+
+This is not part of the layout JSON contract in [docs/AI_LAYOUT_IO.md](docs/AI_LAYOUT_IO.md). AI Layout I/O handles only the confirmed information needed to round-trip-edit a screen layout. Font-addition decisions and font asset inventory are a different responsibility, so they should be defined as a separate specification only when needed.
+
+Possible uses:
+
+- Let an AI inspect only the available fonts before generating a layout JSON.
+- Decide whether an out-of-band font-addition request is needed for the required script, visual style, or size.
+- Inspect adopted fonts, per-profile enabled fonts, font size/script/flash-cost information, and related font asset management data.
+
+This is not implemented for now. The format name, fields, and UI (for example, "Copy font context JSON") are undecided. If introduced, it should be a separate command and separate specification, not mixed into AI layout JSON with fields such as `fontRequests`.
 
 ## 17. Success Criteria
 
