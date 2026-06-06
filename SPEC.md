@@ -459,12 +459,12 @@ Profile creation flow:
 
 1. Create a profile by specifying the screen size (this size becomes the logical coordinate space of the layout).
 2. Specify the rotation.
-3. If multiple profiles have the same size, adjust their order on the Profiles screen and place the one that `Profile::Auto` should prefer above the others.
+3. If multiple profiles have the same size, adjust their order on the Devices screen and place the one that `Profile::Auto` should prefer above the others.
 4. If automatic selection should not be used, specify the profile explicitly with `setProfile()` in user code.
 
 #### 8.9.2 Profile Order
 
-Profile order can be changed on the Profiles screen.
+Profile order can be changed on the Devices screen.
 
 - When multiple profiles match the same screen size, `Profile::Auto` selects the first one in profile order.
 - When no profile matches the screen size, `Profile::Auto` uses the first profile as the final catch-all.
@@ -650,6 +650,19 @@ Text size uses the multiplier as the stored value, and the px height is auxiliar
 
 The tool exchanges the layout of a screen as a simple **JSON**, so that a screen can be handed back and forth when **asking an AI to modify or create a screen**. This is distinct from the project file (§9) and from the Arduino generated output (§10).
 
+AI collaboration is not a replacement for the authoring tool. It is an auxiliary feature for importing and exporting static layout proposals against a user-managed project. Based on the provided JSON and contract, the AI may propose placement, size, color, visibility, Text content, and Text font choices. The user decides whether to import the result, adjust it, or add project assets such as fonts and images.
+
+Basic flow:
+
+1. The user prepares scenes, profiles, image assets, and adopted fonts in the tool.
+2. The user copies the AI layout JSON from the Design screen.
+3. The AI edits or creates a static layout according to the JSON and contract.
+4. If required fonts are missing, the AI may ask the user to add fonts in an out-of-band conversation outside the JSON.
+5. The user adopts fonts in Fonts mode and enables them per profile as needed.
+6. The user pastes the AI JSON, reviews the preview and warnings, and then imports it.
+
+Font addition is a human-side operation. The AI layout JSON receives adopted fonts and per-profile enabled fonts only as confirmed context; it does not add, remove, or change font assets. The AI must not put an unadopted font name into `font`; if needed, it asks the user before or after JSON generation which script, visual style, or size is required.
+
 **Scope and granularity (decided):** the unit is **one scene across all profiles** — the same screen laid out for every device size — so the AI can keep the per-device layouts consistent in one pass. The format is **model-faithful and round-trippable**: it mirrors the internal model values almost one-to-one (absolute pixel coordinates, datum, size multiplier, color), so a layout exported from the tool and edited by the AI can be reconstructed. Stable part IDs are what make round-trip editing safe.
 
 The AI-facing interface contract is a standalone, **English-only** document, [docs/AI_LAYOUT_IO.md](docs/AI_LAYOUT_IO.md), served verbatim on GitHub Pages (the file has no front matter, so Jekyll does not convert it). The canonical contract URL embedded in exported JSON (the `spec` field) is `https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.md` — the same `.md` URL throughout. A Japanese reference translation for humans is provided as [docs/AI_LAYOUT_IO.ja.md](docs/AI_LAYOUT_IO.ja.md), but the contract given to AIs and the `spec` URL remain the English version. (Per the doc-naming convention this contract is intentionally English-only, since it is read by an AI.)
@@ -675,7 +688,7 @@ Import (implemented): the Design screen's **"Paste AI JSON"** action opens a dia
 - **Profiles** are matched by `id`. A JSON profile not in the project is ignored (warning); a project profile missing from the JSON has its placements cloned from the canonical profile (warning).
 - **Validation:** part IDs must be C identifiers and types known; an `asset` name not in the project is cleared to null (warning). The scene draw order is re-normalized.
 
-File-based import and automatic creation of project profiles referenced by the JSON are outside the current scope. Profile creation stays a Profiles-mode action (§15).
+File-based import and automatic creation of project profiles referenced by the JSON are outside the current scope. Profile creation stays a Devices-mode action (§15).
 
 ## 9. Project File
 
