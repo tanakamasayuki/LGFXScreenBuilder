@@ -69,7 +69,9 @@ python -m http.server 8000 --directory docs
 - **Export** mode (SPEC §10): file list (`<Project>.h`, `<Project>_example.ino`)
   with code preview, target-framework choice (M5Unified / M5GFX / LovyanGFX),
   per-profile output subset (the enum/tables are restricted to the selected
-  profiles), validation checks, and per-file download.
+  profiles), render-mode choice (default: tiled double buffering through
+  LGFXVirtualCanvas; direct drawing is also selectable), validation checks, and
+  per-file download.
 - **Code generation** (`src/codegen.js`): `generateHeader(project, opts)` (the §11
   facade + descriptor, with optional profile subset and test/screen-capture
   metadata `detail::kProfileInfo[]` / `detail::kSceneInfo[]`) and

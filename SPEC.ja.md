@@ -775,6 +775,7 @@ Arduino 向けエクスポートでは、以下を生成する。
 - シーンごとの型付きデータ構造体
 - 低レベル API 用のパーツ ID 定義
 - テスト・画面キャプチャ用のプロファイル一覧およびシーン一覧メタ情報
+- 描画モード設定（直描画または LGFXVirtualCanvas による分割ダブルバッファ描画）
 - サンプル利用コード（`<Project>_example.ino`）
 
 サンプル利用コードは対象フレームワークに応じて生成する。LovyanGFX は `LGFX_AUTODETECT` と `display.init()`、M5Unified は `M5.begin()` と `M5.Display` を用いるなど、include と初期化が異なる（描画 API は共通）。
@@ -782,6 +783,10 @@ Arduino 向けエクスポートでは、以下を生成する。
 出力対象のプロファイルは、全部または特定の機種だけを選んで生成できる。`enum class Profile` と生成データは選択したプロファイルだけに絞る。出力後もプロジェクト内のプロファイル順を保持し、`Profile::Auto` は出力対象に含まれるプロファイルの中で、§8.9.4 の優先順位に従って解決する。
 
 生成ヘッダには、通常描画で使う `lgfxsb::Project` とは別に、`detail::kProfileInfo[]` と `detail::kSceneInfo[]` を出力する。これは host テストや画面キャプチャで、全プロファイル × 全シーンを列挙するための補助メタ情報である。通常の利用コードでは参照しないため、描画ランタイムのデータ契約には含めない。
+
+Export では実機描画モードを選択できる。既定は **LGFXVirtualCanvas を使う分割ダブルバッファ描画** とし、背景クリアから各パーツ描画までの直描画ちらつきを低減する。互換性や依存を最小化したい場合は直描画を選択できる。分割ダブルバッファを選択した生成物は `LGFXVirtualCanvas` を依存ライブラリとして要求し、サンプル `.ino` も `#include <LGFXVirtualCanvas.h>` を含む。直描画を選択した生成物は `LGFXVirtualCanvas` に依存しない。
+
+LGFXVirtualCanvas は画面を縦方向タイルに分割し、小さな sprite を 2 枚確保して描画と転送を交互に行う。1 タイルあたりの既定メモリ目安は LGFXVirtualCanvas 側の既定値（約 19KB）に従う。LGFXScreenBuilder は分割数や転送制御を再実装せず、基本図形・Text・RGB565 Image を LGFXVirtualCanvas の描画面へ描く。画像はタイルごとに `pushImage` されるため大きな画像が多い画面では転送コストが増える可能性があるが、本ライブラリの主対象である AI アシスト可能な基本レイアウト（Rect / Line / Circle / Text 中心）では分割描画の負荷は小さい。
 
 生成するコード（ヘッダ・サンプル `.ino` など）に含めるコメントは、**英語のみ、または英語＋日本語の 2 言語（`// en:` / `// ja:` 形式）**とし、**日本語のみにはしない**。公開 Arduino ライブラリの利用者が英語圏でも読めるようにするためである（コメント言語の方針は §13 と共通）。
 
@@ -836,10 +841,12 @@ namespace lgfxsb {
     lgfx::LGFX_Device* _gfx = nullptr;   // LGFX / M5GFX / M5.Display の基底
     const Project& _project;
     uint8_t _profile = 0;          // 0 = Auto（実解決は描画時に遅延）
+    bool _buffered = true;         // true = LGFXVirtualCanvas 分割ダブルバッファ（生成設定に依存）
     void renderScene(/* sceneref */, uint8_t profile);
   public:
     Renderer(lgfx::LGFX_Device& gfx, const Project& project) : _gfx(&gfx), _project(project) {}
     void begin();                  // display 初期化後の設定フック（プロファイル選択には触れない）
+    void setBuffered(bool enable);  // 実行時に直描画へ切り替え可能
   };
 }
 ```
@@ -868,6 +875,7 @@ class Screen : public lgfxsb::Renderer {       // プロジェクト専用ファ
 public:
   explicit Screen(lgfx::LGFX_Device& gfx) : Renderer(gfx, project) {}   // 記述子を束縛
   void setProfile(Profile p);                  // この型だけ受ける（他プロジェクトは型エラー）
+  void setBuffered(bool enable);                // 分割ダブルバッファ描画の有効/無効
   void show(lgfxsb::SceneId id);                // テスト・キャプチャ用（プレビュー値で描画）
   void show(const Scene::Boot& s);              // 自プロジェクトのシーン型ごとの overload
   void update(const Scene::Boot& s);
@@ -885,6 +893,8 @@ public:
 `show` / `update` は、生成コードがシーン型ごとに**関数オーバーロード**として出力する（テンプレートではない）。生成された自プロジェクトのシーン型だけにオーバーロードが存在するため「自プロジェクトのシーンに限定」する性質は保たれ、未知の型を渡すとコンパイルエラーになる。テンプレート構文はユーザーにもライブラリ公開 API にも露出しない。
 
 `show(lgfxsb::SceneId id)` は、host テストや画面キャプチャで `detail::kSceneInfo[]` から列挙したシーンを描画するための補助 API とする。動的な Text 値は渡さず、生成時のプレビュー文字列で描画する。通常のアプリケーションコードでは、シーン構造体を渡す型付き overload を推奨する。
+
+実機描画は、生成時の Export 設定により直描画または LGFXVirtualCanvas 経由の分割ダブルバッファ描画を使う。分割ダブルバッファ描画は既定で有効とし、必要に応じて `screen.setBuffered(false)` で直描画へ切り替えられる。直描画として生成した場合は `setBuffered()` は no-op または未提供でもよい。
 
 ### 11.2 利用例
 
