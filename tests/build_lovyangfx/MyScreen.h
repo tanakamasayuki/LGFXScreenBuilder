@@ -39,14 +39,14 @@ namespace MyScreen
     // ja: パーツ静的定義（全シーン通し。SceneDesc が範囲参照）。
     static const lgfxsb::PartDesc kParts[] = {
         // Boot
-        {"logo", lgfxsb::PartType::Rect, -1, nullptr, -1},        // 0
-        {"boot", lgfxsb::PartType::Text, -1, "Booting...", -1},   // 1
+        {"logo", lgfxsb::PartType::Rect, nullptr, -1},        // 0
+        {"boot", lgfxsb::PartType::Text, "Booting...", -1},   // 1
         // Main
-        {"headerBand", lgfxsb::PartType::Rect, -1, nullptr, -1},  // 2
-        {"title", lgfxsb::PartType::Text, -1, "Main", -1},        // 3
-        {"battery", lgfxsb::PartType::Text, -1, "82%", -1},       // 4
-        {"temp", lgfxsb::PartType::Text, -1, "24.5C", -1},        // 5
-        {"panel", lgfxsb::PartType::Rect, -1, nullptr, -1},       // 6
+        {"headerBand", lgfxsb::PartType::Rect, nullptr, -1},  // 2
+        {"title", lgfxsb::PartType::Text, "Main", -1},        // 3
+        {"battery", lgfxsb::PartType::Text, "82%", -1},       // 4
+        {"temp", lgfxsb::PartType::Text, "24.5C", -1},        // 5
+        {"panel", lgfxsb::PartType::Rect, nullptr, -1},       // 6
     };
     static constexpr uint16_t kPartCount = 7;
 
@@ -61,49 +61,78 @@ namespace MyScreen
     static constexpr uint8_t MC = (uint8_t)lgfxsb::Datum::MC;
 
     // en: Per-profile layouts [profile][part]  /  ja: プロファイル別レイアウト [profile][part]
-    // {x, y, w, h, datum, size, color, visible}
+    // {x, y, w, h, x2, y2, r, datum, size, color, fill, visible, font}
     static const lgfxsb::PartLayout kLayouts[] = {
         // ---- Profile 0: Core 320x240 rot1 ----
-        {110, 80, 100, 60, 0, 0, 0x1e2a30, true},   // logo
-        {160, 160, 0, 0, MC, 2.0f, 0x9ce5ac, true}, // boot
-        {0, 0, 320, 40, 0, 0, 0x1e2a30, true},      // headerBand
-        {12, 10, 0, 0, TL, 2.0f, 0xffffff, true},   // title
-        {310, 12, 0, 0, TR, 1.5f, 0x9ce5ac, true},  // battery
-        {18, 70, 0, 0, TL, 4.0f, 0xffffff, true},   // temp
-        {18, 150, 284, 54, 0, 0, 0x172126, true},   // panel
+        {110, 80, 100, 60, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},   // logo
+        {160, 160, 0, 0, 0, 0, 0, MC, 2.0f, 0x9ce5ac, true, true, nullptr}, // boot
+        {0, 0, 320, 40, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},      // headerBand
+        {12, 10, 0, 0, 0, 0, 0, TL, 2.0f, 0xffffff, true, true, nullptr},   // title
+        {310, 12, 0, 0, 0, 0, 0, TR, 1.5f, 0x9ce5ac, true, true, nullptr},  // battery
+        {18, 70, 0, 0, 0, 0, 0, TL, 4.0f, 0xffffff, true, true, nullptr},   // temp
+        {18, 150, 284, 54, 0, 0, 0, 0, 0.0f, 0x172126, true, true, nullptr},   // panel
 
         // ---- Profile 1: Stick 135x240 rot0 ----
-        {30, 80, 75, 50, 0, 0, 0x1e2a30, true},     // logo
-        {69, 148, 0, 0, MC, 1.5f, 0x9ce5ac, true},  // boot
-        {0, 0, 135, 30, 0, 0, 0x1e2a30, true},      // headerBand
-        {8, 7, 0, 0, TL, 1.5f, 0xffffff, true},     // title
-        {8, 180, 0, 0, TL, 1.5f, 0x9ce5ac, true},   // battery
-        {10, 60, 0, 0, TL, 3.5f, 0xffffff, true},   // temp
-        {10, 110, 115, 60, 0, 0, 0x172126, true},   // panel
+        {30, 80, 75, 50, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},     // logo
+        {69, 148, 0, 0, 0, 0, 0, MC, 1.5f, 0x9ce5ac, true, true, nullptr},  // boot
+        {0, 0, 135, 30, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},      // headerBand
+        {8, 7, 0, 0, 0, 0, 0, TL, 1.5f, 0xffffff, true, true, nullptr},     // title
+        {8, 180, 0, 0, 0, 0, 0, TL, 1.5f, 0x9ce5ac, true, true, nullptr},   // battery
+        {10, 60, 0, 0, 0, 0, 0, TL, 3.5f, 0xffffff, true, true, nullptr},   // temp
+        {10, 110, 115, 60, 0, 0, 0, 0, 0.0f, 0x172126, true, true, nullptr},   // panel
 
         // ---- Profile 2: Cardputer 240x135 rot1 ----
-        {80, 30, 80, 40, 0, 0, 0x1e2a30, true},     // logo
-        {120, 88, 0, 0, MC, 1.5f, 0x9ce5ac, true},  // boot
-        {0, 0, 240, 26, 0, 0, 0x1e2a30, true},      // headerBand
-        {8, 5, 0, 0, TL, 1.5f, 0xffffff, true},     // title
-        {232, 6, 0, 0, TR, 1.25f, 0x9ce5ac, true},  // battery
-        {12, 40, 0, 0, TL, 3.0f, 0xffffff, true},   // temp
-        {12, 86, 216, 40, 0, 0, 0x172126, false},   // panel (hidden on Cardputer / Cardputer では非表示)
+        {80, 30, 80, 40, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},     // logo
+        {120, 88, 0, 0, 0, 0, 0, MC, 1.5f, 0x9ce5ac, true, true, nullptr},  // boot
+        {0, 0, 240, 26, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},      // headerBand
+        {8, 5, 0, 0, 0, 0, 0, TL, 1.5f, 0xffffff, true, true, nullptr},     // title
+        {232, 6, 0, 0, 0, 0, 0, TR, 1.25f, 0x9ce5ac, true, true, nullptr},  // battery
+        {12, 40, 0, 0, 0, 0, 0, TL, 3.0f, 0xffffff, true, true, nullptr},   // temp
+        {12, 86, 216, 40, 0, 0, 0, 0, 0.0f, 0x172126, true, false, nullptr},   // panel (hidden on Cardputer / Cardputer では非表示)
     };
 
     static const lgfxsb::ProfileDesc kProfiles[] = {
-        {320, 240, 1, nullptr, 0},
-        {135, 240, 0, nullptr, 0},
-        {240, 135, 1, nullptr, 0},
+        {320, 240, 1},
+        {135, 240, 0},
+        {240, 135, 1},
     };
+
+    struct ProfileInfo
+    {
+      const char *name;
+      uint8_t index;
+      int16_t w, h;
+      uint8_t rotation;
+    };
+
+    struct SceneInfo
+    {
+      const char *name;
+      lgfxsb::SceneId id;
+      uint16_t index;
+    };
+
+    static constexpr ProfileInfo kProfileInfo[] = {
+        {"Core", 0, 320, 240, 1},
+        {"Stick", 1, 135, 240, 0},
+        {"Cardputer", 2, 240, 135, 1},
+    };
+    static constexpr uint8_t kProfileInfoCount = 3;
+
+    static constexpr SceneInfo kSceneInfo[] = {
+        {"Boot", Scene::Boot::id, 0},
+        {"Main", Scene::Main::id, 1},
+    };
+    static constexpr uint16_t kSceneInfoCount = 2;
   } // namespace detail
 
   static const lgfxsb::Project project = {
-      detail::kProfiles, 3, /*defaultProfile*/ 0,
+      detail::kProfiles, 3,
       detail::kScenes, 2,
       detail::kParts, detail::kPartCount,
       detail::kLayouts,
       /*background*/ 0x000000,
+      nullptr, 0,
   };
 
   // en: Project-specific facade (binds the descriptor to the shared engine. §11.1)
@@ -114,6 +143,8 @@ namespace MyScreen
     explicit Screen(lgfx::LGFX_Device &gfx) : lgfxsb::Renderer(gfx, project) {}
 
     void setProfile(Profile p) { _profile = static_cast<uint8_t>(p); }
+
+    void show(lgfxsb::SceneId id) { renderScene(id, nullptr, 0); }
 
     void show(const Scene::Boot &) { renderScene(Scene::Boot::id, nullptr, 0); }
     void update(const Scene::Boot &s) { show(s); }

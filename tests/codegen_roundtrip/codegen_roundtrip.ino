@@ -44,8 +44,8 @@ void setup()
   Serial.printf("BOOT saved=%d\n", savePng(lcd, "output/boot.png"));
 
   Scene::Main main;
-  main.group.title = "Main";   // title/battery are grouped (nested struct)
-  main.group.battery = "82%";
+  main.title = "Main";
+  main.battery = "82%";
   main.temp = "24.5C";
   screen.show(main);
   Serial.printf("MAIN saved=%d\n", savePng(lcd, "output/main.png"));
