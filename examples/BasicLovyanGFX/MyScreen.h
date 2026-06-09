@@ -117,6 +117,7 @@ static constexpr SceneInfo kSceneInfo[] = {
 };
 static constexpr uint16_t kSceneInfoCount = 3;
 
+
 } // namespace detail
 
 static const lgfxsb::Project project = {
@@ -138,7 +139,6 @@ class Screen : public lgfxsb::Renderer {
     v[1] = lgfxsb::Value::text(s.boot);
     renderScene(Scene::Boot::id, v, 2);
   }
-  void update(const Scene::Boot& s) { show(s); }
   void show(const Scene::Main& s) {
     lgfxsb::Value v[5];
     v[1] = lgfxsb::Value::text(s.title);
@@ -146,14 +146,12 @@ class Screen : public lgfxsb::Renderer {
     v[3] = lgfxsb::Value::text(s.temp);
     renderScene(Scene::Main::id, v, 5);
   }
-  void update(const Scene::Main& s) { show(s); }
   void show(const Scene::Settings& s) {
     lgfxsb::Value v[3];
     v[1] = lgfxsb::Value::text(s.ttl);
     v[2] = lgfxsb::Value::text(s.row1);
     renderScene(Scene::Settings::id, v, 3);
   }
-  void update(const Scene::Settings& s) { show(s); }
 };
 
 } // namespace MyScreen

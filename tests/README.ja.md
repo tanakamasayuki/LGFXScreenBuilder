@@ -26,6 +26,23 @@ ASCII/CJK カバレッジ＋等幅フラグ＋実サイズのサンプル＋正�
 uv run pytest manual/font_introspect/font_introspect.py
 ```
 
+## 生成ヘッダの再生成
+
+コミット済みの `MyScreen.h` は、保存済みプロジェクトファイル（`*.lgfxsb.json`＝
+オーサリングツールの保存形式）から **本番の** コード生成を通して生成する。これにより
+出力フォーマットの変更は、各ヘッダを手で直す代わりに 1 コマンドで全体へ伝播する：
+
+```sh
+node tools/gen-fixtures.mjs --write    # その場で再生成
+node tools/gen-fixtures.mjs --check    # 古いヘッダがあれば exit 1（CI / pre-commit ガード）
+```
+
+真実の元: `fixtures/sample.lgfxsb.json` が `examples/*/MyScreen.h` の両方を生成する
+（ヘッダはフレームワーク非依存）。`.ino` は手書き/手調整で公開APIのみを呼ぶため生成
+対象にしない。`tests/build_lovyangfx/MyScreen.h` は意図的な手書き（codegen がまだ出せない
+ネストグループ・ファサードの先取り）で対象外。`tests/codegen_roundtrip/MyScreen.h` は
+当面それ自身の `gen.mjs` で再生成する（共通ツールへ統合予定）。
+
 ## 必要なもの
 
 - `uv` ＋ Arduino CLI（`lang-ship:host` プラットフォームは自動取得）。

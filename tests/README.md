@@ -26,6 +26,25 @@ hand after bumping the font library (SPEC §8.7.2):
 uv run pytest manual/font_introspect/font_introspect.py
 ```
 
+## Regenerating generated headers
+
+Committed `MyScreen.h` files are generated from stored project files
+(`*.lgfxsb.json`, the authoring tool's save format) through the **production**
+codegen, so an output-format change propagates with one command instead of
+hand-editing each header:
+
+```sh
+node tools/gen-fixtures.mjs --write    # regenerate in place
+node tools/gen-fixtures.mjs --check    # exit 1 if any header is stale (CI / pre-commit guard)
+```
+
+Source of truth: `fixtures/sample.lgfxsb.json` drives both `examples/*/MyScreen.h`
+(the header is framework-agnostic). The `.ino` files are hand-written/curated and
+call only the stable public API, so they are not generated. `tests/build_lovyangfx/MyScreen.h`
+is hand-written on purpose (it previews a nested-group facade the codegen cannot
+emit yet) and is exempt. `tests/codegen_roundtrip/MyScreen.h` is still regenerated
+by its own `gen.mjs` (to be folded into the shared tool).
+
 ## Requirements
 
 - `uv` + Arduino CLI (the `lang-ship:host` platform is fetched automatically).
