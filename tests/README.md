@@ -47,6 +47,15 @@ emit yet) and is exempt. `tests/codegen_roundtrip/MyScreen.h` is generated from
 thin shim over this tool, invoked at pytest collection. CI runs `--check` on the
 pristine checkout so committed headers cannot silently drift from the codegen.
 
+Project files (`*.lgfxsb.json`) are kept in canonical serializer form, checked
+separately (SPEC §9.2). A diff means the project-file format moved (independent of
+codegen changes):
+
+```sh
+node tools/check-formats.mjs --write    # re-serialize (normalize) in place
+node tools/check-formats.mjs --check    # exit 1 if any project file is non-canonical (CI guard)
+```
+
 ## Requirements
 
 - `uv` + Arduino CLI (the `lang-ship:host` platform is fetched automatically).

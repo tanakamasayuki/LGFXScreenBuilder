@@ -28,6 +28,11 @@ jobs:
       - name: Check generated headers are up to date
         run: node tools/gen-fixtures.mjs --check
 
+      # SPEC §9.2: project files must stay in canonical serializer form; a diff
+      # means the project-file format moved (independent of codegen changes).
+      - name: Check project files are canonical
+        run: node tools/check-formats.mjs --check
+
       - name: Install SDL2 (headless LovyanGFX / M5GFX backend)
         run: |
           sudo apt-get update

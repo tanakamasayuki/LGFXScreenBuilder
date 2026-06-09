@@ -45,6 +45,15 @@ node tools/gen-fixtures.mjs --check    # 古いヘッダがあれば exit 1（CI
 本ツールへの薄いシム（pytest collection 時に実行）になった。CI は pristine な
 チェックアウトで `--check` を走らせ、コミット済みヘッダが codegen から static にずれるのを防ぐ。
 
+プロジェクトファイル（`*.lgfxsb.json`）はシリアライザの正準形に保ち、別途チェックする
+（SPEC §9.2）。差分が出る＝プロジェクトファイルのフォーマットが動いた、を意味する（codegen
+変更からは独立）：
+
+```sh
+node tools/check-formats.mjs --write    # 正準形へ再シリアライズ
+node tools/check-formats.mjs --check    # 非正準なファイルがあれば exit 1（CI ガード）
+```
+
 ## 必要なもの
 
 - `uv` ＋ Arduino CLI（`lang-ship:host` プラットフォームは自動取得）。
