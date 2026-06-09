@@ -41,7 +41,9 @@ node tools/gen-fixtures.mjs --check    # 古いヘッダがあれば exit 1（CI
 （ヘッダはフレームワーク非依存）。`.ino` は手書き/手調整で公開APIのみを呼ぶため生成
 対象にしない。`tests/build_lovyangfx/MyScreen.h` は意図的な手書き（codegen がまだ出せない
 ネストグループ・ファサードの先取り）で対象外。`tests/codegen_roundtrip/MyScreen.h` は
-当面それ自身の `gen.mjs` で再生成する（共通ツールへ統合予定）。
+`tests/codegen_roundtrip/codegen_roundtrip.lgfxsb.json` から生成し、その `gen.mjs` は
+本ツールへの薄いシム（pytest collection 時に実行）になった。CI は pristine な
+チェックアウトで `--check` を走らせ、コミット済みヘッダが codegen から static にずれるのを防ぐ。
 
 ## 必要なもの
 

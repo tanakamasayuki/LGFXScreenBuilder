@@ -18,6 +18,16 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Guard against committed generated headers drifting from the codegen.
+      # Runs on the pristine checkout, before any test regenerates a header.
+      - name: Check generated headers are up to date
+        run: node tools/gen-fixtures.mjs --check
+
       - name: Install SDL2 (headless LovyanGFX / M5GFX backend)
         run: |
           sudo apt-get update
