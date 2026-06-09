@@ -58,8 +58,8 @@ python -m http.server 8000 --directory docs
   （デバイス/サイズ/回転）・最初のシーンを指定。
 - **Export** モード（SPEC §10）: ファイル一覧（`<Project>.h` / `<Project>_example.ino`）＋
   コードプレビュー、対象フレームワーク選択（M5Unified / M5GFX / LovyanGFX）、プロファイル別
-  出力サブセット（enum/テーブルを選択分に限定）、描画モード選択（既定は LGFXVirtualCanvas
-  による分割ダブルバッファ。直描画も選択可）、検証チェック、ファイル単位ダウンロード。
+  出力サブセット（enum/テーブルを選択分に限定）、サンプル `.ino` は既定で `LGFXVirtualCanvas`
+  を include（描画モードは include 検出でコンパイル時に確定。外せば直描画。§10）、検証チェック、ファイル単位ダウンロード。
 - **コード生成**（`src/codegen.js`）: `generateHeader(project, opts)`（§11 ファサード＋記述子、
   プロファイル絞り込み、テスト/画面キャプチャ用の `detail::kProfileInfo[]` / `detail::kSceneInfo[]`）
   ＋ `generateSketch(project, framework)`（サンプル `.ino`）。`tests/codegen_roundtrip` で

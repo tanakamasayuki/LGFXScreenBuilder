@@ -775,7 +775,7 @@ Arduino 向けエクスポートでは、以下を生成する。
 - シーンごとの型付きデータ構造体
 - 低レベル API 用のパーツ ID 定義
 - テスト・画面キャプチャ用のプロファイル一覧およびシーン一覧メタ情報
-- 描画モード設定（直描画または LGFXVirtualCanvas による分割ダブルバッファ描画）
+- 描画モードは `LGFXVirtualCanvas.h` の include 検出でコンパイル時に決まる（直描画 / LGFXVirtualCanvas 分割ダブルバッファ。後述）
 - サンプル利用コード（`<Project>_example.ino`）
 
 サンプル利用コードは対象フレームワークに応じて生成する。LovyanGFX は `LGFX_AUTODETECT` と `display.init()`、M5Unified は `M5.begin()` と `M5.Display` を用いるなど、include と初期化が異なる（描画 API は共通）。
@@ -784,7 +784,15 @@ Arduino 向けエクスポートでは、以下を生成する。
 
 生成ヘッダには、通常描画で使う `lgfxsb::Project` とは別に、`detail::kProfileInfo[]` と `detail::kSceneInfo[]` を出力する。これは host テストや画面キャプチャで、全プロファイル × 全シーンを列挙するための補助メタ情報である。通常の利用コードでは参照しないため、描画ランタイムのデータ契約には含めない。
 
-Export では実機描画モードを選択できる。既定は **LGFXVirtualCanvas を使う分割ダブルバッファ描画** とし、背景クリアから各パーツ描画までの直描画ちらつきを低減する。互換性や依存を最小化したい場合は直描画を選択できる。分割ダブルバッファを選択した生成物は `LGFXVirtualCanvas` を依存ライブラリとして要求し、サンプル `.ino` も `#include <LGFXVirtualCanvas.h>` を含む。直描画を選択した生成物は `LGFXVirtualCanvas` に依存しない。
+実機描画モードは **`LGFXVirtualCanvas.h` を include しているかどうかでコンパイル時に確定する**。生成ヘッダ（`MyScreen.h`）より前に `#include <LGFXVirtualCanvas.h>` があり、検出マクロ `LGFXVIRTUALCANVAS_H` が見えていれば **LGFXVirtualCanvas による分割ダブルバッファ描画**、無ければ **直描画** になる。既定はバッファ描画とし、生成サンプル `.ino` は既定で `#include <LGFXVirtualCanvas.h>` を含む。直描画にしたいときはその include を外すだけでよい。実行時のモード切り替えは行わない（`setBuffered()` のような API は無い）。
+
+`__has_include`（ヘッダが存在するか）ではなく **実際に include されたか** を見る。これにより、ライブラリがインストール済みでも include しなければ直描画のままで、意図しないバッファ化を避けられる。直描画ビルドは `LGFXVirtualCanvas` を名前すら参照しないため、本当に依存しない。
+
+確定したモードは `screen.isBuffered()`（true=分割ダブルバッファ / false=直描画）で参照でき、include 順序の誤りでバッファが効いていないことに気づける。
+
+include 順序の規則: `<LGFXVirtualCanvas.h>` は **すべての生成スクリーンヘッダより前** に置く。複数の生成ヘッダ（複数スクリーン）を include しても、公開マクロを出さない設計のため衝突しない。各スクリーンは同じ `LGFXVIRTUALCANVAS_H` を読むので、規則を守れば全スクリーンが一貫したモードになる。検出マクロを持たない古い版の `LGFXVirtualCanvas` を include した場合は、未定義として直描画に解決される（バージョン要件は設けない）。
+
+注意（複数翻訳単位）: 単一の `.ino` では問題ない。複数の `.cpp` から生成ヘッダを使い、TU ごとに include 有無が食い違うと描画先の型が TU 間で食い違い ODR 違反になりうる。複数 TU 構成ではビルドフラグ等でモードをプロジェクト全体に固定する。
 
 LGFXVirtualCanvas は画面を縦方向タイルに分割し、小さな sprite を 2 枚確保して描画と転送を交互に行う。1 タイルあたりの既定メモリ目安は LGFXVirtualCanvas 側の既定値（約 19KB）に従う。LGFXScreenBuilder は分割数や転送制御を再実装せず、基本図形・Text・RGB565 Image を LGFXVirtualCanvas の描画面へ描く。画像はタイルごとに `pushImage` されるため大きな画像が多い画面では転送コストが増える可能性があるが、本ライブラリの主対象である AI アシスト可能な基本レイアウト（Rect / Line / Circle / Text 中心）では分割描画の負荷は小さい。
 
@@ -836,17 +844,21 @@ screen.update(main);
 namespace lgfxsb {
   struct Project { /* profiles, scenes[], assets[] */ };
 
-  class Renderer {
+  // 描画エンジンは描画先の型 Canvas でパラメータ化する。生成ヘッダが §10 の
+  // include 検出で選んだ型（直描画なら lgfx::LGFXBase、バッファなら
+  // LGFXVirtualCanvas）で、ビルドごとに一度だけ実体化される。
+  template <class Canvas>
+  class RendererT {
   protected:
     lgfx::LGFX_Device* _gfx = nullptr;   // LGFX / M5GFX / M5.Display の基底
     const Project& _project;
     uint8_t _profile = 0;          // 0 = Auto（実解決は描画時に遅延）
-    bool _buffered = true;         // true = LGFXVirtualCanvas 分割ダブルバッファ（生成設定に依存）
-    void renderScene(/* sceneref */, uint8_t profile);
+    // parts を Canvas に描く。バッファ時はタイルごとに 1 回ずつ呼ばれる
+    template <class SceneT>
+    void renderScene(SceneId id, const Value* values, uint16_t count, const SceneT& s);
   public:
-    Renderer(lgfx::LGFX_Device& gfx, const Project& project) : _gfx(&gfx), _project(project) {}
+    RendererT(lgfx::LGFX_Device& gfx, const Project& project) : _gfx(&gfx), _project(project) {}
     void begin();                  // display 初期化後の設定フック（プロファイル選択には触れない）
-    void setBuffered(bool enable);  // 実行時に直描画へ切り替え可能
   };
 }
 ```
@@ -871,16 +883,29 @@ namespace Scene {
 
 extern const lgfxsb::Project project;          // 全データの入口（生成）
 
-class Screen : public lgfxsb::Renderer {       // プロジェクト専用ファサード
+// 描画モードを include 検出でコンパイル時に確定（§10）
+#if defined(LGFXVIRTUALCANVAS_H)
+using Canvas = LGFXVirtualCanvas;              // 分割ダブルバッファの描画面
+#else
+using Canvas = lgfx::LGFXBase;                 // 直描画の描画面（device / sprite の基底）
+#endif
+
+class Screen : public lgfxsb::RendererT<Canvas> {  // プロジェクト専用ファサード
 public:
-  explicit Screen(lgfx::LGFX_Device& gfx) : Renderer(gfx, project) {}   // 記述子を束縛
+  explicit Screen(lgfx::LGFX_Device& gfx) : RendererT(gfx, project) {}   // 記述子を束縛
   void setProfile(Profile p);                  // この型だけ受ける（他プロジェクトは型エラー）
-  void setBuffered(bool enable);                // 分割ダブルバッファ描画の有効/無効
+
+  bool isBuffered() const;                      // 確定したモードの参照（true=バッファ / false=直描画）
+
   void show(lgfxsb::SceneId id);                // テスト・キャプチャ用（プレビュー値で描画）
   void show(const Scene::Boot& s);              // 自プロジェクトのシーン型ごとの overload
   void update(const Scene::Boot& s);
   void show(const Scene::Main& s);
   void update(const Scene::Main& s);
+
+  // 動的描画フック（任意・シーンごとに 1 回登録。§11.4）
+  void setOverlay(void (*fn)(Canvas&, const Scene::Boot&));
+  void setOverlay(void (*fn)(Canvas&, const Scene::Main&));
 };
 
 } // namespace MyScreen
@@ -890,17 +915,18 @@ public:
 
 `gfx` の受け型は `lgfx::LGFX_Device`（`LovyanGFX` 基底クラスの派生）とする。ユーザーが渡す LovyanGFX autodetect の `LGFX`、`M5GFX`、`M5.Display` はいずれも `lgfx::LGFX_Device` 派生なので、同一 API で受けられる。
 
-`show` / `update` は、生成コードがシーン型ごとに**関数オーバーロード**として出力する（テンプレートではない）。生成された自プロジェクトのシーン型だけにオーバーロードが存在するため「自プロジェクトのシーンに限定」する性質は保たれ、未知の型を渡すとコンパイルエラーになる。テンプレート構文はユーザーにもライブラリ公開 API にも露出しない。
+`show` / `update` は、生成コードがシーン型ごとに**関数オーバーロード**として出力する（テンプレートではない）。生成された自プロジェクトのシーン型だけにオーバーロードが存在するため「自プロジェクトのシーンに限定」する性質は保たれ、未知の型を渡すとコンパイルエラーになる。テンプレート構文は `show` / `update` には露出しない（overlay フックでのみ、ユーザーが gfx 引数を任意でテンプレート化できる。§11.4）。
 
 `show(lgfxsb::SceneId id)` は、host テストや画面キャプチャで `detail::kSceneInfo[]` から列挙したシーンを描画するための補助 API とする。動的な Text 値は渡さず、生成時のプレビュー文字列で描画する。通常のアプリケーションコードでは、シーン構造体を渡す型付き overload を推奨する。
 
-実機描画は、生成時の Export 設定により直描画または LGFXVirtualCanvas 経由の分割ダブルバッファ描画を使う。分割ダブルバッファ描画は既定で有効とし、必要に応じて `screen.setBuffered(false)` で直描画へ切り替えられる。直描画として生成した場合は `setBuffered()` は no-op または未提供でもよい。
+実機描画のモードは §10 のとおり `LGFXVirtualCanvas.h` の include 検出でコンパイル時に確定する。実行時切り替えは無い。生成ファサードは include 検出で描画先の型 `Canvas`（直描画なら `lgfx::LGFXBase`、バッファなら `LGFXVirtualCanvas`）を選び、共有エンジンをその型で実体化する。確定したモードは `screen.isBuffered()`（true=分割ダブルバッファ / false=直描画）で参照でき、include 順序の誤りに気づける。
 
 ### 11.2 利用例
 
 ```cpp
 #include <LovyanGFX.hpp>
 #include <LGFX_AUTODETECT.hpp>
+#include <LGFXVirtualCanvas.h>    // 既定の分割ダブルバッファを使う（外すと直描画。§10）
 #include <LGFXScreenBuilder.h>
 #include "MyScreen.h"             // 生成物（プロジェクト名.h）
 
@@ -947,6 +973,55 @@ screen.setProfile(Profile::Auto);    // 自動判定へ戻す
 M5GFX は LovyanGFX 派生または互換 API として扱える範囲で同一 API に統合する。
 
 文字列 ID を使った `show("Main")` や `setText("Main.temperature", "...")` は、デバッグ用途または低レベル互換 API として扱い、通常利用の推奨 API にはしない。
+
+### 11.4 動的描画フック（overlay）
+
+parts では表現できない動的描画（メーターの針、波形など）を、静的 parts と **同じバッファに合成** するためのフックを提供する。`show` のあとにユーザーが直接描くと別バッファが必要になりちらつきも戻るため、描画は `show` / `update` の内部から呼び出す。これは §3 の非目標（ユーザー独自描画）に対する、バッファ整合のとれた唯一の正規ルートとして位置づける。
+
+- **登録はシーンごとに 1 回**（事前登録）。`setOverlay` をシーン型ごとに overload するので、overload 解決で「第 2 引数の型 → そのシーンのスロット」と型安全に振り分けられる。`show` / `update` の呼び出し側は overlay を意識しない。
+- **シグネチャは `void(Canvas&, const SceneT&)`**。gfx 引数はユーザー側で `template <class GFX>` にしてよい。描画モードが 1 つの `Canvas` に確定しているため、登録時に `GFX = Canvas` が推論され、`Canvas` 名を書かずに済む。シーン型は省略不可で、typed なデータ参照（`s.battery` 等）と登録スロット選択の両方を担う。
+- **呼び出しタイミング**: 各 `show` / `update` が静的 parts を描いた **後** に呼ぶ。**バッファ時はタイルごとに複数回**、**直描画時は 1 回** 呼ばれる。したがって overlay は **描画専用・冪等** にする。状態の前進（アニメーション、`millis()` 取得、センサ読み取り）は `loop()` 側で行い、結果はシーン構造体 `s` や自前の状態として渡す。同じ入力なら何度呼んでも同じ絵になること。
+- 未登録のシーンでは何も追加描画しない。
+- `show(lgfxsb::SceneId)`（プレビュー・キャプチャ用）は動的データを持たないため overlay を呼ばない。
+
+記述例は `using namespace` を使わず、ネームスペース修飾の名前付き関数で示す。
+
+```cpp
+#include <LovyanGFX.hpp>
+#include <LGFX_AUTODETECT.hpp>
+#include <LGFXVirtualCanvas.h>      // include すれば分割ダブルバッファ／外すと直描画（§10）
+#include <LGFXScreenBuilder.h>
+#include "MyScreen.h"
+
+static LGFX display;
+static MyScreen::Screen screen(display);
+
+// Main シーンの動的描画（parts では表現できないもの）。
+// gfx 引数をテンプレートにしてキャンバス型名を書かずに済ませる。
+// シーン型は明示する（typed データ＋登録スロット選択）。
+template <class GFX>
+void mainOverlay(GFX& g, const MyScreen::Scene::Main& s) {
+  const float a = s.battery / 100.0f * 270 - 135;
+  g.drawLine(120, 120,
+             120 + cosf(a * DEG_TO_RAD) * 60,
+             120 + sinf(a * DEG_TO_RAD) * 60, TFT_RED);
+}
+
+void setup() {
+  display.init();
+  screen.begin();
+  screen.setOverlay(mainOverlay);          // 一度だけ登録。GFX = Canvas を推論
+}
+
+void loop() {
+  static MyScreen::Scene::Main main;
+  main.battery = readBattery();            // 状態の前進は overlay の外（ここ）で行う
+  screen.update(main);                     // overlay は自動で呼ばれる（バッファ時はタイル毎）
+  delay(100);
+}
+```
+
+具象 `MyScreen::Canvas&` を直接書いても同じ `setOverlay` で受かる（定義時に本体の型エラーを出したい場合はこちら）。
 
 ## 12. ホストプレビューとスクリーンショット
 
