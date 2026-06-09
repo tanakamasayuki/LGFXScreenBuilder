@@ -773,6 +773,29 @@ At generation time, the following UI-only information is excluded from the rich 
 - Temporary UI state such as the selected tab or selected item
 - Browser-preview-only auxiliary information
 
+### 9.2 Version Compatibility and Migration
+
+The project file (`.lgfxsb.json`) **prioritizes backward compatibility**. The minimum guarantee is "works with the latest browser + latest library," and older project files should remain loadable as much as possible. Forward compatibility (an old tool reading a newer file) is not guaranteed; pinned operation on a past version is covered by self-hosting the authoring tool bundled in that release.
+
+The project file carries a **`formatVersion` (integer)** on an axis **separate** from the library/tool semver. A missing value is treated as 1. `formatVersion` is bumped **only when the project-file format actually changes**, not on every release. The tool-side value lives as the `FORMAT_VERSION` constant in **`docs/src/version.js`** (kept in-tree rather than fetched, so the authoring tool works when served from `docs/` alone; updated by hand only on a format change, independently of `bump_version.py`). The round-trip check pairs with this constant to catch a forgotten bump.
+
+Compatibility is secured in **three layers**.
+
+**Layer 1: tolerant loader.** On load, unknown fields are ignored and missing fields are filled with defaults. As a result, additive changes that do not affect output stay backward compatible without bumping `formatVersion`.
+
+**Layer 2: formatVersion and migration.** Only for changes the tolerant loader cannot absorb (semantic reinterpretation, a rename requiring transformation of the old value, removal) is `formatVersion` bumped, with a **forward-only chained migration** (v1→v2→…→current) applied on load. If `formatVersion` is newer than the tool knows, the file is **not rejected**: it is loaded best-effort **with a warning** (the known parts work; the warning notes that unknown fields may be dropped on save, and recommends self-hosting the matching release for pinned operation; preserving unknown fields is a future enhancement).
+
+**Layer 3: golden checks (CI).** These mechanically detect a "forgotten bump" and a "behavior change for old files." The comparison surfaces are kept strictly separate, and **generation data and the `.h` are not used** (they would yield false positives on output-logic changes).
+
+- **Bump completeness (project-file round-trip)**: for a representative project, check that `serialize(load(file))` equals the committed file. A diff means the load/serialize representation changed, i.e., the format moved. **If a diff appears while `formatVersion` is unchanged, CI fails** (forgotten-bump detection). Changing only the output logic (codegen) does not touch load/serialize, so it does not trigger.
+- **Backward-compat correctness (render goldens)**: for each past version, load → migrate → generate → render on host the frozen project file, and check **pixel equality against frozen render PNGs (per profile × scene)** (within tolerance). A successful structural migration does not prove visual identity, so the rendered result is the final oracle. A diff is classified as an intended change (refreeze) or a regression (fix). The render engine is pinned via sketch.yaml; on an engine bump the goldens are deliberately refrozen. If isolating the cause is needed, keep current-format goldens too, so that a diff only in the past-version goldens indicates a migration-specific issue.
+
+The check harness reuses the production routines (`docs/src` load/serialize + codegen, host rendering) and the existing fixtures/CI (same style as `tools/gen-fixtures.mjs --check`, host-PNG pixel-diff).
+
+**Pre-first-release operation.** `formatVersion` stays 1, and since there are no past versions, the goldens (render PNGs, frozen projects) need not be created yet. The round-trip check already works with the current fixtures. **At the first format change (when the round-trip diffs), freeze v1** and activate Layer 3.
+
+In the worst case, even if an old generated `.h` becomes unreadable after a library upgrade, recovery is assumed via **re-generation from the project file** (the generated `.h` ⇄ runtime compatibility is best-effort).
+
 ## 10. Export Specification
 
 The Arduino-bound export generates the following.
