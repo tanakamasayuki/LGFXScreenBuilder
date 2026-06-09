@@ -959,7 +959,7 @@ void loop() {
 
 ### 11.3 プロファイル選択（順不同・遅延解決）
 
-`setProfile()` と `begin()` の順序は固定しない。`setProfile()` は選択を記録するだけでハードウェアに触れないため、`begin()` の前後どちらでも、実行中の切り替えでも呼べる。`Profile::Auto` の実解決と回転（`setRotation`）は描画時（`show` / `update`）に遅延適用するため、`display.init()` → `show()` の順さえ守れば順序を意識する必要はない。
+`setProfile()` と `begin()` の順序は固定しない。`setProfile()` は選択を記録するだけでハードウェアに触れないため、`begin()` の前後どちらでも、実行中の切り替えでも呼べる。`Profile::Auto` の実解決と回転（`setRotation`）は描画時（`show`）に遅延適用するため、`display.init()` → `show()` の順さえ守れば順序を意識する必要はない。
 
 ```cpp
 screen.setProfile(Profile::Stick);   // 自動判定を上書き（自作パネル等）。begin の前後どちらでも可

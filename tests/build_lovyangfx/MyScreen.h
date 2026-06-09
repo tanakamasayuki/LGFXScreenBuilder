@@ -147,7 +147,6 @@ namespace MyScreen
     void show(lgfxsb::SceneId id) { renderScene(id, nullptr, 0); }
 
     void show(const Scene::Boot &) { renderScene(Scene::Boot::id, nullptr, 0); }
-    void update(const Scene::Boot &s) { show(s); }
 
     void show(const Scene::Main &s)
     {
@@ -159,7 +158,6 @@ namespace MyScreen
       v[3] = lgfxsb::Value::text(s.body.temperature);
       renderScene(Scene::Main::id, v, 5);
     }
-    void update(const Scene::Main &s) { show(s); }
   };
 
 } // namespace MyScreen

@@ -183,7 +183,6 @@ export function generateHeader(project, opts = {}) {
       });
       s += `    renderScene(Scene::${sc.id}::id, v, ${sc.parts.length});\n  }\n`;
     }
-    s += `  void update(const Scene::${sc.id}& s) { show(s); }\n`;
   });
   s += `};\n\n`;
 
@@ -241,7 +240,7 @@ export function generateSketch(project, framework, opts = {}) {
     for (const p of demo.parts.filter((x) => x.type === 'Text')) setupBody += `  ${v}.${p.id} = ${preview(demo, p)};\n`;
     setupBody += `  screen.show(${v});\n`;
     const t0 = demo.parts.find((p) => p.type === 'Text');
-    loopBody = `  static Scene::${demo.id} ${v};\n  ${v}.${t0.id} = ${preview(demo, t0)};\n  screen.update(${v});  // values only; layout is fixed\n  delay(1000);\n`;
+    loopBody = `  static Scene::${demo.id} ${v};\n  ${v}.${t0.id} = ${preview(demo, t0)};\n  screen.show(${v});  // redraw with new values (drawing is always show)\n  delay(1000);\n`;
   }
 
   let s = '';

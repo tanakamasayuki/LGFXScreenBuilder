@@ -967,7 +967,7 @@ Normally, `setProfile()` is not called, and it is left to the default `Profile::
 
 ### 11.3 Profile Selection (Order-Independent, Draw-Time Resolution)
 
-The order of `setProfile()` and `begin()` is not fixed. Because `setProfile()` only records the selection and does not touch the hardware, it can be called either before or after `begin()`, or to switch during execution. The actual resolution of `Profile::Auto` and the rotation (`setRotation`) are applied at draw time (`show` / `update`), so as long as the order `display.init()` → `show()` is observed, there is no need to be conscious of the order.
+The order of `setProfile()` and `begin()` is not fixed. Because `setProfile()` only records the selection and does not touch the hardware, it can be called either before or after `begin()`, or to switch during execution. The actual resolution of `Profile::Auto` and the rotation (`setRotation`) are applied at draw time (`show`), so as long as the order `display.init()` → `show()` is observed, there is no need to be conscious of the order.
 
 ```cpp
 screen.setProfile(Profile::Stick);   // override auto-detection (self-built panel, etc.); either before or after begin
