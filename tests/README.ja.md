@@ -43,12 +43,12 @@ node tools/gen-fixtures.mjs --write    # その場で再生成
 node tools/gen-fixtures.mjs --check    # 古いヘッダがあれば exit 1（CI / pre-commit ガード）
 ```
 
-真実の元: `fixtures/sample.lgfxsb.json` が `examples/*/MyScreen.h` の両方を生成する
+真実の元: `fixtures/sample.lgfxsb.json` が `examples/*` と sample ベースの build
+テスト（`build_lovyangfx`・`build_buffered`）のコミット済み `MyScreen.h` を生成する
 （ヘッダはフレームワーク非依存）。`.ino` は手書き/手調整で公開APIのみを呼ぶため生成
-対象にしない。`tests/build_lovyangfx/MyScreen.h` は意図的な手書き（codegen がまだ出せない
-ネストグループ・ファサードの先取り）で対象外。`tests/codegen_roundtrip/MyScreen.h` は
+対象にしない。`tests/codegen_roundtrip/MyScreen.h` は
 `tests/codegen_roundtrip/codegen_roundtrip.lgfxsb.json` から生成し、その `gen.mjs` は
-本ツールへの薄いシム（pytest collection 時に実行）になった。CI は pristine な
+本ツールへの薄いシム（pytest collection 時に実行。ヘッダは gitignore）。CI は pristine な
 チェックアウトで `--check` を走らせ、コミット済みヘッダが codegen から static にずれるのを防ぐ。
 
 プロジェクトファイル（`*.lgfxsb.json`）はシリアライザの正準形に保ち、別途チェックする

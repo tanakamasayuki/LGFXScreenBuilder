@@ -46,9 +46,9 @@ void setup()
   Serial.printf("BOOT saved=%d\n", bootSaved);
 
   Scene::Main main;
-  main.header.title = "Main";
-  main.header.battery = 82;
-  main.body.temperature = "24.5C";
+  main.title = "Main";
+  main.battery = "82%";
+  main.temp = "24.5C";
   screen.show(main);
 
   const bool saved = savePng(lcd, "output/build_lovyangfx.png");

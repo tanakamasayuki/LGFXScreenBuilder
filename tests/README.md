@@ -44,14 +44,15 @@ node tools/gen-fixtures.mjs --write    # regenerate in place
 node tools/gen-fixtures.mjs --check    # exit 1 if any header is stale (CI / pre-commit guard)
 ```
 
-Source of truth: `fixtures/sample.lgfxsb.json` drives both `examples/*/MyScreen.h`
-(the header is framework-agnostic). The `.ino` files are hand-written/curated and
-call only the stable public API, so they are not generated. `tests/build_lovyangfx/MyScreen.h`
-is hand-written on purpose (it previews a nested-group facade the codegen cannot
-emit yet) and is exempt. `tests/codegen_roundtrip/MyScreen.h` is generated from
-`tests/codegen_roundtrip/codegen_roundtrip.lgfxsb.json`; its `gen.mjs` is now a
-thin shim over this tool, invoked at pytest collection. CI runs `--check` on the
-pristine checkout so committed headers cannot silently drift from the codegen.
+Source of truth: `fixtures/sample.lgfxsb.json` drives the committed `MyScreen.h`
+for `examples/*` and the sample-based build tests (`build_lovyangfx`,
+`build_buffered`); the header is framework-agnostic. The `.ino` files are
+hand-written/curated and call only the stable public API, so they are not
+generated. `tests/codegen_roundtrip/MyScreen.h` is generated from
+`tests/codegen_roundtrip/codegen_roundtrip.lgfxsb.json`; its `gen.mjs` is a thin
+shim over this tool, invoked at pytest collection (the header is gitignored).
+CI runs `--check` on the pristine checkout so committed headers cannot silently
+drift from the codegen.
 
 Project files (`*.lgfxsb.json`) are kept in canonical serializer form, checked
 separately (SPEC §9.2). A diff means the project-file format moved (independent of
