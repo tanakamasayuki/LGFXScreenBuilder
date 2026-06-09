@@ -169,22 +169,41 @@ export function generateHeader(project, opts = {}) {
   s += `  /*background*/ ${hex(project.background)},\n`;
   s += assets.length ? `  detail::kAssets, ${assets.length},\n};\n\n` : `  nullptr, 0,\n};\n\n`;
 
+  // Render mode is fixed at compile time by whether <LGFXVirtualCanvas.h> was
+  // included before this header (§10): the drawing-surface type Canvas is the
+  // tiled double buffer when present, the device base otherwise.
+  s += `#if defined(LGFXVIRTUALCANVAS_H)\n`;
+  s += `using Canvas = LGFXVirtualCanvas;\n`;
+  s += `#else\n`;
+  s += `using Canvas = lgfx::LGFXBase;\n`;
+  s += `#endif\n\n`;
+
   // Facade
-  s += `class Screen : public lgfxsb::Renderer {\n public:\n`;
-  s += `  explicit Screen(lgfx::LGFX_Device& gfx) : lgfxsb::Renderer(gfx, project) {}\n`;
+  s += `class Screen : public lgfxsb::RendererT<Canvas> {\n`;
+  s += `  using Base = lgfxsb::RendererT<Canvas>;\n`;
+  // Per-scene overlay slot + a type-erased thunk that recovers the typed scene
+  // and the user callback at draw time (§11.4).
+  project.scenes.forEach((sc) => {
+    s += `  void (*_ov_${sc.id})(Canvas&, const Scene::${sc.id}&) = nullptr;\n`;
+    s += `  static void _ovt_${sc.id}(Canvas& g, const void* s, const void* fnp) { (*static_cast<void (*const*)(Canvas&, const Scene::${sc.id}&)>(fnp))(g, *static_cast<const Scene::${sc.id}*>(s)); }\n`;
+  });
+  s += ` public:\n`;
+  s += `  explicit Screen(lgfx::LGFX_Device& gfx) : Base(gfx, project) {}\n`;
   s += `  void setProfile(Profile p) { _profile = static_cast<uint8_t>(p); }\n`;
   s += `  void show(lgfxsb::SceneId id) { renderScene(id, nullptr, 0); }\n`;
   project.scenes.forEach((sc) => {
     const texts = sc.parts.map((p, k) => ({ p, k })).filter((x) => x.p.type === 'Text');
+    const ov = `_ov_${sc.id} ? &_ovt_${sc.id} : nullptr, &s, &_ov_${sc.id}`;
     if (texts.length === 0) {
-      s += `  void show(const Scene::${sc.id}&) { renderScene(Scene::${sc.id}::id, nullptr, 0); }\n`;
+      s += `  void show(const Scene::${sc.id}& s) { renderScene(Scene::${sc.id}::id, nullptr, 0, ${ov}); }\n`;
     } else {
       s += `  void show(const Scene::${sc.id}& s) {\n    lgfxsb::Value v[${sc.parts.length}];\n`;
       texts.forEach(({ p, k }) => {
         s += `    v[${k}] = lgfxsb::Value::text(s.${p.id});\n`;
       });
-      s += `    renderScene(Scene::${sc.id}::id, v, ${sc.parts.length});\n  }\n`;
+      s += `    renderScene(Scene::${sc.id}::id, v, ${sc.parts.length}, ${ov});\n  }\n`;
     }
+    s += `  void setOverlay(void (*fn)(Canvas&, const Scene::${sc.id}&)) { _ov_${sc.id} = fn; }\n`;
   });
   s += `};\n\n`;
 

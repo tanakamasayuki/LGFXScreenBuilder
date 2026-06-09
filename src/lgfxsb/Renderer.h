@@ -8,15 +8,30 @@
 // facade `<Project>::Screen` inherits from it and binds the project descriptor.
 // Targets LovyanGFX / M5GFX (a LovyanGFX derivative); <LovyanGFX.hpp> (or M5GFX)
 // must be included before this header.
+//
+// Render mode is fixed at compile time by whether <LGFXVirtualCanvas.h> was
+// included before this header (SPEC §10): if it was, drawing goes through the
+// tiled double-buffered LGFXVirtualCanvas; otherwise it draws directly to the
+// device. The engine is templated on the canvas type `Canvas` (the generated
+// header selects it), so the same part-drawing code drives both.
 namespace lgfxsb
 {
 
-  class Renderer
+  template <class Canvas>
+  class RendererT
   {
   protected:
     lgfx::LGFX_Device *_gfx = nullptr; // base of LGFX / M5GFX / M5.Display
     const Project &_project;
     uint8_t _profile = 0; // 0 = Auto (actual resolution deferred to draw time; 1+ = enum Profile value = index + 1)
+#if defined(LGFXVIRTUALCANVAS_H)
+    LGFXVirtualScreen _vscreen; // tiled double-buffer manager (buffered build only)
+#endif
+
+    // Type-erased, per-scene overlay hook (§11.4). The generated facade binds
+    // the user callback + the live scene struct into (scene, fnp); the engine
+    // invokes it after the static parts — once per tile in buffered mode.
+    using OverlayThunk = void (*)(Canvas &g, const void *scene, const void *fnp);
 
     // Resolve the selected profile to a concrete index (§8.9.4). Auto order:
     // 1) orientation-sensitive size match, 2) first profile.
@@ -28,28 +43,17 @@ namespace lgfxsb
         return (idx < _project.profileCount) ? idx : 0;
       }
 
-      // 1) Size match against the panel's native (rotation-0) resolution, compared
-      // orientation-sensitively (135x240 != 240x135). Profile w/h are native dims;
-      // a profile's own rotation is applied later at draw time, so we normalize the
-      // current physical size back to native using the current rotation parity.
       const uint8_t rot = _gfx->getRotation();
       const int pw = _gfx->width(), ph = _gfx->height();
       const int16_t nativeW = static_cast<int16_t>((rot & 1) ? ph : pw);
       const int16_t nativeH = static_cast<int16_t>((rot & 1) ? pw : ph);
-      int firstSize = -1;
       for (uint8_t pi = 0; pi < _project.profileCount; ++pi)
       {
         const ProfileDesc &pr = _project.profiles[pi];
         if (pr.w == nativeW && pr.h == nativeH)
-        {
-          if (firstSize < 0)
-            firstSize = pi;
-        }
+          return pi;
       }
-      if (firstSize >= 0)
-        return static_cast<uint8_t>(firstSize);
-
-      // 2) No size match either: fall back so something always renders.
+      // No size match: fall back so something always renders.
       return 0;
     }
 
@@ -71,32 +75,30 @@ namespace lgfxsb
       return _gfx->color565((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
     }
 
-    // Render a scene. `values` are the dynamic values in this scene's local part
-    // order (relative to partStart).
-    void renderScene(SceneId id, const Value *values, uint16_t valueCount)
+    // Draw a whole scene onto a canvas: clear, parts, then the overlay. Templated
+    // on `Canvas` so the same code drives the device (direct) and the tiled
+    // LGFXVirtualCanvas (buffered); in buffered mode it runs once per tile.
+    void drawSceneTo(Canvas &g, const SceneDesc *sc, uint8_t pi,
+                     const Value *values, uint16_t valueCount,
+                     OverlayThunk overlay, const void *scene, const void *fnp)
     {
-      if (!_gfx)
-        return;
-      const uint8_t pi = resolveProfileIndex();
-      const ProfileDesc &pr = _project.profiles[pi];
-      _gfx->setRotation(pr.rotation);
-      _gfx->fillScreen(color565(_project.background)); // full physical-size fill (§7.4)
-
-      const SceneDesc *sc = findScene(id);
-      if (!sc)
-        return;
-
-      for (uint16_t k = 0; k < sc->partCount; ++k)
+      g.fillScreen(color565(_project.background));
+      if (sc)
       {
-        const uint16_t gpi = sc->partStart + k;
-        const PartDesc &pd = _project.parts[gpi];
-        const PartLayout &lo = layoutOf(pi, gpi);
-        const Value v = (k < valueCount) ? values[k] : Value();
-        drawPart(pd, lo, v);
+        for (uint16_t k = 0; k < sc->partCount; ++k)
+        {
+          const uint16_t gpi = sc->partStart + k;
+          const PartDesc &pd = _project.parts[gpi];
+          const PartLayout &lo = layoutOf(pi, gpi);
+          const Value v = (k < valueCount) ? values[k] : Value();
+          drawPart(g, pd, lo, v);
+        }
       }
+      if (overlay)
+        overlay(g, scene, fnp);
     }
 
-    void drawPart(const PartDesc &pd, const PartLayout &lo, const Value &v)
+    void drawPart(Canvas &g, const PartDesc &pd, const PartLayout &lo, const Value &v)
     {
       // Visibility: base on layout.visible, overridden by a Bool value if present.
       bool visible = lo.visible;
@@ -114,28 +116,28 @@ namespace lgfxsb
         if (lo.fill)
         {
           if (lo.r > 0)
-            _gfx->fillRoundRect(ox, oy, lo.w, lo.h, lo.r, color565(lo.color));
+            g.fillRoundRect(ox, oy, lo.w, lo.h, lo.r, color565(lo.color));
           else
-            _gfx->fillRect(ox, oy, lo.w, lo.h, color565(lo.color));
+            g.fillRect(ox, oy, lo.w, lo.h, color565(lo.color));
         }
         else
         {
           if (lo.r > 0)
-            _gfx->drawRoundRect(ox, oy, lo.w, lo.h, lo.r, color565(lo.color));
+            g.drawRoundRect(ox, oy, lo.w, lo.h, lo.r, color565(lo.color));
           else
-            _gfx->drawRect(ox, oy, lo.w, lo.h, color565(lo.color));
+            g.drawRect(ox, oy, lo.w, lo.h, color565(lo.color));
         }
         break;
 
       case PartType::Line:
-        _gfx->drawLine(ox, oy, lo.x2, lo.y2, color565(lo.color));
+        g.drawLine(ox, oy, lo.x2, lo.y2, color565(lo.color));
         break;
 
       case PartType::Circle:
         if (lo.fill)
-          _gfx->fillCircle(ox, oy, lo.r, color565(lo.color));
+          g.fillCircle(ox, oy, lo.r, color565(lo.color));
         else
-          _gfx->drawCircle(ox, oy, lo.r, color565(lo.color));
+          g.drawCircle(ox, oy, lo.r, color565(lo.color));
         break;
 
       case PartType::Text:
@@ -154,28 +156,26 @@ namespace lgfxsb
         // Preset font (§8.7.5): the descriptor stores &lgfx::v1::fonts::X as a
         // void* (null = default). Set it on every Text so the previous Text's
         // font does not leak into this one.
-        _gfx->setFont(lo.font ? static_cast<const lgfx::v1::IFont *>(lo.font)
-                              : &lgfx::v1::fonts::Font0);
-        _gfx->setTextColor(color565(lo.color));
-        _gfx->setTextSize(lo.size);
-        _gfx->setTextDatum(static_cast<lgfx::textdatum_t>(lo.datum));
-        _gfx->drawString(content, ox, oy);
+        g.setFont(lo.font ? static_cast<const lgfx::v1::IFont *>(lo.font)
+                          : &lgfx::v1::fonts::Font0);
+        g.setTextColor(color565(lo.color));
+        g.setTextSize(lo.size);
+        g.setTextDatum(static_cast<lgfx::textdatum_t>(lo.datum));
+        g.drawString(content, ox, oy);
         break;
       }
 
       case PartType::Image:
-        // Draw the referenced RGB565 asset at its native size (§8.4); if none is
-        // bound, fall back to a placeholder frame.
         if (pd.assetIndex >= 0 && pd.assetIndex < static_cast<int16_t>(_project.assetCount) && _project.assets)
         {
           const AssetDesc &a = _project.assets[pd.assetIndex];
           if (a.data)
           {
-            _gfx->pushImage(ox, oy, a.w, a.h, a.data);
+            g.pushImage(ox, oy, a.w, a.h, a.data);
             break;
           }
         }
-        _gfx->drawRect(ox, oy, lo.w, lo.h, color565(0x6f8a92));
+        g.drawRect(ox, oy, lo.w, lo.h, color565(0x6f8a92));
         break;
 
       default:
@@ -183,10 +183,76 @@ namespace lgfxsb
       }
     }
 
+    // Render a scene. `values` are the dynamic values in this scene's local part
+    // order (relative to partStart). The optional overlay hook (§11.4) is invoked
+    // after the static parts.
+    void renderScene(SceneId id, const Value *values, uint16_t valueCount,
+                     OverlayThunk overlay = nullptr, const void *scene = nullptr, const void *fnp = nullptr)
+    {
+      if (!_gfx)
+        return;
+      const uint8_t pi = resolveProfileIndex();
+      _gfx->setRotation(_project.profiles[pi].rotation);
+      const SceneDesc *sc = findScene(id);
+
+#if defined(LGFXVIRTUALCANVAS_H)
+      // Buffered: LGFXVirtualCanvas tiles the screen and calls our draw function
+      // once per tile in virtual full-screen coordinates (Canvas == LGFXVirtualCanvas).
+      struct Ctx
+      {
+        RendererT *self;
+        const SceneDesc *sc;
+        uint8_t pi;
+        const Value *values;
+        uint16_t count;
+        OverlayThunk overlay;
+        const void *scene;
+        const void *fnp;
+      } ctx{this, sc, pi, values, valueCount, overlay, scene, fnp};
+      _vscreen.render(
+          [](LGFXVirtualCanvas &g, void *p)
+          {
+            Ctx *c = static_cast<Ctx *>(p);
+            c->self->drawSceneTo(g, c->sc, c->pi, c->values, c->count, c->overlay, c->scene, c->fnp);
+          },
+          &ctx);
+#else
+      // Direct: draw straight to the device (Canvas == lgfx::LGFXBase).
+      drawSceneTo(*_gfx, sc, pi, values, valueCount, overlay, scene, fnp);
+#endif
+    }
+
   public:
-    Renderer(lgfx::LGFX_Device &gfx, const Project &project) : _gfx(&gfx), _project(project) {}
+    RendererT(lgfx::LGFX_Device &gfx, const Project &project)
+        : _gfx(&gfx), _project(project)
+#if defined(LGFXVIRTUALCANVAS_H)
+          ,
+          _vscreen(gfx)
+#endif
+    {
+#if defined(LGFXVIRTUALCANVAS_H)
+      // drawSceneTo() clears each tile via fillScreen(), so the library's own
+      // per-tile auto-clear is redundant.
+      _vscreen.setAutoClear(false);
+#endif
+    }
 
     void begin() {} // configuration hook after display init (does not touch profile selection; §11.3)
+
+    // Resolved render mode (compile-time constant; §10). true = tiled double
+    // buffering via LGFXVirtualCanvas, false = direct drawing.
+    bool isBuffered() const
+    {
+#if defined(LGFXVIRTUALCANVAS_H)
+      return true;
+#else
+      return false;
+#endif
+    }
   };
+
+  // Direct-drawing engine, and a backward-compatible name for headers written
+  // against the original non-template engine (direct mode only).
+  using Renderer = RendererT<lgfx::LGFXBase>;
 
 } // namespace lgfxsb

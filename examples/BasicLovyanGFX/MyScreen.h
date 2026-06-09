@@ -129,29 +129,45 @@ static const lgfxsb::Project project = {
   nullptr, 0,
 };
 
-class Screen : public lgfxsb::Renderer {
+#if defined(LGFXVIRTUALCANVAS_H)
+using Canvas = LGFXVirtualCanvas;
+#else
+using Canvas = lgfx::LGFXBase;
+#endif
+
+class Screen : public lgfxsb::RendererT<Canvas> {
+  using Base = lgfxsb::RendererT<Canvas>;
+  void (*_ov_Boot)(Canvas&, const Scene::Boot&) = nullptr;
+  static void _ovt_Boot(Canvas& g, const void* s, const void* fnp) { (*static_cast<void (*const*)(Canvas&, const Scene::Boot&)>(fnp))(g, *static_cast<const Scene::Boot*>(s)); }
+  void (*_ov_Main)(Canvas&, const Scene::Main&) = nullptr;
+  static void _ovt_Main(Canvas& g, const void* s, const void* fnp) { (*static_cast<void (*const*)(Canvas&, const Scene::Main&)>(fnp))(g, *static_cast<const Scene::Main*>(s)); }
+  void (*_ov_Settings)(Canvas&, const Scene::Settings&) = nullptr;
+  static void _ovt_Settings(Canvas& g, const void* s, const void* fnp) { (*static_cast<void (*const*)(Canvas&, const Scene::Settings&)>(fnp))(g, *static_cast<const Scene::Settings*>(s)); }
  public:
-  explicit Screen(lgfx::LGFX_Device& gfx) : lgfxsb::Renderer(gfx, project) {}
+  explicit Screen(lgfx::LGFX_Device& gfx) : Base(gfx, project) {}
   void setProfile(Profile p) { _profile = static_cast<uint8_t>(p); }
   void show(lgfxsb::SceneId id) { renderScene(id, nullptr, 0); }
   void show(const Scene::Boot& s) {
     lgfxsb::Value v[2];
     v[1] = lgfxsb::Value::text(s.boot);
-    renderScene(Scene::Boot::id, v, 2);
+    renderScene(Scene::Boot::id, v, 2, _ov_Boot ? &_ovt_Boot : nullptr, &s, &_ov_Boot);
   }
+  void setOverlay(void (*fn)(Canvas&, const Scene::Boot&)) { _ov_Boot = fn; }
   void show(const Scene::Main& s) {
     lgfxsb::Value v[5];
     v[1] = lgfxsb::Value::text(s.title);
     v[2] = lgfxsb::Value::text(s.battery);
     v[3] = lgfxsb::Value::text(s.temp);
-    renderScene(Scene::Main::id, v, 5);
+    renderScene(Scene::Main::id, v, 5, _ov_Main ? &_ovt_Main : nullptr, &s, &_ov_Main);
   }
+  void setOverlay(void (*fn)(Canvas&, const Scene::Main&)) { _ov_Main = fn; }
   void show(const Scene::Settings& s) {
     lgfxsb::Value v[3];
     v[1] = lgfxsb::Value::text(s.ttl);
     v[2] = lgfxsb::Value::text(s.row1);
-    renderScene(Scene::Settings::id, v, 3);
+    renderScene(Scene::Settings::id, v, 3, _ov_Settings ? &_ovt_Settings : nullptr, &s, &_ov_Settings);
   }
+  void setOverlay(void (*fn)(Canvas&, const Scene::Settings&)) { _ov_Settings = fn; }
 };
 
 } // namespace MyScreen
