@@ -2,15 +2,36 @@
 // plus lightweight autosave/restore via localStorage. Browser-only APIs are
 // guarded so the module is importable under Node (for tests).
 
+import { FORMAT_VERSION } from './version.js';
+
 const AUTOSAVE_KEY = 'lgfxsb.autosave.v1';
 
 export function serialize(project) {
-  return JSON.stringify(project, null, 2);
+  // Stamp the current format version first; drop any stale value (SPEC §9.2).
+  const { formatVersion, ...rest } = project;
+  return JSON.stringify({ formatVersion: FORMAT_VERSION, ...rest }, null, 2);
 }
 
 // Minimal validation: must look like a project.
 export function isProject(obj) {
   return !!obj && typeof obj === 'object' && Array.isArray(obj.profiles) && Array.isArray(obj.scenes);
+}
+
+// Apply forward migrations to a freshly-parsed project (SPEC §9.2, Layer 2).
+// A missing formatVersion is treated as 1. A newer-than-known version is loaded
+// best-effort with a warning (unknown fields are ignored, and may be dropped on
+// save); for pinned operation, self-host the matching release.
+export function migrate(project) {
+  const v = Number.isInteger(project.formatVersion) ? project.formatVersion : 1;
+  if (v > FORMAT_VERSION) {
+    console.warn(
+      `[lgfxsb] project formatVersion ${v} is newer than this tool (FORMAT_VERSION=${FORMAT_VERSION}); ` +
+      'loading best-effort — unknown fields are ignored and may be dropped on save. ' +
+      'For pinned operation, self-host the matching release.'
+    );
+  }
+  // Forward migrations (v -> v+1) are applied here as the format evolves.
+  return project;
 }
 
 // Trigger a file download of text content.
@@ -50,7 +71,7 @@ export function openProjectFile() {
         try {
           const obj = JSON.parse(reader.result);
           if (!isProject(obj)) throw new Error('not a LGFXScreenBuilder project');
-          resolve(obj);
+          resolve(migrate(obj));
         } catch (e) { reject(e); }
       };
       reader.onerror = () => reject(reader.error);
@@ -72,7 +93,7 @@ export function loadAutosave() {
     const raw = localStorage.getItem(AUTOSAVE_KEY);
     if (!raw) return null;
     const obj = JSON.parse(raw);
-    return isProject(obj) ? obj : null;
+    return isProject(obj) ? migrate(obj) : null;
   } catch { return null; }
 }
 

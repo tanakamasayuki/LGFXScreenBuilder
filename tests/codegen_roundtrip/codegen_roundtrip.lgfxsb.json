@@ -1,4 +1,5 @@
 {
+  "formatVersion": 1,
   "name": "MyScreen",
   "targetLibrary": "LovyanGFX",
   "background": "#000000",

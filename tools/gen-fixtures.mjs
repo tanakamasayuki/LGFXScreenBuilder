@@ -36,6 +36,10 @@ const FIXTURES = [
     name: 'codegen_roundtrip',
     source: 'tests/codegen_roundtrip/codegen_roundtrip.lgfxsb.json',
     headers: ['tests/codegen_roundtrip/MyScreen.h'],
+    // The .h is gitignored and regenerated at pytest collection (via gen.mjs),
+    // so it is not a committed golden: --write produces it, --check skips it
+    // (it does not exist on a pristine checkout).
+    committed: false,
   },
 ];
 
@@ -63,6 +67,9 @@ export function regenerate(mode, only = null) {
   const stale = [];
   const fixtures = only ? FIXTURES.filter((f) => f.name === only) : FIXTURES;
   for (const fx of fixtures) {
+    // Non-committed headers (gitignored, regenerated at test time) are produced
+    // by --write but skipped by --check (they are absent on a pristine checkout).
+    if (mode === 'check' && fx.committed === false) continue;
     const header = generateHeader(loadProject(fx.source));
     const next = norm(header);
     for (const rel of fx.headers) {
