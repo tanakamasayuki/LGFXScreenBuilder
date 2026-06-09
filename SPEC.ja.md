@@ -826,12 +826,12 @@ main.wifiVisible = true;
 screen.show(main);
 ```
 
-更新時も同じシーン構造体を渡す。
+値を更新したいときは、変更したシーン構造体を再度 `show` に渡すだけでよい（描画は常に `show` の一本）。
 
 ```cpp
 main.battery = 79;
 main.temperature = "25.1C";
-screen.update(main);
+screen.show(main);
 ```
 
 ### 11.1 共有エンジンと生成ファサード
@@ -899,9 +899,7 @@ public:
 
   void show(lgfxsb::SceneId id);                // テスト・キャプチャ用（プレビュー値で描画）
   void show(const Scene::Boot& s);              // 自プロジェクトのシーン型ごとの overload
-  void update(const Scene::Boot& s);
   void show(const Scene::Main& s);
-  void update(const Scene::Main& s);
 
   // 動的描画フック（任意・シーンごとに 1 回登録。§11.4）
   void setOverlay(void (*fn)(Canvas&, const Scene::Boot&));
@@ -915,7 +913,7 @@ public:
 
 `gfx` の受け型は `lgfx::LGFX_Device`（`LovyanGFX` 基底クラスの派生）とする。ユーザーが渡す LovyanGFX autodetect の `LGFX`、`M5GFX`、`M5.Display` はいずれも `lgfx::LGFX_Device` 派生なので、同一 API で受けられる。
 
-`show` / `update` は、生成コードがシーン型ごとに**関数オーバーロード**として出力する（テンプレートではない）。生成された自プロジェクトのシーン型だけにオーバーロードが存在するため「自プロジェクトのシーンに限定」する性質は保たれ、未知の型を渡すとコンパイルエラーになる。テンプレート構文は `show` / `update` には露出しない（overlay フックでのみ、ユーザーが gfx 引数を任意でテンプレート化できる。§11.4）。
+`show` は、生成コードがシーン型ごとに**関数オーバーロード**として出力する（テンプレートではない）。生成された自プロジェクトのシーン型だけにオーバーロードが存在するため「自プロジェクトのシーンに限定」する性質は保たれ、未知の型を渡すとコンパイルエラーになる。テンプレート構文は `show` には露出しない（overlay フックでのみ、ユーザーが gfx 引数を任意でテンプレート化できる。§11.4）。
 
 `show(lgfxsb::SceneId id)` は、host テストや画面キャプチャで `detail::kSceneInfo[]` から列挙したシーンを描画するための補助 API とする。動的な Text 値は渡さず、生成時のプレビュー文字列で描画する。通常のアプリケーションコードでは、シーン構造体を渡す型付き overload を推奨する。
 
@@ -952,7 +950,7 @@ void loop() {
   static Scene::Main main;
   main.battery     = readBattery();
   main.temperature = formatTemp(readTemp());
-  screen.update(main);             // 値だけ差し替えて再描画
+  screen.show(main);               // 値を更新して再描画（描画は常に show）
   delay(1000);
 }
 ```
@@ -976,11 +974,11 @@ M5GFX は LovyanGFX 派生または互換 API として扱える範囲で同一 
 
 ### 11.4 動的描画フック（overlay）
 
-parts では表現できない動的描画（メーターの針、波形など）を、静的 parts と **同じバッファに合成** するためのフックを提供する。`show` のあとにユーザーが直接描くと別バッファが必要になりちらつきも戻るため、描画は `show` / `update` の内部から呼び出す。これは §3 の非目標（ユーザー独自描画）に対する、バッファ整合のとれた唯一の正規ルートとして位置づける。
+parts では表現できない動的描画（メーターの針、波形など）を、静的 parts と **同じバッファに合成** するためのフックを提供する。`show` のあとにユーザーが直接描くと別バッファが必要になりちらつきも戻るため、描画は `show` の内部から呼び出す。これは §3 の非目標（ユーザー独自描画）に対する、バッファ整合のとれた唯一の正規ルートとして位置づける。
 
-- **登録はシーンごとに 1 回**（事前登録）。`setOverlay` をシーン型ごとに overload するので、overload 解決で「第 2 引数の型 → そのシーンのスロット」と型安全に振り分けられる。`show` / `update` の呼び出し側は overlay を意識しない。
+- **登録はシーンごとに 1 回**（事前登録）。`setOverlay` をシーン型ごとに overload するので、overload 解決で「第 2 引数の型 → そのシーンのスロット」と型安全に振り分けられる。`show` の呼び出し側は overlay を意識しない。
 - **シグネチャは `void(Canvas&, const SceneT&)`**。gfx 引数はユーザー側で `template <class GFX>` にしてよい。描画モードが 1 つの `Canvas` に確定しているため、登録時に `GFX = Canvas` が推論され、`Canvas` 名を書かずに済む。シーン型は省略不可で、typed なデータ参照（`s.battery` 等）と登録スロット選択の両方を担う。
-- **呼び出しタイミング**: 各 `show` / `update` が静的 parts を描いた **後** に呼ぶ。**バッファ時はタイルごとに複数回**、**直描画時は 1 回** 呼ばれる。したがって overlay は **描画専用・冪等** にする。状態の前進（アニメーション、`millis()` 取得、センサ読み取り）は `loop()` 側で行い、結果はシーン構造体 `s` や自前の状態として渡す。同じ入力なら何度呼んでも同じ絵になること。
+- **呼び出しタイミング**: 各 `show` が静的 parts を描いた **後** に呼ぶ。**バッファ時はタイルごとに複数回**、**直描画時は 1 回** 呼ばれる。したがって overlay は **描画専用・冪等** にする。状態の前進（アニメーション、`millis()` 取得、センサ読み取り）は `loop()` 側で行い、結果はシーン構造体 `s` や自前の状態として渡す。同じ入力なら何度呼んでも同じ絵になること。
 - 未登録のシーンでは何も追加描画しない。
 - `show(lgfxsb::SceneId)`（プレビュー・キャプチャ用）は動的データを持たないため overlay を呼ばない。
 
@@ -1016,7 +1014,7 @@ void setup() {
 void loop() {
   static MyScreen::Scene::Main main;
   main.battery = readBattery();            // 状態の前進は overlay の外（ここ）で行う
-  screen.update(main);                     // overlay は自動で呼ばれる（バッファ時はタイル毎）
+  screen.show(main);                       // overlay は自動で呼ばれる（バッファ時はタイル毎）
   delay(100);
 }
 ```

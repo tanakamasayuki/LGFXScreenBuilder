@@ -834,12 +834,12 @@ main.wifiVisible = true;
 screen.show(main);
 ```
 
-On update, the same scene structure is passed.
+To redraw with new values, pass the updated scene structure to `show` again (drawing is always a single `show`).
 
 ```cpp
 main.battery = 79;
 main.temperature = "25.1C";
-screen.update(main);
+screen.show(main);
 ```
 
 ### 11.1 Shared Engine and Generated Facade
@@ -907,9 +907,7 @@ public:
 
   void show(lgfxsb::SceneId id);                // for tests/capture (draws with preview values)
   void show(const Scene::Boot& s);              // overload per scene type in this project
-  void update(const Scene::Boot& s);
   void show(const Scene::Main& s);
-  void update(const Scene::Main& s);
 
   // optional dynamic overlay, registered once per scene (§11.4)
   void setOverlay(void (*fn)(Canvas&, const Scene::Boot&));
@@ -923,7 +921,7 @@ Because `Screen` binds the descriptor in its constructor, the user does not need
 
 The receiving type for `gfx` is `lgfx::LGFX_Device` (a subclass of the `LovyanGFX` base). The LovyanGFX autodetect `LGFX`, `M5GFX`, and `M5.Display` that the user passes are all derived from `lgfx::LGFX_Device`, so they can be accepted by the same API.
 
-`show` / `update` are emitted by the generated code as **function overloads** per scene type (not templates). Because overloads exist only for the generated scene types of the project itself, the "limited to this project's scenes" property is preserved, and passing an unknown type is a compile error. The template syntax is not exposed on `show` / `update` (only the overlay hook lets the user optionally template the gfx parameter; see §11.4).
+`show` is emitted by the generated code as **function overloads** per scene type (not templates). Because overloads exist only for the generated scene types of the project itself, the "limited to this project's scenes" property is preserved, and passing an unknown type is a compile error. The template syntax is not exposed on `show` (only the overlay hook lets the user optionally template the gfx parameter; see §11.4).
 
 `show(lgfxsb::SceneId id)` is an auxiliary API for host tests and screen capture. It draws a scene enumerated from `detail::kSceneInfo[]` using the generated preview strings instead of dynamic Text values. Normal application code should use the typed overloads that accept generated scene structures.
 
@@ -960,7 +958,7 @@ void loop() {
   static Scene::Main main;
   main.battery     = readBattery();
   main.temperature = formatTemp(readTemp());
-  screen.update(main);             // swap only the values and redraw
+  screen.show(main);               // redraw with new values (drawing is always show)
   delay(1000);
 }
 ```
@@ -984,11 +982,11 @@ M5GFX is integrated into the same API to the extent that it can be treated as a 
 
 ### 11.4 Dynamic Drawing Hook (overlay)
 
-A hook is provided to **composite dynamic drawing that parts cannot express** (gauge needles, waveforms, etc.) **into the same buffer as the static parts**. Drawing directly after `show()` returns would require a separate buffer and reintroduce flicker, so the drawing is invoked from inside `show` / `update`. This is positioned as the single buffer-consistent route for the non-goal of §3 (user-custom drawing).
+A hook is provided to **composite dynamic drawing that parts cannot express** (gauge needles, waveforms, etc.) **into the same buffer as the static parts**. Drawing directly after `show()` returns would require a separate buffer and reintroduce flicker, so the drawing is invoked from inside `show`. This is positioned as the single buffer-consistent route for the non-goal of §3 (user-custom drawing).
 
-- **Registered once per scene** (pre-registration). `setOverlay` is overloaded per scene type, so overload resolution dispatches "second-argument type → that scene's slot" in a type-safe way. The `show` / `update` call sites stay unaware of overlays.
+- **Registered once per scene** (pre-registration). `setOverlay` is overloaded per scene type, so overload resolution dispatches "second-argument type → that scene's slot" in a type-safe way. The `show` call sites stay unaware of overlays.
 - **The signature is `void(Canvas&, const SceneT&)`**. The user may template the gfx parameter as `template <class GFX>`. Because the render mode is fixed to a single `Canvas`, `GFX = Canvas` is deduced at registration, so the user need not name `Canvas`. The scene type is mandatory: it carries both typed data access (`s.battery`, etc.) and the registration-slot selection.
-- **Invocation timing**: called **after** each `show` / `update` has drawn the static parts. It runs **once per tile in buffered mode** and **once in direct mode**. Therefore the overlay must be **draw-only and idempotent**. Advance state (animation, `millis()`, sensor reads) in `loop()`, and pass results via the scene struct `s` or your own state; the same input must always produce the same picture.
+- **Invocation timing**: called **after** each `show` has drawn the static parts. It runs **once per tile in buffered mode** and **once in direct mode**. Therefore the overlay must be **draw-only and idempotent**. Advance state (animation, `millis()`, sensor reads) in `loop()`, and pass results via the scene struct `s` or your own state; the same input must always produce the same picture.
 - For an unregistered scene, nothing extra is drawn.
 - `show(lgfxsb::SceneId)` (the preview/capture path) does not invoke overlays, since it has no dynamic data.
 
@@ -1024,7 +1022,7 @@ void setup() {
 void loop() {
   static MyScreen::Scene::Main main;
   main.battery = readBattery();            // advance state here, outside the overlay
-  screen.update(main);                     // the overlay runs automatically (per tile when buffered)
+  screen.show(main);                       // the overlay runs automatically (per tile when buffered)
   delay(100);
 }
 ```
