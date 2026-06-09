@@ -33,6 +33,11 @@ const FIXTURES = [
     ],
   },
   {
+    name: 'build_buffered',
+    source: 'fixtures/sample.lgfxsb.json',
+    headers: ['tests/build_buffered/MyScreen.h'],
+  },
+  {
     name: 'codegen_roundtrip',
     source: 'tests/codegen_roundtrip/codegen_roundtrip.lgfxsb.json',
     headers: ['tests/codegen_roundtrip/MyScreen.h'],

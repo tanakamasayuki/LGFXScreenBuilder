@@ -8,6 +8,12 @@
 - 生成シーン相当のデータ構造を描画 API に渡す
 - `LovyanGFX::createPng()` で host 側 PNG を保存する
 
+`build_lovyangfx/` と `codegen_roundtrip/` は **direct** モードでビルド・描画する。
+`build_buffered/` は `<LGFXVirtualCanvas.h>` を `<LGFXScreenBuilder.h>` より前に
+include して **分割ダブルバッファ**経路（SPEC §10）を検証する（`isBuffered()` が true
+であること、タイル合成＋overlay のフレームが非空であることをアサート）。このテストは
+`LGFXVirtualCanvas` を Arduino ライブラリインデックスから取得する（`sketch.yaml` で版固定）。
+
 ランタイムとジェネレータが育ったら、`LGFXVirtualCanvas` と同じ形でスナップショット比較やピクセル差分テストを追加します。
 
 `manual/` には**デフォルトスイートに含めない**生成器を置きます。コミット済みの成果物を

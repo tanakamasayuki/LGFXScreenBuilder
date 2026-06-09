@@ -8,6 +8,12 @@ The initial tests are intentionally small:
 - render a generated scene-shaped data object;
 - save a host-side PNG through `LovyanGFX::createPng()`.
 
+`build_lovyangfx/` and `codegen_roundtrip/` build and render in **direct** mode;
+`build_buffered/` covers the **tiled double-buffer** path (SPEC §10) by including
+`<LGFXVirtualCanvas.h>` before `<LGFXScreenBuilder.h>` — it asserts `isBuffered()`
+is true and that the tiled+overlay frame is non-blank. That test pulls
+`LGFXVirtualCanvas` from the Arduino library index (pinned in its `sketch.yaml`).
+
 As the runtime and generator mature, add snapshot and pixel-diff tests here, following the same pattern used by `LGFXVirtualCanvas`.
 
 `manual/` holds generators that are **not** part of the default suite — they
