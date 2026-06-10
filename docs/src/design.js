@@ -382,6 +382,46 @@ export function renderDesign() {
   renderInspector(); renderStatus();
 }
 
+// Part-type picker: a "+ Add ▾" dropdown (same pattern as the Devices add menu).
+// Picking a type adds a part of that type to the current scene and selects it.
+const PART_TYPES = ['Rect', 'Line', 'Circle', 'Text', 'Image'];
+function initPartAddMenu() {
+  const btn = $('part-add');
+  const menu = $('part-add-menu');
+  const close = () => menu.classList.remove('open');
+  // The menu is position:fixed (so the scrollable left pane can't clip it); place
+  // it just under the trigger. Scrolling closes it (fixed won't follow).
+  const place = () => {
+    const r = btn.getBoundingClientRect();
+    menu.style.top = `${Math.round(r.bottom + 4)}px`;
+    menu.style.left = `${Math.round(Math.min(r.left, window.innerWidth - menu.offsetWidth - 8))}px`;
+  };
+  const fill = () => {
+    menu.innerHTML = '';
+    for (const type of PART_TYPES) {
+      const it = document.createElement('button');
+      it.className = 'menu-item';
+      it.innerHTML = `<span class="res">${type}</span><span class="sub">${t('parttype.' + type)}</span>`;
+      it.onclick = () => {
+        close();
+        mutate((st) => { lineKeyMode = 'move'; st.ui.selected = addPart(st.project, st.ui.sceneId, type); });
+      };
+      menu.appendChild(it);
+    }
+  };
+  btn.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    if (menu.classList.contains('open')) { close(); return; }
+    fill();
+    menu.classList.add('open');
+    place();
+  });
+  menu.addEventListener('click', (ev) => ev.stopPropagation());
+  document.addEventListener('click', close);
+  window.addEventListener('resize', close);
+  document.addEventListener('scroll', (ev) => { if (!menu.contains(ev.target)) close(); }, true);
+}
+
 // --- interactions (attached once) ---------------------------------------
 let drag = null;
 let lineKeyMode = 'move';
@@ -514,11 +554,9 @@ export function initDesign() {
   $('scene-up').onclick = () => mutate((st) => moveScene(st.project, st.ui.sceneId, -1));
   $('scene-down').onclick = () => mutate((st) => moveScene(st.project, st.ui.sceneId, +1));
 
-  // Part add (of the picked type). Delete lives in the part inspector on the right.
-  $('part-add').onclick = () => mutate((st) => {
-    lineKeyMode = 'move';
-    st.ui.selected = addPart(st.project, st.ui.sceneId, $('part-type').value);
-  });
+  // Part add: pick the type from a dropdown (consistent with the Devices "+ Add ▾"
+  // menu). Delete lives in the part inspector on the right.
+  initPartAddMenu();
 
   // Reorder among siblings (↑ = toward front, ↓ = toward back; §8.3).
   $('part-front').onclick = () => { if (store.ui.selected) mutate((st) => reorderPart(st.project, st.ui.sceneId, st.ui.selected, +1)); };

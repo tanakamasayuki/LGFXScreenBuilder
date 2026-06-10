@@ -60,14 +60,10 @@
       <div class="section">
         <h2 id="parts-title" data-i18n="pane.parts">Parts</h2>
         <div class="layerbar">
-          <select class="icon" id="part-type">
-            <option value="Rect">Rect</option>
-            <option value="Line">Line</option>
-            <option value="Circle">Circle</option>
-            <option value="Text">Text</option>
-            <option value="Image">Image</option>
-          </select>
-          <button class="icon" id="part-add" data-i18n-title="act.addPart">＋</button>
+          <span class="menu-wrap">
+            <button class="icon" id="part-add" data-i18n="parts.add">＋ Add ▾</button>
+            <div class="menu" id="part-add-menu"></div>
+          </span>
           <span class="toolsep"></span>
           <button class="icon" id="part-front" data-i18n-title="act.front">↑</button>
           <button class="icon" id="part-back" data-i18n-title="act.back">↓</button>
