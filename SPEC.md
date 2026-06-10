@@ -236,6 +236,8 @@ Candidate future extensions are as follows.
 
 `Text` is a general-purpose part that displays an arbitrary string. It can be used for fixed labels, status strings, or displaying numbers converted to strings. The name is `Text` rather than `Label`, prioritizing an expression that corresponds well to the drawing APIs of LovyanGFX/M5GFX.
 
+**There is no separate type for fixed labels.** A fixed label is expressed as a `Text` whose value is never assigned at runtime. The generated scene struct's Text field defaults to the design string (§8.2), so if you never assign it, that design string is drawn as-is with no user code; only the ones you assign change dynamically. This keeps the model simple without adding a type. (If a future optimization needs to keep fixed labels out of the scene struct, it would be added as an optional per-Text `dynamic: false` flag — append-only — rather than a new type. §15.)
+
 A part dedicated to numeric display is not added in the current specification. When you want to handle a prefix/suffix, decimal places, and units for temperature, voltage, battery level, etc., user code assembles the string and passes it to `Text`.
 
 A `ValueText` or `Value`-family part is not handled in the current specification. If introduced, it would be considered separately with settings such as the following.

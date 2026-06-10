@@ -168,7 +168,10 @@ wrapping, clipping, ellipsis, or in-box alignment; keep the text short enough to
 use different `text`/`size` values per profile.
 `x, y` is the **anchor point**; `datum` says which point of the text sits on the anchor;
 `size` is a **scale multiplier** (rendered height ≈ font base height × `size`);
-`color` `"#rrggbb"`; `text` the string to show;
+`color` `"#rrggbb"`; `text` the string to show. Both fixed labels and dynamic values
+use the same `Text` part (there is no separate "Label" type): put final copy in `text`
+for a fixed label, or a preview value in `text` for a value substituted at runtime (see
+the static-layout boundary in §4).
 `font` the font name (string) or `null` for the default. **Preserve `font` as-is**
 unless the request asks you to change it; only use a font name from the same profile's
 `fonts` array, never invent a font name, and never add `fontFamily`/`bold`/`italic`
