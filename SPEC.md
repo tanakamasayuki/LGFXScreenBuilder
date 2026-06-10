@@ -729,7 +729,7 @@ The project file includes the following.
 - Part definitions
 - Asset definitions
 - Font definitions
-- Output settings
+- Output settings (the render-mode `buffered` flag = use LGFXVirtualCanvas; absent means true = buffered. §10)
 
 A part's layout is held keyed by the profile ID, as a **complete value per profile** (§8.2). There is no concept of a base or a diff. For a single profile, only one set. The generated structures are determined only by the part's ID and type, and do not depend on profile or layout values.
 
