@@ -19,13 +19,16 @@ namespace lgfxsb
     Image,
   };
 
-  // Text datum / anchor point (§8.7). The ordering matches LovyanGFX
-  // textdatum_t (top_left..bottom_right) so it can be cast directly.
+  // Text datum / anchor point (§8.7). Values match lgfx::textdatum_t EXACTLY
+  // (horizontal = low 2 bits: left/center/right = 0/1/2; vertical = top/middle/
+  // bottom = 0/4/8), so PartLayout.datum casts straight to lgfx::textdatum_t.
+  // Do NOT renumber to a plain 0..8 sequence: the middle/bottom rows would then
+  // map to the wrong datum (this was a bug — MC=4 cast to middle_left).
   enum class Datum : uint8_t
   {
-    TL = 0, TC, TR,
-    ML, MC, MR,
-    BL, BC, BR,
+    TL = 0, TC = 1, TR = 2,
+    ML = 4, MC = 5, MR = 6,
+    BL = 8, BC = 9, BR = 10,
   };
 
   // Carrier for a "dynamic value" that the generated facade extracts from a
