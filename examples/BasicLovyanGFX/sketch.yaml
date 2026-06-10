@@ -1,9 +1,4 @@
-# en: LovyanGFX build profiles. The Native (SDL) profiles render the screen on a
-#     PC with no hardware.
-# ja: LovyanGFX 用ビルドプロファイル。Native(SDL) は実機なしで PC 上に画面を描く。
 profiles:
-  # Real hardware (ESP32, LovyanGFX autodetect).
-
   esp32:
     fqbn: esp32:esp32:esp32:DebugLevel=debug
     platforms:
@@ -12,57 +7,110 @@ profiles:
     libraries:
       - dir: ../../
       - LovyanGFX (1.2.21)
-  # Native (SDL) preview — LovyanGFX-supported boards only.
 
-  sld2_m5stack:
-    fqbn: lang-ship:native:SLD2_M5Stack
+  display_core:
+    fqbn: lang-ship:host:display
     platforms:
-      - platform: lang-ship:native (1.1.2)
+      - platform: lang-ship:host (1.4.4)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
       - LovyanGFX (1.2.21)
 
-  sld2_m5stackcore2:
-    fqbn: lang-ship:native:SLD2_M5StackCore2
+  display_core2:
+    fqbn: lang-ship:host:display:m5gfx_board=board_M5StackCore2
     platforms:
-      - platform: lang-ship:native (1.1.2)
+      - platform: lang-ship:host (1.4.4)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
       - LovyanGFX (1.2.21)
 
-  sld2_m5stackcores3:
-    fqbn: lang-ship:native:SLD2_M5StackCoreS3
+  display_cores3:
+    fqbn: lang-ship:host:display:m5gfx_board=board_M5StackCoreS3
     platforms:
-      - platform: lang-ship:native (1.1.2)
+      - platform: lang-ship:host (1.4.4)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
       - LovyanGFX (1.2.21)
 
-  sld2_m5stickcplus:
-    fqbn: lang-ship:native:SLD2_M5StickCPlus
+  display_coreink:
+    fqbn: lang-ship:host:display:m5gfx_board=board_M5StackCoreInk
     platforms:
-      - platform: lang-ship:native (1.1.2)
+      - platform: lang-ship:host (1.4.4)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
       - LovyanGFX (1.2.21)
 
-  sld2_m5stickcplus2:
-    fqbn: lang-ship:native:SLD2_M5StickCPlus2
+  display_stickc:
+    fqbn: lang-ship:host:display:m5gfx_board=board_M5StickC
     platforms:
-      - platform: lang-ship:native (1.1.2)
+      - platform: lang-ship:host (1.4.4)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
       - LovyanGFX (1.2.21)
 
-  sld2_m5stackcoreink:
-    fqbn: lang-ship:native:SLD2_M5StackCoreInk
+  display_stickcplus:
+    fqbn: lang-ship:host:display:m5gfx_board=board_M5StickCPlus
     platforms:
-      - platform: lang-ship:native (1.1.2)
+      - platform: lang-ship:host (1.4.4)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - LovyanGFX (1.2.21)
+
+  display_stickplus2:
+    fqbn: lang-ship:host:display:m5gfx_board=board_M5StickCPlus2
+    platforms:
+      - platform: lang-ship:host (1.4.4)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - LovyanGFX (1.2.21)
+
+  display_dial:
+    fqbn: lang-ship:host:display:m5gfx_board=board_M5Dial
+    platforms:
+      - platform: lang-ship:host (1.4.4)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - LovyanGFX (1.2.21)
+
+  display_tab5:
+    fqbn: lang-ship:host:display:m5gfx_board=board_M5Tab5
+    platforms:
+      - platform: lang-ship:host (1.4.4)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - LovyanGFX (1.2.21)
+
+  display_cardputer:
+    fqbn: lang-ship:host:display:m5gfx_board=board_M5Cardputer
+    platforms:
+      - platform: lang-ship:host (1.4.4)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - LovyanGFX (1.2.21)
+
+  display_atoms3:
+    fqbn: lang-ship:host:display:m5gfx_board=board_M5AtomS3
+    platforms:
+      - platform: lang-ship:host (1.4.4)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - LovyanGFX (1.2.21)
+
+  display_paper:
+    fqbn: lang-ship:host:display:m5gfx_board=board_M5Paper
+    platforms:
+      - platform: lang-ship:host (1.4.4)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
