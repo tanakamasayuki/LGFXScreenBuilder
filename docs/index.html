@@ -190,6 +190,10 @@
             <input type="checkbox" id="export-buffered" style="width:auto;min-height:auto">
             <p class="sub" data-i18n="export.bufferedHint">Tiled double-buffering reduces flicker. Needs the LGFXVirtualCanvas library; off = direct drawing.</p>
           </div>
+          <div class="field"><label data-i18n="export.embedAi">Embed AI layouts (comment)</label>
+            <input type="checkbox" id="export-embed-ai" style="width:auto;min-height:auto">
+            <p class="sub" data-i18n="export.embedAiHint">Embed every scene's AI layout JSON in the header as a comment (stripped at compile). Lets tools read layouts from the .h alone.</p>
+          </div>
           <div class="field"><label data-i18n="export.profiles">Target profiles</label><div id="export-profsel"></div></div>
         </div>
         <div class="section">

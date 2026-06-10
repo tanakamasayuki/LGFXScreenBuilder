@@ -19,7 +19,9 @@ const inofile = () => `${store.project.name || 'project'}_example.ino`;
 const files = () => [{ name: hfile(), meta: 'C++' }, { name: inofile(), meta: 'Sample' }];
 // buffered defaults to true (less flicker); persisted on the project like targetLibrary.
 const buffered = () => store.project.buffered !== false;
-const opts = () => ({ profiles: [...included], buffered: buffered() });
+// embedAiLayouts defaults to false (keeps headers lean); opt-in per §10.2.
+const embedAi = () => store.project.embedAiLayouts === true;
+const opts = () => ({ profiles: [...included], buffered: buffered(), embedAiLayouts: embedAi() });
 
 // Keep UI state consistent with the current project (profiles may have changed).
 function reconcile() {
@@ -103,6 +105,7 @@ export function renderExport() {
   const nameEl = $('export-name');
   if (document.activeElement !== nameEl) nameEl.value = store.project.name || '';
   $('export-buffered').checked = buffered();
+  $('export-embed-ai').checked = embedAi();
   reconcile();
   renderFiles();
   renderProfSel();
@@ -129,6 +132,10 @@ export function initExport() {
   });
   $('export-buffered').addEventListener('change', () => {
     store.project.buffered = $('export-buffered').checked;
+    renderExport();
+  });
+  $('export-embed-ai').addEventListener('change', () => {
+    store.project.embedAiLayouts = $('export-embed-ai').checked;
     renderExport();
   });
   $('export-fw').addEventListener('change', () => {

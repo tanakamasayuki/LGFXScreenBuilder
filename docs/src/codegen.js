@@ -5,6 +5,7 @@
 // Output shape matches examples/Basic/MyScreen.h. Generated-code comments are
 // English-only per SPEC §10/§13.
 import { sceneById, placement, DATUMS, profileFonts } from './model.js';
+import { buildAiLayout, AI_LAYOUT_DOC_URL } from './ailayout.js';
 import { FORMAT_VERSION } from './version.js';
 
 const PART_ENUM = { Rect: 'Rect', Line: 'Line', Circle: 'Circle', Text: 'Text', Image: 'Image' };
@@ -208,7 +209,22 @@ export function generateHeader(project, opts = {}) {
   s += `};\n\n`;
 
   s += `} // namespace ${name}\n`;
+
+  if (opts.embedAiLayouts) s += embedAiLayoutsBlock(project, profiles);
   return s;
+}
+
+// SPEC §10.2: embed every scene's AI layout (§8.15) as a parseable comment
+// block. Comment-only, so the compiler strips it and it never reaches the
+// binary. `/` is escaped as `\/` so the JSON can never contain `*/` and close
+// the block early (`\/` is valid JSON; a reader parses the text between the
+// sentinels directly, no un-escaping needed).
+function embedAiLayoutsBlock(project, profiles) {
+  const aiProject = { ...project, profiles }; // layouts match the exported profiles
+  const scenes = project.scenes.map((sc) => buildAiLayout(aiProject, sc.id)).filter(Boolean);
+  const doc = { format: 'lgfxsb-ai-layouts', version: 1, spec: AI_LAYOUT_DOC_URL, scenes };
+  const json = JSON.stringify(doc, null, 2).replace(/\//g, '\\/');
+  return `\n/* LGFXSB-AI-LAYOUTS v1 (generated; comment only — stripped at compile, do not edit)\n${json}\nLGFXSB-AI-LAYOUTS END */\n`;
 }
 
 function fmtFloat(n) {
