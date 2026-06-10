@@ -50,7 +50,9 @@
           <h2 data-i18n="pane.scenes">Scenes</h2>
           <div class="secacts">
             <button class="icon" id="scene-add" data-i18n-title="act.addScene">＋</button>
-            <button class="icon" id="scene-del" data-i18n-title="act.delScene">🗑</button>
+            <span class="toolsep"></span>
+            <button class="icon" id="scene-up" data-i18n-title="act.moveUp">↑</button>
+            <button class="icon" id="scene-down" data-i18n-title="act.moveDown">↓</button>
           </div>
         </div>
         <div class="list" id="scene-list"></div>
@@ -66,7 +68,6 @@
             <option value="Image">Image</option>
           </select>
           <button class="icon" id="part-add" data-i18n-title="act.addPart">＋</button>
-          <button class="icon" id="part-del" data-i18n-title="act.delPart">🗑</button>
           <span class="toolsep"></span>
           <button class="icon" id="part-front" data-i18n-title="act.front">↑</button>
           <button class="icon" id="part-back" data-i18n-title="act.back">↓</button>
@@ -114,10 +115,15 @@
         <div class="section">
           <div class="sechead">
             <h2 data-i18n="pane.profiles">Devices</h2>
-            <span class="menu-wrap">
-              <button class="icon" id="profile-add" data-i18n="profiles.add">+ Add ▾</button>
-              <div class="menu" id="profile-add-menu"></div>
-            </span>
+            <div class="secacts">
+              <span class="menu-wrap">
+                <button class="icon" id="profile-add" data-i18n="profiles.add">+ Add ▾</button>
+                <div class="menu" id="profile-add-menu"></div>
+              </span>
+              <span class="toolsep"></span>
+              <button class="icon" id="profile-up" data-i18n-title="act.moveUp">↑</button>
+              <button class="icon" id="profile-down" data-i18n-title="act.moveDown">↓</button>
+            </div>
           </div>
           <div class="list" id="profile-list"></div>
         </div>

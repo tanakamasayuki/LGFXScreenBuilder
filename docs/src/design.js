@@ -4,7 +4,7 @@
 import { store, update, mutate, checkpoint } from './store.js';
 import {
   DATUMS, DATUM_FX, DATUM_FY, orient, dispDims, pxOf, sceneById, profileById, partDef, placement,
-  addPart, removePart, renamePart, addScene, removeScene, renameScene,
+  addPart, removePart, renamePart, addScene, removeScene, renameScene, moveScene,
   absOrigin, reorderPart, assetById, profileFonts,
   reconcileAiLayout, applyAiLayout,
 } from './model.js';
@@ -50,7 +50,10 @@ let scale = 1; // canvas px per logical px (fit * zoom)
 function renderScenes() {
   const el = $('scene-list');
   el.innerHTML = '';
-  $('scene-del').disabled = store.project.scenes.length <= 1;
+  // Reorder acts on the active scene; disable at the list boundaries.
+  const si = store.project.scenes.findIndex((s) => s.id === store.ui.sceneId);
+  $('scene-up').disabled = si <= 0;
+  $('scene-down').disabled = si < 0 || si >= store.project.scenes.length - 1;
   for (const s of store.project.scenes) {
     const it = document.createElement('div');
     it.className = 'sitem' + (s.id === store.ui.sceneId ? ' active' : '');
@@ -198,7 +201,6 @@ function renderParts() {
   $('parts-title').textContent = t('parts.title', { scene: store.ui.sceneId });
   const scene = curScene();
   const sel = store.ui.selected;
-  $('part-del').disabled = !sel;
   $('part-front').disabled = !sel;
   $('part-back').disabled = !sel;
 
@@ -293,6 +295,8 @@ function renderInspector() {
   }
   h += row('visible', t('field.visible'), 'checkbox', e.visible);
   h += `<div class="field"><label>${t('field.descPart')}</label><textarea id="p-desc" rows="2">${def.desc || ''}</textarea></div>`;
+  // Delete lives in the inspector (consistent with Devices/Assets), not the top toolbar.
+  h += `<div class="delrow"><button class="mini danger" id="part-del">${t('btn.delPart')}</button></div>`;
   el.innerHTML = h;
 
   el.querySelectorAll('[data-k]').forEach((inp) => {
@@ -316,17 +320,27 @@ function renderInspector() {
   });
   const assetSel = el.querySelector('#p-asset');
   if (assetSel) assetSel.addEventListener('change', () => { def.asset = assetSel.value || null; renderCanvas(); renderParts(); });
+  el.querySelector('#part-del').onclick = () => {
+    if (!confirm(t('confirm.delPart', { id: sel }))) return;
+    mutate((st) => {
+      removePart(st.project, st.ui.sceneId, sel);
+      lineKeyMode = 'move';
+      st.ui.selected = null;
+    });
+  };
 }
 
 // Part deselected -> edit the scene's own properties (§8.13).
 function renderSceneProps() {
   const s = curScene();
   $('insp-title').textContent = t('inspector.scene', { scene: s.id });
+  const lastScene = store.project.scenes.length <= 1;
   $('props').innerHTML =
     `<div class="field"><label>${t('field.sceneId')}</label><input type="text" id="s-id" value="${s.id}"></div>` +
     readout(t('field.partCount'), s.parts.length) +
     `<div class="field"><label>${t('field.descScene')}</label><textarea id="s-desc" rows="3">${s.desc || ''}</textarea></div>` +
-    `<p class="sub">${t('hint.sceneProps')}</p>`;
+    `<p class="sub">${t('hint.sceneProps')}</p>` +
+    `<div class="delrow"><button class="mini danger" id="scene-del" ${lastScene ? 'disabled' : ''}>${t('btn.delScene')}</button></div>`;
   const dsc = $('s-desc');
   if (dsc) dsc.oninput = (ev) => { s.desc = ev.target.value; };
   const idInp = $('s-id');
@@ -334,6 +348,15 @@ function renderSceneProps() {
     const nid = renameScene(store.project, s.id, idInp.value);
     update((st) => { st.ui.sceneId = nid; });
   });
+  $('scene-del').onclick = () => {
+    if (store.project.scenes.length <= 1) return;
+    if (!confirm(t('confirm.delScene', { id: s.id }))) return;
+    mutate((st) => {
+      removeScene(st.project, s.id);
+      st.ui.sceneId = st.project.scenes[0].id;
+      st.ui.selected = null;
+    });
+  };
 }
 
 function renderStatus() {
@@ -482,36 +505,20 @@ export function initDesign() {
   };
   scr.addEventListener('wheel', (ev) => { ev.preventDefault(); setZoom(store.ui.zoom * (ev.deltaY < 0 ? 1.1 : 1 / 1.1)); }, { passive: false });
 
-  // Scene add / delete (delete is disabled when only one scene remains).
+  // Scene add (top toolbar). Reorder is the top ↑↓; delete lives in the scene
+  // inspector on the right (renderSceneProps), consistent with Devices/Assets.
   $('scene-add').onclick = () => mutate((st) => {
     st.ui.sceneId = addScene(st.project);
     st.ui.selected = null;
   });
-  $('scene-del').onclick = () => {
-    if (store.project.scenes.length <= 1) return;
-    if (!confirm(t('confirm.delScene', { id: store.ui.sceneId }))) return;
-    mutate((st) => {
-      removeScene(st.project, st.ui.sceneId);
-      st.ui.sceneId = st.project.scenes[0].id;
-      st.ui.selected = null;
-    });
-  };
+  $('scene-up').onclick = () => mutate((st) => moveScene(st.project, st.ui.sceneId, -1));
+  $('scene-down').onclick = () => mutate((st) => moveScene(st.project, st.ui.sceneId, +1));
 
-  // Part add (of the picked type) / delete (the selected part).
+  // Part add (of the picked type). Delete lives in the part inspector on the right.
   $('part-add').onclick = () => mutate((st) => {
     lineKeyMode = 'move';
     st.ui.selected = addPart(st.project, st.ui.sceneId, $('part-type').value);
   });
-  $('part-del').onclick = () => {
-    const sel = store.ui.selected;
-    if (!sel) return;
-    if (!confirm(t('confirm.delPart', { id: sel }))) return;
-    mutate((st) => {
-      removePart(st.project, st.ui.sceneId, sel);
-      lineKeyMode = 'move';
-      st.ui.selected = null;
-    });
-  };
 
   // Reorder among siblings (↑ = toward front, ↓ = toward back; §8.3).
   $('part-front').onclick = () => { if (store.ui.selected) mutate((st) => reorderPart(st.project, st.ui.sceneId, st.ui.selected, +1)); };

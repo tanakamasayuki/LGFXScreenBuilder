@@ -392,6 +392,15 @@ export function addScene(project, baseName = 'Scene') {
   return id;
 }
 
+// Reorder a scene among its siblings (dir = -1 up / +1 down). Scene order is the
+// display order and the generated SceneId enum order. No-op at the boundaries.
+export function moveScene(project, sceneId, dir) {
+  const i = project.scenes.findIndex((s) => s.id === sceneId), j = i + dir;
+  if (i < 0 || j < 0 || j >= project.scenes.length) return false;
+  [project.scenes[i], project.scenes[j]] = [project.scenes[j], project.scenes[i]];
+  return true;
+}
+
 // Remove a scene and its layout from every profile.
 export function removeScene(project, sceneId) {
   project.scenes = project.scenes.filter((s) => s.id !== sceneId);

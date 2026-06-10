@@ -47,6 +47,10 @@ select.icon { padding: 0 4px; }
 
 .zbar { display: flex; gap: 6px; align-items: center; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--line); }
 .mini { min-height: 24px; padding: 0 8px; font-size: 12px; border-radius: 5px; }
+/* Delete actions live at the bottom of the right-side inspector (scene/part/profile/asset). */
+.delrow { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.mini.danger { color: var(--warn); border-color: var(--warn); }
+.mini.danger:disabled { color: var(--muted); border-color: var(--line); }
 .sub { color: var(--muted); font-size: 12px; }
 
 /* `safe center` keeps the canvas centered but falls back to start-aligned when
@@ -73,8 +77,6 @@ select.icon { padding: 0 4px; }
 .pitem.active { border-color: #8fcac5; background: #e1f2f0; }
 .pitem.dropok { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent) inset; }
 .sitem .cnt, .pitem .ty { color: var(--muted); font-size: 11px; }
-.profile-order { display: inline-flex; align-items: center; gap: 4px; }
-.profile-order .mini { min-height: 20px; padding: 0 5px; }
 
 .field { display: grid; gap: 4px; margin-bottom: 9px; }
 .field .lab { display: flex; justify-content: space-between; align-items: baseline; }

@@ -18,19 +18,15 @@ const cur = () => profileById(store.project, store.ui.profileId);
 function renderProfList() {
   const el = $('profile-list');
   el.innerHTML = '';
-  store.project.profiles.forEach((p, i) => {
+  // Reorder acts on the selected profile via the top ↑↓ toolbar; disable at ends.
+  const i = store.project.profiles.findIndex((p) => p.id === store.ui.profileId);
+  $('profile-up').disabled = i <= 0;
+  $('profile-down').disabled = i < 0 || i >= store.project.profiles.length - 1;
+  store.project.profiles.forEach((p) => {
     const it = document.createElement('div');
     it.className = 'sitem' + (p.id === store.ui.profileId ? ' active' : '');
-    it.innerHTML = `<span>${p.id}</span><span class="profile-order"><button class="mini up" title="${t('profiles.up')}" ${i === 0 ? 'disabled' : ''}>↑</button><button class="mini down" title="${t('profiles.down')}" ${i === store.project.profiles.length - 1 ? 'disabled' : ''}>↓</button><span class="cnt">${p.w}×${p.h}</span></span>`;
+    it.innerHTML = `<span>${p.id}</span><span class="cnt">${p.w}×${p.h}</span>`;
     it.onclick = () => update((st) => { st.ui.profileId = p.id; });
-    it.querySelector('.up').onclick = (ev) => {
-      ev.stopPropagation();
-      mutate((st) => { moveProfile(st.project, p.id, -1); st.ui.profileId = p.id; });
-    };
-    it.querySelector('.down').onclick = (ev) => {
-      ev.stopPropagation();
-      mutate((st) => { moveProfile(st.project, p.id, +1); st.ui.profileId = p.id; });
-    };
     el.appendChild(it);
   });
 }
@@ -89,7 +85,7 @@ function renderProfProps() {
     [0, 1, 2, 3].map((r) => `<option value="${r}"${r === p.rotation ? ' selected' : ''}>${r}</option>`).join('') +
     `</select></div>` +
     `<div class="field"><label>${t('field.descProfile')}</label><textarea id="pf-desc" rows="2">${p.desc || ''}</textarea></div>` +
-    `<button class="mini" id="pf-del">${t('btn.delProfile')}</button>`;
+    `<div class="delrow"><button class="mini danger" id="pf-del">${t('btn.delProfile')}</button></div>`;
   // Partial re-render on size/rotation edits to keep input focus (like Design).
   const reSize = () => { renderProfList(); renderProfCenter(); renderBanner(); };
   $('pf-id').addEventListener('change', () => {
@@ -165,6 +161,9 @@ export function initProfiles() {
     place();
   });
   menu.addEventListener('click', (ev) => ev.stopPropagation());
+  // Reorder the selected profile (top toolbar, consistent with Design's scenes/parts).
+  $('profile-up').onclick = () => mutate((st) => { moveProfile(st.project, st.ui.profileId, -1); });
+  $('profile-down').onclick = () => mutate((st) => { moveProfile(st.project, st.ui.profileId, +1); });
   document.addEventListener('click', close);
   window.addEventListener('resize', close);
   // Close when an OUTSIDE scroller moves (the menu is fixed and won't follow it),

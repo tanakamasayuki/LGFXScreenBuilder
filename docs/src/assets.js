@@ -74,7 +74,7 @@ function renderProps() {
     `<div class="field"><label>${t('field.assetId')}</label><input id="a-id" value="${a.id}"></div>` +
     `<div class="field"><label>${t('field.assetSize')}</label><div class="readout">${a.w} × ${a.h}</div></div>` +
     `<div class="field"><label>${t('assets.usage')}</label><div class="readout">${usage.length ? usage.join(', ') : `<span class="sub">${t('assets.unused')}</span>`}</div></div>` +
-    `<button class="mini" id="a-del">${t('btn.delAsset')}</button>`;
+    `<div class="delrow"><button class="mini danger" id="a-del">${t('btn.delAsset')}</button></div>`;
   $('a-id').addEventListener('change', () => { selAsset = renameAsset(store.project, a.id, $('a-id').value); update(() => {}); });
   $('a-del').onclick = () => {
     if (!confirm(t('confirm.delAsset', { id: a.id }))) return;
