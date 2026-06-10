@@ -166,7 +166,7 @@ Drawing is resolved based on the currently selected profile (§8.9).
 - Full-screen fills and background clears are based on the physical size of the actual device (`gfx.width()` / `gfx.height()`).
 - Each part is drawn with the logical coordinates of the currently selected profile treated as absolute pixels, with the origin at the top-left. No coordinate scaling is performed.
 - Drawing that extends outside the physical screen is left to the clipping of the drawing backend.
-- Rotation applies the rotation value (0–3) of the currently selected profile via `setRotation()` (§8.9.3).
+- Rotation applies the currently selected profile's rotation value (0–3) relative to the underlying display's standard orientation, via `setRotation((base + rotation) % 4)` (§8.9.3).
 
 Even if the logical coordinate space (the profile's size) and the physical screen size differ, drawing is done with the top-left as the origin without scaling. For example, if a 135×240 profile is used on a physical 320×240 display, the background is drawn over the full 320×240, while the parts are drawn in the top-left 135×240 region. If a profile larger than the physical screen is used, the overflowing portion is clipped. To preserve the meaning of the coordinates, no automatic scaling or automatic repositioning is performed (a layout engine is a non-goal).
 
@@ -484,9 +484,9 @@ Profile order can be changed on the Devices screen.
 
 Orientation (portrait/landscape) is not made into a separate profile but expressed by rotation.
 
-- A profile has a rotation (0–3). Orientation is expressed by this rotation.
+- A profile has a rotation (0–3). The rotation is **relative to the board's standard orientation** and is shown in the UI as 0°/90°/180°/270°. 0 (0°) = the standard orientation established by the underlying display (`M5.begin()` / `display.init()`).
 - The canvas width/height become the profile's screen size with width/height swapped by the rotation.
-- The runtime only applies the rotation of the currently selected profile via `setRotation()`, and does not carry device-specific rotation logic.
+- The runtime captures the underlying display's standard rotation as a base (via `getRotation()` in `begin()`, right after display init) and applies `setRotation((base + profile rotation) % 4)`. This makes the same project render correctly even on boards whose standard rotation is not 0 (e.g. M5GFX's M5Stack defaults to rotation 1). There is no per-device-name branching — only the generic base offset.
 
 Changing rotation per scene (changing portrait/landscape per screen on the same device) is outside the current scope (§15).
 

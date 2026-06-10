@@ -72,7 +72,7 @@ function renderTabs() {
     tab.className = 'tab' + (p.id === store.ui.profileId ? ' active' : '');
     const d = dispDims(p); // show the effective (rotated) screen, matching the canvas
     tab.innerHTML = `<span class="t1">${p.id}</span>` +
-      `<span class="t2">${d.w}×${d.h} · ${orientText(d.w, d.h)} · rot${p.rotation}</span>`;
+      `<span class="t2">${d.w}×${d.h} · ${orientText(d.w, d.h)} · ${p.rotation * 90}°</span>`;
     tab.onclick = () => update((st) => { st.ui.profileId = p.id; });
     el.appendChild(tab);
   }
@@ -226,7 +226,7 @@ function renderProfMeta() {
   const d = dispDims(pr); // effective (rotated) screen size shown in the canvas
   $('prof-meta').innerHTML =
     readout(t('field.size'), `${d.w} × ${d.h}`) +
-    readout(t('field.rotation'), `${pr.rotation} <span class="unit">（${orientText(d.w, d.h)}）</span>`) +
+    readout(t('field.rotation'), `${pr.rotation * 90}° <span class="unit">（${orientText(d.w, d.h)}）</span>`) +
     `<p class="sub">${t('hint.profileMeta')}</p>`;
 }
 
@@ -373,7 +373,7 @@ function renderStatus() {
     $('st-sel').textContent = t('status.none', { scene: store.ui.sceneId });
   }
   const dp = dispDims(pr);
-  $('st-prof').textContent = t('status.profile', { profile: pr.id, w: dp.w, h: dp.h, orient: orientText(dp.w, dp.h), rot: pr.rotation });
+  $('st-prof').textContent = t('status.profile', { profile: pr.id, w: dp.w, h: dp.h, orient: orientText(dp.w, dp.h), rot: `${pr.rotation * 90}°` });
   $('zoom-label').textContent = Math.round(store.ui.zoom * 100) + '%';
 }
 

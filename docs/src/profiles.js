@@ -46,7 +46,7 @@ function renderProfCenter() {
   scr.textContent = `${d.w} × ${d.h}`;
   const oc = orient(d.w, d.h);
   $('prof-size').textContent = `${t('orient.' + oc)} ${d.w}×${d.h}`;
-  $('prof-rot').textContent = `rotation ${p.rotation}`;
+  $('prof-rot').textContent = `${p.rotation * 90}°`;
   $('prof-orient').textContent = t('orient.' + oc);
 
   const cat = $('board-catalog');
@@ -82,7 +82,7 @@ function renderProfProps() {
     `<div class="field"><label>${t('field.heightPx')}</label><input id="pf-h" type="number" value="${p.h}"></div></div>` +
     `<p class="sub">${t('orient.' + oc)}</p>` +
     `<div class="field"><label>${t('field.defaultRotation')}</label><select id="pf-rot">` +
-    [0, 1, 2, 3].map((r) => `<option value="${r}"${r === p.rotation ? ' selected' : ''}>${r}</option>`).join('') +
+    [0, 1, 2, 3].map((r) => `<option value="${r}"${r === p.rotation ? ' selected' : ''}>${r * 90}°</option>`).join('') +
     `</select></div>` +
     `<div class="field"><label>${t('field.descProfile')}</label><textarea id="pf-desc" rows="2">${p.desc || ''}</textarea></div>` +
     `<div class="delrow"><button class="mini danger" id="pf-del">${t('btn.delProfile')}</button></div>`;

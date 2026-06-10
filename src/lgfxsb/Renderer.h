@@ -24,6 +24,20 @@ namespace lgfxsb
     lgfx::LGFX_Device *_gfx = nullptr; // base of LGFX / M5GFX / M5.Display
     const Project &_project;
     uint8_t _profile = 0; // 0 = Auto (actual resolution deferred to draw time; 1+ = enum Profile value = index + 1)
+    // Board's standard rotation, captured once after the display is initialized
+    // (e.g. M5.begin()/display.init() leave it). A profile's rotation is the
+    // canonical "0 = standard orientation" and is applied RELATIVE to this base
+    // as (base + profile.rotation) % 4, so it maps correctly onto boards (e.g.
+    // M5GFX) whose standard rotation is not 0 (§8.9).
+    uint8_t _baseRotation = 0;
+    bool _baseRotationSet = false;
+
+    void captureBaseRotation()
+    {
+      if (_gfx)
+        _baseRotation = static_cast<uint8_t>(_gfx->getRotation() & 3);
+      _baseRotationSet = true;
+    }
 #if defined(LGFXVIRTUALCANVAS_H)
     LGFXVirtualScreen _vscreen; // tiled double-buffer manager (buffered build only)
 #endif
@@ -43,10 +57,12 @@ namespace lgfxsb
         return (idx < _project.profileCount) ? idx : 0;
       }
 
-      const uint8_t rot = _gfx->getRotation();
+      // Orientation relative to the board's standard (base), so the native
+      // (de-rotated) size is computed the same way on any board.
+      const uint8_t rel = static_cast<uint8_t>((_gfx->getRotation() + 4u - _baseRotation) & 3u);
       const int pw = _gfx->width(), ph = _gfx->height();
-      const int16_t nativeW = static_cast<int16_t>((rot & 1) ? ph : pw);
-      const int16_t nativeH = static_cast<int16_t>((rot & 1) ? pw : ph);
+      const int16_t nativeW = static_cast<int16_t>((rel & 1) ? ph : pw);
+      const int16_t nativeH = static_cast<int16_t>((rel & 1) ? pw : ph);
       for (uint8_t pi = 0; pi < _project.profileCount; ++pi)
       {
         const ProfileDesc &pr = _project.profiles[pi];
@@ -191,8 +207,12 @@ namespace lgfxsb
     {
       if (!_gfx)
         return;
+      if (!_baseRotationSet)
+        captureBaseRotation();
       const uint8_t pi = resolveProfileIndex();
-      _gfx->setRotation(_project.profiles[pi].rotation);
+      // (base + profile.rotation) % 4: profile rotation is relative to the board's
+      // standard orientation (§8.9), so it wraps back into 0..3.
+      _gfx->setRotation((_baseRotation + _project.profiles[pi].rotation) % 4);
       const SceneDesc *sc = findScene(id);
 
 #if defined(LGFXVIRTUALCANVAS_H)
@@ -237,7 +257,9 @@ namespace lgfxsb
 #endif
     }
 
-    void begin() {} // configuration hook after display init (does not touch profile selection; §11.3)
+    // Configuration hook after display init (§11.3). Captures the board's standard
+    // rotation as the base for profile rotation (§8.9); does not change the profile.
+    void begin() { captureBaseRotation(); }
 
     // Resolved render mode (compile-time constant; §10). true = tiled double
     // buffering via LGFXVirtualCanvas, false = direct drawing.
