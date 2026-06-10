@@ -93,11 +93,17 @@ function renderCanvas() {
   for (const def of scene.parts) {
     const e = curPlacement(def.id);
     if (!e) continue;
+    // Hidden parts appear on the canvas only while selected, so visible:false parts
+    // don't clutter the layout. They stay in the part list and can be selected there.
+    // 非表示パーツは選択中だけキャンバスに出す（レイアウトを汚さない）。リストには残り、
+    // そこから選択できる。
+    const isSel = def.id === store.ui.selected;
+    if (!e.visible && !isSel) continue;
     const o = absOrigin(pr, store.ui.sceneId, scene, def);
     const ax = (o.x + e.x) * scale, ay = (o.y + e.y) * scale;
     const d = document.createElement('div');
     d.className = 'part ' + def.type.toLowerCase() +
-      (def.id === store.ui.selected ? ' selected' : '') + (e.visible ? '' : ' hidden');
+      (isSel ? ' selected' : '') + (e.visible ? '' : ' hidden');
     d.dataset.id = def.id;
 
     if (def.type === 'Text') {

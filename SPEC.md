@@ -537,6 +537,11 @@ The preview lets you check the following.
 - Part placement
 - Visibility
 
+Hidden parts (`visible: false`) appear on the editing canvas **only while selected**,
+drawn dimmed (and not drawn otherwise), so they don't clutter the layout. They remain
+in the layer list at all times, so they can be selected there and repositioned. Export
+and on-device rendering do not draw hidden parts at all.
+
 ### 8.11 Namespace Management
 
 Parts are managed by unique IDs within each Scene. In the Arduino-bound generated code, instead of handling string IDs directly, they can be used as structure fields per scene.

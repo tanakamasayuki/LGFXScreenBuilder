@@ -58,7 +58,9 @@ select.icon { padding: 0 4px; }
 .part.text { display: flex; align-items: center; color: #fff; font-weight: 650; }
 .part.image { background: #2a3940; border: 1px dashed #5d6d73; }
 .part.selected { border-color: var(--sel); box-shadow: 0 0 0 1px var(--sel) inset; }
-.part.hidden { opacity: .25; }
+/* Hidden parts render only while selected (see renderCanvas); dim + dashed so it
+   reads as "hidden" while still being editable. */
+.part.hidden { opacity: .5; outline: 1px dashed var(--muted); outline-offset: 1px; }
 .anchor { position: absolute; width: 7px; height: 7px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--sel); border: 1px solid #06343055; pointer-events: none; z-index: 5; }
 .line-handle { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--panel); border: 2px solid var(--sel); box-shadow: 0 0 0 1px rgba(0, 0, 0, .25); cursor: crosshair; z-index: 6; }
 
