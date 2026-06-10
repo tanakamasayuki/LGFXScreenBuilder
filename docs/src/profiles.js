@@ -7,7 +7,7 @@ import {
   orient, dispDims, profileById, addProfile, removeProfile, renameProfile, moveProfile,
 } from './model.js';
 import {
-  dimKey, boardCatalog, commonResolutions,
+  boardCatalog, commonResolutions,
 } from './boards.js';
 import { t } from './i18n.js';
 
@@ -53,8 +53,9 @@ function renderProfCenter() {
   cat.innerHTML = '';
   let matched = 0;
   for (const b of boardCatalog()) {
-    const mism = dimKey(b.w, b.h) !== dimKey(p.w, p.h);
-    if (mism) continue;
+    // Exact size match incl. orientation: 135×240 (stick) and 240×135 (Cardputer)
+    // are different profiles and must not be mixed in the reference list.
+    if (b.w !== p.w || b.h !== p.h) continue;
     matched++;
     const btn = document.createElement('button');
     btn.className = 'board';

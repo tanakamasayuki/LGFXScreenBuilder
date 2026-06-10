@@ -18,8 +18,6 @@ export const BOARDS = [
 
 export const TARGET_LIBS = ['M5Unified', 'M5GFX', 'LovyanGFX'];
 
-// Orientation-independent dimension key (135x240 == 240x135).
-export const dimKey = (w, h) => [Math.min(w, h), Math.max(w, h)].join('x');
 export const boardCatalog = () => BOARDS;
 
 // Common panel sizes that aren't tied to a board in the catalog.
