@@ -17,7 +17,9 @@ const fw = () => $('export-fw').value;
 const hfile = () => `${store.project.name || 'project'}.h`;
 const inofile = () => `${store.project.name || 'project'}_example.ino`;
 const files = () => [{ name: hfile(), meta: 'C++' }, { name: inofile(), meta: 'Sample' }];
-const opts = () => ({ profiles: [...included] });
+// buffered defaults to true (less flicker); persisted on the project like targetLibrary.
+const buffered = () => store.project.buffered !== false;
+const opts = () => ({ profiles: [...included], buffered: buffered() });
 
 // Keep UI state consistent with the current project (profiles may have changed).
 function reconcile() {
@@ -100,6 +102,7 @@ export function renderExport() {
   // Reflect the project name, but don't clobber the field (or cursor) while editing.
   const nameEl = $('export-name');
   if (document.activeElement !== nameEl) nameEl.value = store.project.name || '';
+  $('export-buffered').checked = buffered();
   reconcile();
   renderFiles();
   renderProfSel();
@@ -122,6 +125,10 @@ export function initExport() {
     if (!isValidId(v)) { errEl.textContent = t('newproj.errName'); return; }
     errEl.textContent = '';
     store.project.name = v;
+    renderExport();
+  });
+  $('export-buffered').addEventListener('change', () => {
+    store.project.buffered = $('export-buffered').checked;
     renderExport();
   });
   $('export-fw').addEventListener('change', () => {

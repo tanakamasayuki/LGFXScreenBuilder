@@ -819,9 +819,11 @@ Arduino 向けエクスポートでは、以下を生成する。
 
 生成ヘッダには、通常描画で使う `lgfxsb::Project` とは別に、`detail::kProfileInfo[]` と `detail::kSceneInfo[]` を出力する。これは host テストや画面キャプチャで、全プロファイル × 全シーンを列挙するための補助メタ情報である。通常の利用コードでは参照しないため、描画ランタイムのデータ契約には含めない。
 
-実機描画モードは **`LGFXVirtualCanvas.h` を include しているかどうかでコンパイル時に確定する**。生成ヘッダ（`MyScreen.h`）より前に `#include <LGFXVirtualCanvas.h>` があり、検出マクロ `LGFXVIRTUALCANVAS_H` が見えていれば **LGFXVirtualCanvas による分割ダブルバッファ描画**、無ければ **直描画** になる。既定はバッファ描画とし、生成サンプル `.ino` は既定で `#include <LGFXVirtualCanvas.h>` を含む。直描画にしたいときはその include を外すだけでよい。実行時のモード切り替えは行わない（`setBuffered()` のような API は無い）。
+実機描画モードは **`LGFXVirtualCanvas.h` を include しているかどうかでコンパイル時に確定する**。生成ヘッダ（`MyScreen.h`）より前に `#include <LGFXVirtualCanvas.h>` があり、検出マクロ `LGFXVIRTUALCANVAS_H` が見えていれば **LGFXVirtualCanvas による分割ダブルバッファ描画**、無ければ **直描画** になる。実行時のモード切り替えは行わない（`setBuffered()` のような API は無い）。
 
-`__has_include`（ヘッダが存在するか）ではなく **実際に include されたか** を見る。これにより、ライブラリがインストール済みでも include しなければ直描画のままで、意図しないバッファ化を避けられる。直描画ビルドは `LGFXVirtualCanvas` を名前すら参照しないため、本当に依存しない。
+バッファ描画を**既定**とする（直描画はちらつきやすいため）。Export 画面に「バッファリング (LGFXVirtualCanvas)」トグル（既定オン）を設け、オンのとき生成サンプル `.ino` に include を出力する。その include は **`#if __has_include(<LGFXVirtualCanvas.h>)` でガード**し、ライブラリ未インストールでもビルドが通って直描画にフォールバックする（`#warning` で導入を促す）。トグルをオフにすると include 自体を出力しないので常に直描画になる。
+
+`__has_include`（ヘッダが存在するか）ではなく **実際に include されたか**（検出マクロが見えるか）を見る。これにより、ライブラリがインストール済みでも include しなければ直描画のままで、意図しないバッファ化を避けられる。直描画ビルドは `LGFXVirtualCanvas` を名前すら参照しないため、本当に依存しない。なお、この**ライブラリ側の判定（実 include されたマクロ）**と、サンプル `.ino` が出力する `#if __has_include(...)` ガードは**層が別**である。後者は「そもそも include 文を出すか／未インストール時にフォールバックするか」を決めるだけで、最終的なモードはやはり実 include の有無で決まる。
 
 確定したモードは `screen.isBuffered()`（true=分割ダブルバッファ / false=直描画）で参照でき、include 順序の誤りでバッファが効いていないことに気づける。
 
