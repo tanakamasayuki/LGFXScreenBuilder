@@ -268,8 +268,12 @@ values.
 **Keep the `parts` array order consistent across profiles**, because array order is the
 draw order. If you reorder layers, apply the same relative order to every profile.
 
-If a part should not appear on a certain profile, keep the part and set
-`"visible": false` — do **not** delete it from that profile.
+**Parts are shared across all profiles** (the `(id, type)` set is identical on every
+profile), so choose hide vs delete by **scope**. For a part that is **unused on a specific
+profile**, do not delete it from that profile — set `"visible": false` (deleting it from
+just some profiles breaks the invariant and also drops it from the profiles that do use
+it). For a part that is **unused on every profile**, you may delete the part entirely —
+and then delete it from **all** profiles.
 
 **Use only the part types and fields defined here.** For visual-polish requests such as
 "make it richer", do not invent unsupported fields such as `radius`, `cornerRadius`,
@@ -323,9 +327,11 @@ them, causing duplication or mismatch).
 - Adapt sizes and positions to each profile's aspect ratio (a tall 135×240 needs a
   different arrangement than a wide 320×240).
 - Reuse anchors + `datum` to align text (e.g. `TR` at `x = w` for a right-aligned value).
+- For a part unused on a specific profile, set `"visible": false` instead of deleting it.
 - Return the whole object, with all profiles, as valid JSON.
 
 **Don't**
+- Don't delete a part from just some profiles (it desyncs the `(id, type)` set); delete from all profiles only when the part is unused everywhere.
 - Don't add `w`/`h` to a `Text` (it has none).
 - Don't invent `asset` names — only reference assets that already exist.
 - Don't change `Image.asset` unless explicitly requested, and never add image-slice fields.

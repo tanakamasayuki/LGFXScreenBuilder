@@ -222,7 +222,7 @@ LovyanGFX/M5GFX の `drawLine(x, y, x2, y2, color)` に対応します。stroke-
 
 **`parts` 配列順を profile 間で一貫させます。** 配列順は描画順です。レイヤー順を変える場合は、すべての profile で同じ相対順にします。
 
-ある profile で part を表示したくない場合は、part を残して `"visible": false` にします。その profile から削除してはいけません。
+**パーツは全 profile 共通**（`(id, type)` の集合は全 profile で同一）です。隠すか削除かは**スコープ**で決めます。**特定の profile でだけ使わない**部品は、その profile から削除せず `"visible": false` で非表示にします（一部の profile からだけ削除すると不変条件が崩れ、その部品を使う他の profile からも消えてしまいます）。**どの profile でも使わない**部品は、part ごと削除して構いません（その場合は**すべての profile**から削除します）。
 
 **ここで定義した part type と field だけを使います。** 「もっとリッチに」などの見た目改善依頼でも、`radius`, `cornerRadius`, `stroke`, `strokeWidth`, `border`, `opacity`, `alpha`, `gradient`, `shadow`, `fontFamily`, `fontStyle`, `fontWeight`, `bold`, `italic`, `wrap`, `align` など未対応フィールドを作ってはいけません。カード、区切り線、ハイライト、簡単な影、簡単なマークは `Rect`、`Line`、`Circle`、`Text` の重ね合わせで近似します。`Image` は既存 project asset を配置する場合だけ使い、asset 名、画像スライス、プロファイル別 asset 差し替えを捏造してはいけません。
 
@@ -243,9 +243,11 @@ LovyanGFX/M5GFX の `drawLine(x, y, x2, y2, color)` に対応します。stroke-
 - すべての part を profile の `w`×`h` 内に収める。
 - profile のアスペクト比に合わせてサイズと位置を調整する（縦長 135×240 には、横長 320×240 とは違う配置が必要）。
 - text の整列には anchor + `datum` を使う（例: 右寄せ値は `x = w` の `TR`）。
+- 特定の profile で使わない部品は、削除せず `"visible": false` で非表示にする。
 - すべての profile を含む全体オブジェクトを、有効な JSON として返す。
 
 **Don't**
+- 一部の profile からだけ part を削除しない（`(id, type)` の集合がずれる）。どの profile でも使わない部品だけ、全 profile から削除する。
 - `Text` に `w`/`h` を追加しない（Text には存在しない）。
 - `asset` 名を捏造しない。既存 asset だけを参照する。
 - 明示的に依頼されない限り `Image.asset` を変更しない。画像スライス用 field を追加しない。
