@@ -97,6 +97,9 @@ function renderChecks() {
 
 export function renderExport() {
   if (!fwInit) { $('export-fw').value = store.project.targetLibrary || 'M5Unified'; fwInit = true; }
+  // Reflect the project name, but don't clobber the field (or cursor) while editing.
+  const nameEl = $('export-name');
+  if (document.activeElement !== nameEl) nameEl.value = store.project.name || '';
   reconcile();
   renderFiles();
   renderProfSel();
@@ -110,6 +113,17 @@ export function renderExport() {
 }
 
 export function initExport() {
+  // Project name = generated namespace + output .h/.ino/.json file names (§9.1).
+  // It must be a C identifier; on an invalid value, show an error and keep the
+  // last good name so codegen never emits a broken namespace.
+  $('export-name').addEventListener('input', () => {
+    const v = $('export-name').value.trim();
+    const errEl = $('export-name-err');
+    if (!isValidId(v)) { errEl.textContent = t('newproj.errName'); return; }
+    errEl.textContent = '';
+    store.project.name = v;
+    renderExport();
+  });
   $('export-fw').addEventListener('change', () => {
     store.project.targetLibrary = $('export-fw').value;
     renderExport();
