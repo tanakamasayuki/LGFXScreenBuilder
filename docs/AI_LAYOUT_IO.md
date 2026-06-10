@@ -302,6 +302,17 @@ image slices, project name/namespace, output settings, Arduino code). This is **
 `.lgfxsb.json` project file and **not** Arduino generated output. Represent **static
 layouts only**.
 
+**The static-layout boundary.** This format represents a static "scaffold." A Text
+part's `text` is a **preview value**, not final copy: user code substitutes the string
+at runtime through the scene struct (the tool still draws it, so place labels, status
+strings, and numeric readouts as `Text` parts). By contrast, drawing whose shape changes
+with a value — a graph's data line, a progress bar's fill, a meter's needle — is the
+user's Arduino code's responsibility (the overlay hook, SPEC §11.4) and is out of scope
+for this JSON. Include in the design only what is always drawn regardless of any dynamic
+value (gridlines and axes; a bar's outline and its 0% state); **do not bake a
+representative or sample fill/line into the static parts** (the overlay would draw over
+them, causing duplication or mismatch).
+
 ---
 
 ## 5. Do / Don't

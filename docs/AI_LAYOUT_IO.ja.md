@@ -232,6 +232,8 @@ LovyanGFX/M5GFX の `drawLine(x, y, x2, y2, color)` に対応します。stroke-
 
 **この形式には含まれず、追加してはいけないもの:** 提供済みフォント文脈と Text の `font` 名 + `size` + `color` を超える編集可能な font family/style 指定、animation/transition/keyframe/fade/duration/delay/timing、project-level data（`assets`、asset binary / Data URL、`targetLibrary`、画像スライス、project name/namespace、output settings、Arduino code）。これは `.lgfxsb.json` project file ではなく、Arduino 生成出力でもありません。**静的レイアウトだけ**を表します。
 
+**静的レイアウトの境界。** このレイアウトは静的な「下地」を表します。`Text` の `text` は確定文言ではなく**プレビュー値**で、実行時にユーザーコードが文字列を差し替えます（描画自体はツールが行うので、ラベル・状態文字・数値表示は `Text` として置いてください）。一方、グラフのデータ線、プログレスバーの塗り、メーターの針のように**値に応じて形状が変わる描画は、利用者の Arduino コード（overlay フック、SPEC §11.4）の責務**であり、この JSON の対象外です。デザインに含めるのは値に依存せず常に出る部分（罫線・軸、バーの枠と 0% 状態）までとし、**代表値やサンプルの塗り・線を静的 part に焼き込まないでください**（overlay が上から描き、二重・食い違いになります）。
+
 ---
 
 ## 5. Do / Don't

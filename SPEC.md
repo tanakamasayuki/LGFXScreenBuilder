@@ -440,6 +440,14 @@ When dynamic visuals are needed, user code is responsible for them:
 - Draw graphs, waveforms, meters, game-like visuals, and similar content directly with LovyanGFX/M5GFX.
 - Manage timers, state transitions, and animation progress in the application.
 
+The static layer covers only "what is always drawn regardless of any dynamic value." Think of the boundary as three categories:
+
+- ① The **invariant scaffold** (a graph's gridlines and axes; a progress bar's outline and unfilled / 0% track) is placed as static parts and drawn by `show()`.
+- ② **Text** is a static part (its position, datum, size, font, and color are design), but its displayed string is substituted at runtime by user code through the scene struct (the `text` field is a preview value). `show()` draws it — this is not an overlay.
+- ③ **Drawing whose shape changes with a value** (a data line, a bar fill, a meter needle) is drawn by the user in an overlay (§11.4).
+
+"The user can change it" does not imply an overlay: string substitution is category ②. Do not bake a representative or sample fill/line into the static parts (the overlay would draw over them, causing duplication or mismatch).
+
 This keeps the tool and AI layout JSON focused on static layouts and avoids making the specification unnecessarily complex.
 
 ### 8.9 Profiles (Multi-Device Support)
