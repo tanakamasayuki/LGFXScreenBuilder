@@ -15,13 +15,13 @@ python -m http.server 8000 --directory docs
 
 - **Design** mode is implemented: two axes — scenes (left pane) × profiles (top
   tabs); each profile holds an independent layout per scene (SPEC §8.9.6). Canvas
-  rendering (Rect / Text with datum / Image placeholder), layer list, inspector,
-  drag-move, arrow-key nudge/resize (§8.14), zoom, and scene-level properties on
-  deselect. Scenes and parts can be added/deleted/renamed; adding or removing a
-  part/scene updates every profile's layout in lockstep (§8.9.6). Layer panel is a
-  tree (front-on-top): reorder among siblings (↑/↓), group/ungroup, and drag-drop
-  reparenting (onto a group = nest, onto a part = sibling, empty = root) — all
-  with absolute position preserved; cascade delete of groups (§8.3.1).
+  rendering of all part types (Rect with corner radius / fill, Line, Circle with
+  fill, Text with datum, Image), layer list, inspector, drag-move, arrow-key
+  nudge/resize (§8.14), zoom, and scene-level properties on deselect. Scenes and
+  parts can be added (the part type is picked from a "+ Add" dropdown), reordered
+  (↑/↓), renamed, and deleted (from the right-side inspector); adding or removing a
+  part/scene updates every profile's layout in lockstep (§8.9.6). The layer panel
+  is a flat list (front-on-top); there are no groups.
 - **Profiles** mode (SPEC §8.9): target-library bar, profile list with add
   (by resolution / custom, cloning the current layout), size/rotation/note +
   rename/delete, profile reordering, orientation/size preview, and a reference
