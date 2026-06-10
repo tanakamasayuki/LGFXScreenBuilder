@@ -689,7 +689,7 @@ Format:
 
 Export (implemented): the Design screen's **"Copy AI JSON"** action (`docs/src/ailayout.js`) copies the current scene (all profiles) in this format to the clipboard as **minified JSON** (the clipboard is an AI input, so no whitespace — fewer tokens; the contract's worked example stays pretty for human readers). A file download is used as a fallback when the clipboard is unavailable.
 
-Import (implemented): the Design screen's **"Paste AI JSON"** action opens a dialog; the user pastes the JSON (minified or pretty) and sees a live preview (update vs add, part/profile counts, warnings) before applying. Import is wired through the undo system (`reconcileAiLayout` / `applyAiLayout` in `docs/src/model.js`). Reconciliation rules:
+Import (implemented): the Design screen's **"Paste AI JSON"** action opens a dialog; the user pastes the JSON (minified or pretty) and sees a live preview (update vs add, part/profile counts, warnings) before applying. Chat models tend to wrap their output in a Markdown code fence (```` ```json … ``` ````, sometimes with prose around it), so import **extracts the first fenced block's inner content before parsing** (and parses as-is when no fence is present). Import is wired through the undo system (`reconcileAiLayout` / `applyAiLayout` in `docs/src/model.js`; fence stripping in `parseAiLayout`, `docs/src/ailayout.js`). Reconciliation rules:
 
 - **Update vs add by scene ID:** if the JSON's `scene` matches an existing scene it is **overwritten**; otherwise it is **added** as a new scene.
 - **Part definitions** (the shared `(id, type)` + order + `asset`) are taken from one **canonical profile** — the first profile in profile order; if other profiles' part sets differ, the canonical one wins (with a warning).

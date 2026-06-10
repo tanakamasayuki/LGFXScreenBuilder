@@ -681,7 +681,7 @@ AI に渡す IF 契約書は単独の**英語のみ**ドキュメント [docs/AI
 
 出力（実装済み）: Design 画面の**「AI用JSONコピー」**（`docs/src/ailayout.js`）で、現在の画面（全プロファイル）をこの形式で**minified JSON**としてクリップボードにコピーする（clipboard は AI への入力なので空白なし＝トークン最小。契約書の worked example は人間向けに pretty のまま）。クリップボード不可環境ではファイルダウンロードにフォールバックする。
 
-取り込み（実装済み）: Design 画面の**「AI結果を貼付」**でダイアログを開き、JSON（minified/pretty どちらでも）を貼り付けると、適用前に**プレビュー**（上書き更新か新規追加か・パーツ数/プロファイル数・警告）を表示する。取り込みは Undo に対応（`docs/src/model.js` の `reconcileAiLayout` / `applyAiLayout`）。整合ルール:
+取り込み（実装済み）: Design 画面の**「AI結果を貼付」**でダイアログを開き、JSON（minified/pretty どちらでも）を貼り付けると、適用前に**プレビュー**（上書き更新か新規追加か・パーツ数/プロファイル数・警告）を表示する。チャットモデルは出力を Markdown のコードフェンス（```` ```json … ``` ````、前後に文章が付く場合も含む）で囲みがちなので、取り込みは**最初のフェンス内側を取り出してから解析する**（フェンスが無ければそのまま解析）。取り込みは Undo に対応（`docs/src/model.js` の `reconcileAiLayout` / `applyAiLayout`、フェンス除去は `docs/src/ailayout.js` の `parseAiLayout`）。整合ルール:（上書き更新か新規追加か・パーツ数/プロファイル数・警告）を表示する。取り込みは Undo に対応（`docs/src/model.js` の `reconcileAiLayout` / `applyAiLayout`）。整合ルール:
 
 - **scene ID で上書き/追加判定**: JSON の `scene` が既存シーンと一致すれば**上書き**、無ければ**新規追加**。
 - **パーツ定義**（共有の `(id, type)`＋順序＋`asset`）は**正本プロファイル** 1 つから採る＝プロファイル順で先頭のものを使う。他プロファイルの集合が食い違えば正本優先（警告）。

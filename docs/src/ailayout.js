@@ -94,3 +94,22 @@ export function buildAiLayout(project, sceneId) {
 export function aiLayoutJson(project, sceneId) {
   return JSON.stringify(buildAiLayout(project, sceneId));
 }
+
+// Parse a layout JSON pasted from an AI reply. Chat models routinely wrap their
+// output in a Markdown code fence (```json ... ```), sometimes with prose around
+// it, so strip the first fenced block (the inner content) before parsing; if no
+// fence is present, parse the trimmed text as-is. Returns { obj } on success or
+// { err } with the parser message.
+// AI の返信から貼り付けたレイアウト JSON を取り込む。多くのチャットモデルは出力を
+// ```json ... ``` で囲む（前後に文章が付くこともある）ため、最初のフェンス内側を
+// 取り出してから parse する。フェンスが無ければそのまま（trim して）parse する。
+export function parseAiLayout(text) {
+  const src = typeof text === 'string' ? text : '';
+  const fence = src.match(/```[^\n`]*\r?\n([\s\S]*?)```/);
+  const json = (fence ? fence[1] : src).trim();
+  try {
+    return { obj: JSON.parse(json) };
+  } catch (e) {
+    return { err: e.message };
+  }
+}

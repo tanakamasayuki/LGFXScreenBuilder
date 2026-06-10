@@ -9,7 +9,7 @@ import {
   reconcileAiLayout, applyAiLayout,
 } from './model.js';
 import { loadMetrics, metricsFor, approxCss, approxWeight, fontByName, fontDetailUrl } from './fonts.js';
-import { aiLayoutJson } from './ailayout.js';
+import { aiLayoutJson, parseAiLayout } from './ailayout.js';
 import { downloadText } from './persist.js';
 import { t } from './i18n.js';
 
@@ -537,7 +537,8 @@ export function initDesign() {
   const pasteOv = $('paste-overlay'), pasteTa = $('paste-json');
   const pasteSummary = $('paste-summary'), pasteErr = $('paste-err'), pasteImport = $('paste-import');
   const closePaste = () => { pasteOv.hidden = true; };
-  const parsePaste = () => { try { return { obj: JSON.parse(pasteTa.value) }; } catch (e) { return { err: e.message }; } };
+  // Tolerate a Markdown code fence around AI output (```json ... ```); parseAiLayout strips it.
+  const parsePaste = () => parseAiLayout(pasteTa.value);
   const refreshPaste = () => {
     pasteSummary.textContent = ''; pasteErr.textContent = '';
     if (!pasteTa.value.trim()) { pasteSummary.textContent = t('paste.empty'); pasteImport.disabled = true; return; }
