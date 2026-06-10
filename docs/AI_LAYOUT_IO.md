@@ -164,8 +164,10 @@ stroke-width, dash, arrow, or cap-style fields.
 Use `fill: true` for `fillCircle`, and `fill: false` for `drawCircle`.
 
 **Text** — a single line of text. **Text has no width/height box.** There is no
-wrapping, clipping, ellipsis, or in-box alignment; keep the text short enough to fit, or
-use different `text`/`size` values per profile.
+wrapping, clipping, ellipsis, or in-box alignment; text past the screen edge is simply
+cut off. Keep the text short enough to fit; where it would overflow, fix it per profile
+by shortening the `text`, using a smaller font (e.g. `Font0`) or a smaller `size`, and/or
+adjusting `datum`/anchor so it stays on screen.
 `x, y` is the **anchor point**; `datum` says which point of the text sits on the anchor;
 `size` is a **scale multiplier** (rendered height ≈ font base height × `size`);
 `color` `"#rrggbb"`; `text` the string to show. Both fixed labels and dynamic values
@@ -331,9 +333,11 @@ them, causing duplication or mismatch).
   different arrangement than a wide 320×240).
 - Reuse anchors + `datum` to align text (e.g. `TR` at `x = w` for a right-aligned value).
 - For a part unused on a specific profile, set `"visible": false` instead of deleting it.
+- Give a **new** part a meaningful `id` (e.g. `battery`, not `text1`): the `id` becomes the generated `main.<id>` field the user's Arduino code calls.
 - Return the whole object, with all profiles, as valid JSON.
 
 **Don't**
+- Don't rename an existing `id` to "improve" it on your own — that changes the generated `main.<id>` field and breaks the user's code. If an existing id is cryptic, suggest a rename to the user instead of doing it unasked.
 - Don't delete a part from just some profiles (it desyncs the `(id, type)` set); delete from all profiles only when the part is unused everywhere.
 - Don't add `w`/`h` to a `Text` (it has none).
 - Don't invent `asset` names — only reference assets that already exist.
