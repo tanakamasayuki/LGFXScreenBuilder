@@ -31,6 +31,7 @@ const FIXTURES = [
       'examples/BasicLovyanGFX/MyScreen.h',
       'examples/BasicM5Unified/MyScreen.h',
       'examples/ExportedSample/MyScreen.h',
+      'examples/OverlayM5Unified/MyScreen.h',
     ],
     // ExportedSample is the verbatim Export output (header + sample sketch), so
     // its .ino IS generated here (unlike the hand-curated Basic* sketches) and
