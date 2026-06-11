@@ -91,3 +91,35 @@ jobs:
           name: pytest-report
           path: tests/report.html
           if-no-files-found: ignore
+
+  # Compile every bundled example for a real device (esp32) and the host backend
+  # (display_core). The esp32 build is what catches platform-macro collisions the
+  # host cannot — e.g. xtensa specreg.h defining `MR`, which broke the Datum enum.
+  # Each example's sketch.yaml profile is self-contained (it pins and auto-installs
+  # its platform + libraries), so no global board-manager config is needed.
+  examples:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example: [BasicLovyanGFX, BasicM5Unified, ExportedSample, OverlayM5Unified]
+        profile: [esp32, display_core]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Needed to link the host (lang-ship:host SDL) backend for the display_core
+      # profile; harmless for the esp32 profile.
+      - name: Install SDL2
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-dev
+
+      - name: Setup arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Initialize arduino-cli
+        run: arduino-cli config init --overwrite
+
+      - name: Compile ${{ matrix.example }} (${{ matrix.profile }})
+        run: arduino-cli compile --profile ${{ matrix.profile }} examples/${{ matrix.example }}
