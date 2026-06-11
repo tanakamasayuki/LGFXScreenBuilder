@@ -101,3 +101,105 @@ export function clearAutosave() {
   if (typeof localStorage === 'undefined') return;
   try { localStorage.removeItem(AUTOSAVE_KEY); } catch { /* ignore */ }
 }
+
+// --- in-place save via File System Access API (§9.3) ---------------------
+// Per-target FileSystemFileHandle registry. Keys: 'project' | 'header' | 'sketch'.
+// Browser-only APIs are touched inside functions only, so this module still
+// imports cleanly under Node (gen-fixtures uses isProject/serialize).
+const handles = new Map();
+
+// Common picker file-type filters.
+export const ACCEPT = {
+  project: { 'application/json': ['.lgfxsb.json', '.json'] },
+  header: { 'text/x-c': ['.h'] },
+  sketch: { 'text/x-arduino': ['.ino'] },
+};
+
+export function fsaSupported() {
+  return typeof window !== 'undefined' && 'showSaveFilePicker' in window;
+}
+
+// Name of the file currently bound to `key`, or null if none / unsupported.
+export function boundFileName(key) {
+  const h = handles.get(key);
+  return h ? h.name : null;
+}
+
+export function clearHandle(key) { handles.delete(key); }
+export function clearAllHandles() { handles.clear(); }
+
+async function ensureWritable(handle) {
+  const opts = { mode: 'readwrite' };
+  if ((await handle.queryPermission(opts)) === 'granted') return true;
+  return (await handle.requestPermission(opts)) === 'granted';
+}
+
+async function writeHandle(handle, text) {
+  const w = await handle.createWritable();
+  await w.write(text);
+  await w.close();
+}
+
+// Save `text` for a logical target. With the File System Access API, overwrites
+// the bound file in place; if none is bound yet it prompts once (showSaveFilePicker)
+// and binds the chosen file. Without the API it downloads. Always call from a
+// user gesture. Returns one of:
+//   { method: 'overwrite' | 'picked' | 'download', name }
+//   { cancelled: true }              (user dismissed the picker)
+//   { error: 'permission-denied' }   (write permission refused)
+export async function saveText(key, suggestedName, text, accept, mime) {
+  if (fsaSupported()) {
+    let handle = handles.get(key);
+    let picked = false;
+    try {
+      if (!handle) {
+        handle = await window.showSaveFilePicker({
+          suggestedName,
+          types: accept ? [{ accept }] : undefined,
+        });
+        picked = true;
+      }
+      if (!(await ensureWritable(handle))) return { error: 'permission-denied' };
+      await writeHandle(handle, text);
+      handles.set(key, handle);
+      return { method: picked ? 'picked' : 'overwrite', name: handle.name };
+    } catch (e) {
+      if (e && e.name === 'AbortError') return { cancelled: true };
+      throw e;
+    }
+  }
+  download(suggestedName, text, mime || 'application/octet-stream');
+  return { method: 'download', name: suggestedName };
+}
+
+// Force a re-pick (Save As) and rebind.
+export async function saveAsText(key, suggestedName, text, accept, mime) {
+  if (fsaSupported()) handles.delete(key);
+  return saveText(key, suggestedName, text, accept, mime);
+}
+
+// Open a project. With the File System Access API the handle is kept so a later
+// Save overwrites the same file. Resolves to the parsed project, or null if the
+// user cancelled. Throws on a non-project / parse error.
+export async function openProject() {
+  if (fsaSupported()) {
+    let handle;
+    try {
+      [handle] = await window.showOpenFilePicker({
+        types: [{ description: 'LGFXScreenBuilder project', accept: ACCEPT.project }],
+        multiple: false,
+      });
+    } catch (e) {
+      if (e && e.name === 'AbortError') return null;
+      throw e;
+    }
+    const file = await handle.getFile();
+    const obj = JSON.parse(await file.text());
+    if (!isProject(obj)) throw new Error('not a LGFXScreenBuilder project');
+    handles.set('project', handle);
+    return migrate(obj);
+  }
+  const project = await openProjectFile();
+  if (project) handles.delete('project');
+  return project;
+}

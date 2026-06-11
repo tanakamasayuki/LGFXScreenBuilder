@@ -11,23 +11,9 @@ import {
 import { loadMetrics, metricsFor, approxCss, approxWeight, fontByName, fontDetailUrl } from './fonts.js';
 import { aiLayoutJson, parseAiLayout } from './ailayout.js';
 import { downloadText } from './persist.js';
+import { flash } from './toast.js';
 import { t } from './i18n.js';
 
-// Transient bottom-center toast for one-shot feedback (e.g. clipboard copy).
-function flash(msg) {
-  let el = document.getElementById('toast');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'toast';
-    el.className = 'toast';
-    el.setAttribute('aria-live', 'polite');
-    document.body.appendChild(el);
-  }
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(flash._t);
-  flash._t = setTimeout(() => el.classList.remove('show'), 1800);
-}
 
 // Approximate on-canvas height (px) of a Text part's font at multiplier 1.
 // Uses the host-introspected native height when available, else the default

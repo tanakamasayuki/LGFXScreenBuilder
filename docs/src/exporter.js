@@ -3,7 +3,8 @@
 import { store } from './store.js';
 import { generateHeader, generateSketch } from './codegen.js';
 import { isValidId } from './model.js';
-import { downloadText } from './persist.js';
+import { saveText, saveAsText, boundFileName, ACCEPT } from './persist.js';
+import { flash } from './toast.js';
 import { t } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
@@ -111,6 +112,9 @@ export function renderExport() {
   renderProfSel();
   renderChecks();
   $('export-curfile').textContent = selFile || '';
+  // Show which on-disk file an overwrite-save would target (§10.3).
+  const bound = selFile ? boundFileName(targetOf(selFile).key) : null;
+  $('export-bound').textContent = bound ? t('export.boundTo', { name: bound }) : '';
   $('export-code').textContent = included.size ? contentOf(selFile) : '';
   const parts = store.project.scenes.reduce((n, s) => n + s.parts.length, 0);
   $('export-st-l').textContent = t('export.status', { scenes: store.project.scenes.length, sel: included.size, total: store.project.profiles.length, parts });
@@ -142,9 +146,32 @@ export function initExport() {
     store.project.targetLibrary = $('export-fw').value;
     renderExport();
   });
-  $('export-download').addEventListener('click', () => {
-    if (!included.size || !selFile) return;
-    const mime = selFile.endsWith('.h') ? 'text/x-c' : 'text/plain';
-    downloadText(selFile, contentOf(selFile), mime);
-  });
+  $('export-save').addEventListener('click', () => doSave(saveText));
+  $('export-saveas').addEventListener('click', () => doSave(saveAsText));
+}
+
+// Logical target / picker filter / mime for the currently-selected output file.
+function targetOf(name) {
+  return name.endsWith('.ino')
+    ? { key: 'sketch', accept: ACCEPT.sketch, mime: 'text/x-arduino' }
+    : { key: 'header', accept: ACCEPT.header, mime: 'text/x-c' };
+}
+
+// In-place save / Save As of the selected file (§9.3, §10.3). `fn` is saveText
+// (overwrite the bound file, else pick) or saveAsText (always re-pick).
+async function doSave(fn) {
+  if (!included.size || !selFile) return;
+  const { key, accept, mime } = targetOf(selFile);
+  try {
+    const r = await fn(key, selFile, contentOf(selFile), accept, mime);
+    if (!r || r.cancelled) return;
+    if (r.error === 'permission-denied') { flash(t('save.denied')); return; }
+    const name = r.name || selFile;
+    if (r.method === 'overwrite') flash(t('save.overwrote', { name }));
+    else if (r.method === 'picked') flash(t('save.savedTo', { name }));
+    else flash(t('save.downloaded', { name }));
+    renderExport(); // refresh the bound-file indicator
+  } catch (e) {
+    flash(t('save.failed', { msg: e.message }));
+  }
 }

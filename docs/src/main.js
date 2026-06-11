@@ -10,7 +10,8 @@ import { initNewProject } from './newproject.js';
 import { generateHeader } from './codegen.js';
 import { sampleProject } from './model.js';
 import { detectLanguage, setLang, getLang, applyStatic, t } from './i18n.js';
-import { saveProjectFile, openProjectFile, downloadText, autosave, loadAutosave } from './persist.js';
+import { serialize, openProject, saveText, autosave, loadAutosave, clearAllHandles, ACCEPT } from './persist.js';
+import { flash } from './toast.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -70,17 +71,37 @@ initNewProject('btn-new');
 // Demo loads the rich sample project (multi-profile, Boot/Main/Settings) so a
 // fresh user can explore a populated project instead of the blank New scene.
 // Confirm first since it replaces the current project.
-onClick('btn-demo', () => { if (confirm(t('demo.confirm'))) loadProject(sampleProject()); });
+onClick('btn-demo', () => {
+  if (confirm(t('demo.confirm'))) { clearAllHandles(); loadProject(sampleProject()); }
+});
 onClick('btn-open', async () => {
   try {
-    const project = await openProjectFile();
-    if (project) loadProject(project);
+    const project = await openProject();
+    if (project) loadProject(project); // openProject already bound the handle
   } catch (e) { alert('Open failed: ' + e.message); }
 });
-onClick('btn-save', () => saveProjectFile(store.project));
-onClick('btn-export-h', () => {
-  downloadText(`${store.project.name || 'project'}.h`, generateHeader(store.project), 'text/x-c');
+onClick('btn-save', async () => {
+  const name = `${store.project.name || 'project'}.lgfxsb.json`;
+  try { saveFeedback(await saveText('project', name, serialize(store.project), ACCEPT.project, 'application/json'), name); }
+  catch (e) { flash(t('save.failed', { msg: e.message })); }
 });
+onClick('btn-export-h', async () => {
+  const name = `${store.project.name || 'project'}.h`;
+  // Use the project's persisted output settings (buffered / embed AI layouts).
+  const opts = { buffered: store.project.buffered !== false, embedAiLayouts: store.project.embedAiLayouts === true };
+  try { saveFeedback(await saveText('header', name, generateHeader(store.project, opts), ACCEPT.header, 'text/x-c'), name); }
+  catch (e) { flash(t('save.failed', { msg: e.message })); }
+});
+
+// Toast the outcome of an in-place save (§9.3) uniformly across save actions.
+function saveFeedback(r, fallbackName) {
+  if (!r || r.cancelled) return;
+  if (r.error === 'permission-denied') { flash(t('save.denied')); return; }
+  const name = r.name || fallbackName;
+  if (r.method === 'overwrite') flash(t('save.overwrote', { name }));
+  else if (r.method === 'picked') flash(t('save.savedTo', { name }));
+  else flash(t('save.downloaded', { name }));
+}
 
 // --- autosave (latest state only; §9) ------------------------------------
 if (typeof window !== 'undefined') {

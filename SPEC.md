@@ -813,6 +813,19 @@ The check harness reuses the production routines (`docs/src` load/serialize + co
 
 In the worst case, even if an old generated `.h` becomes unreadable after a library upgrade, recovery is assumed via **re-generation from the project file** (the generated `.h` ⇄ runtime compatibility is best-effort).
 
+### 9.3 In-place Save (File System Access API)
+
+Where the browser exposes the File System Access API (`window.showOpenFilePicker` / `showSaveFilePicker`, currently Chromium-based browsers), saving **overwrites the chosen file in place** instead of downloading a fresh copy. The tool keeps a `FileSystemFileHandle` per output target — the project `.lgfxsb.json`, and the exported `.h` / `.ino` (§10.3):
+
+- **Open** (project) uses `showOpenFilePicker` and keeps the returned handle.
+- **Save / Export** writes back to the bound handle via `createWritable()` after a one-time read-write permission grant (`requestPermission({ mode: 'readwrite' })`); no download occurs. Writes are always **user-initiated** (a button gesture) — the tool never writes to disk on its own (autosave stays in localStorage only).
+- If no handle is bound yet (new project, or the first save/export), the action prompts once via `showSaveFilePicker`, binds the chosen file, and writes. **Save As** re-picks and rebinds.
+- **New** clears the project binding.
+
+Browsers without the API keep the prior behavior: Open via `<input type="file">`, Save/Export via download. The localStorage autosave/restore (recovery) is unchanged and independent of this.
+
+The binding is **not persisted across reloads** in this version: after a reload, autosave restores the content, but the first save re-prompts for the file (an IndexedDB-backed rebind is a possible later enhancement). The bound file names are shown in the UI so it is clear which file a save will overwrite.
+
 ## 10. Export Specification
 
 The Arduino-bound export generates the following.
@@ -880,6 +893,12 @@ LGFXSB-AI-LAYOUTS END */
 - The toggle state is persisted in the project's output settings (§9). The default is **off** so headers stay lean for users who do not need it.
 
 This block is the single source for tools such as the screenshot gallery: they parse the header once to obtain scene names, descriptions, profiles, and the per-scene AI JSON (for example, a "copy this scene's layout" button), with **no dependency on `.lgfxsb.json`**.
+
+### 10.3 In-place Overwrite of Exported Files
+
+Exported files reuse the in-place save mechanism of §9.3, and the **`.h` overwrite is the primary case**. It is the core of the **edit → export → screenshot-capture → fix** loop: the first Export binds the `.h` (and optionally the `_example.ino`) to a file — for example the `Sfm.h` consumed by a screenshot test repo (§10.2) — and every later **Export overwrites that same file silently**, so re-exporting after a layout fix needs no re-download or manual file replacement. With *Embed AI layouts* (§10.2) on, that single overwritten `.h` also refreshes the gallery's layout data in one step.
+
+Each exportable file keeps its own handle, independent of the project handle, so the `.h` can be bound to a path outside the project (the test repo) while the `.lgfxsb.json` is saved elsewhere. Browsers without the File System Access API fall back to downloading the file as before (§9.3).
 
 ## 11. Proposed Arduino API Specification
 

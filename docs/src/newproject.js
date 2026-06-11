@@ -2,6 +2,7 @@
 // profile (device/size/rotation), and the first scene. On create, a fresh
 // single-profile, single-scene project replaces the current one.
 import { loadProject } from './store.js';
+import { clearAllHandles } from './persist.js';
 import { newProject, isValidId } from './model.js';
 import { commonResolutions } from './boards.js';
 import { t } from './i18n.js';
@@ -56,6 +57,7 @@ function create() {
   if (!isValidId(name)) { err.textContent = t('newproj.errName'); return; }
   if (!isValidId(profileId) || !isValidId(sceneName)) { err.textContent = t('newproj.errId'); return; }
   if (!(w > 0) || !(h > 0)) { err.textContent = t('newproj.errSize'); return; }
+  clearAllHandles(); // a new project is unbound from any previously saved file (§9.3)
   loadProject(newProject({
     name, targetLibrary: $('np-lib').value, profileId,
     w, h, rotation: +$('np-rot').value, sceneName,
