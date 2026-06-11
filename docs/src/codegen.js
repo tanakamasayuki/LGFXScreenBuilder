@@ -9,6 +9,14 @@ import { buildAiLayout, AI_LAYOUT_DOC_URL } from './ailayout.js';
 import { FORMAT_VERSION } from './version.js';
 
 const PART_ENUM = { Rect: 'Rect', Line: 'Line', Circle: 'Circle', Text: 'Text', Image: 'Image' };
+// Authoring datum code (TL…BR) -> lgfxsb::Datum member name. The C++ names are
+// spelled out because short tokens like MR collide with platform macros (ESP32
+// xtensa defines `MR`); see src/lgfxsb/Types.h.
+const DATUM_ENUM = {
+  TL: 'TopLeft', TC: 'TopCenter', TR: 'TopRight',
+  ML: 'MidLeft', MC: 'MidCenter', MR: 'MidRight',
+  BL: 'BottomLeft', BC: 'BottomCenter', BR: 'BottomRight',
+};
 const hex = (css) => '0x' + (css || '#000000').replace('#', '').padStart(6, '0').toLowerCase();
 const cstr = (s) => '"' + String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
 
@@ -106,7 +114,7 @@ export function generateHeader(project, opts = {}) {
       const x2 = f.part.type === 'Line' ? (e.x2 || 0) : 0;
       const y2 = f.part.type === 'Line' ? (e.y2 || 0) : 0;
       const r = (f.part.type === 'Rect' || f.part.type === 'Circle') ? (e.r || 0) : 0;
-      const datum = isText ? `(uint8_t)lgfxsb::Datum::${e.datum || 'TL'}` : '0';
+      const datum = isText ? `(uint8_t)lgfxsb::Datum::${DATUM_ENUM[e.datum] || 'TopLeft'}` : '0';
       const size = isText ? (e.size || 1) : 0;
       const color = (f.part.type === 'Image') ? '0' : hex(e.color);
       const fill = ((f.part.type === 'Rect' || f.part.type === 'Circle') && e.fill === false) ? 'false' : 'true';
