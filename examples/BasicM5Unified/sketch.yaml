@@ -12,7 +12,7 @@ profiles:
   display_core:
     fqbn: lang-ship:host:display
     platforms:
-      - platform: lang-ship:host (1.4.4)
+      - platform: lang-ship:host (1.4.5)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -22,7 +22,7 @@ profiles:
   display_core2:
     fqbn: lang-ship:host:display:m5gfx_board=board_M5StackCore2
     platforms:
-      - platform: lang-ship:host (1.4.4)
+      - platform: lang-ship:host (1.4.5)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -32,7 +32,7 @@ profiles:
   display_cores3:
     fqbn: lang-ship:host:display:m5gfx_board=board_M5StackCoreS3
     platforms:
-      - platform: lang-ship:host (1.4.4)
+      - platform: lang-ship:host (1.4.5)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -42,7 +42,7 @@ profiles:
   display_coreink:
     fqbn: lang-ship:host:display:m5gfx_board=board_M5StackCoreInk
     platforms:
-      - platform: lang-ship:host (1.4.4)
+      - platform: lang-ship:host (1.4.5)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -52,7 +52,7 @@ profiles:
   display_stickc:
     fqbn: lang-ship:host:display:m5gfx_board=board_M5StickC
     platforms:
-      - platform: lang-ship:host (1.4.4)
+      - platform: lang-ship:host (1.4.5)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -62,7 +62,7 @@ profiles:
   display_stickcplus:
     fqbn: lang-ship:host:display:m5gfx_board=board_M5StickCPlus
     platforms:
-      - platform: lang-ship:host (1.4.4)
+      - platform: lang-ship:host (1.4.5)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -72,7 +72,7 @@ profiles:
   display_stickplus2:
     fqbn: lang-ship:host:display:m5gfx_board=board_M5StickCPlus2
     platforms:
-      - platform: lang-ship:host (1.4.4)
+      - platform: lang-ship:host (1.4.5)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -82,7 +82,7 @@ profiles:
   display_dial:
     fqbn: lang-ship:host:display:m5gfx_board=board_M5Dial
     platforms:
-      - platform: lang-ship:host (1.4.4)
+      - platform: lang-ship:host (1.4.5)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -92,7 +92,7 @@ profiles:
   display_tab5:
     fqbn: lang-ship:host:display:m5gfx_board=board_M5Tab5
     platforms:
-      - platform: lang-ship:host (1.4.4)
+      - platform: lang-ship:host (1.4.5)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -102,7 +102,7 @@ profiles:
   display_cardputer:
     fqbn: lang-ship:host:display:m5gfx_board=board_M5Cardputer
     platforms:
-      - platform: lang-ship:host (1.4.4)
+      - platform: lang-ship:host (1.4.5)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -112,7 +112,7 @@ profiles:
   display_atoms3:
     fqbn: lang-ship:host:display:m5gfx_board=board_M5AtomS3
     platforms:
-      - platform: lang-ship:host (1.4.4)
+      - platform: lang-ship:host (1.4.5)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -122,7 +122,7 @@ profiles:
   display_paper:
     fqbn: lang-ship:host:display:m5gfx_board=board_M5Paper
     platforms:
-      - platform: lang-ship:host (1.4.4)
+      - platform: lang-ship:host (1.4.5)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../

@@ -22,7 +22,7 @@ profiles:
   display_stickplus2:
     fqbn: lang-ship:host:display:m5gfx_board=board_M5StickCPlus2
     platforms:
-      - platform: lang-ship:host (1.4.4)
+      - platform: lang-ship:host (1.4.5)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
@@ -32,7 +32,7 @@ profiles:
   display_cardputer:
     fqbn: lang-ship:host:display:m5gfx_board=board_M5Cardputer
     platforms:
-      - platform: lang-ship:host (1.4.4)
+      - platform: lang-ship:host (1.4.5)
         platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
     libraries:
       - dir: ../../
