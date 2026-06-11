@@ -158,7 +158,9 @@ namespace lgfxsb
 
       case PartType::Text:
       {
-        const char *content = pd.text ? pd.text : "";
+        // Per-profile design text (§8.7) is the fallback when no dynamic value
+        // is supplied, so each profile shows its own fixed-label string.
+        const char *content = lo.text ? lo.text : "";
         char buf[24];
         if (v.kind == Value::Kind::Text && v.s)
         {

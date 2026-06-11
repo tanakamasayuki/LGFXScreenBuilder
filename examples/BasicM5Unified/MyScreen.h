@@ -10,34 +10,34 @@ enum class Profile : uint8_t { Auto = 0, Core, Stick, Cardputer };
 namespace Scene {
   struct Boot {
     static constexpr lgfxsb::SceneId id = 0;
-    const char* boot = "Booting...";
+    const char* boot = nullptr;  // design: Booting...
   };
   struct Main {
     static constexpr lgfxsb::SceneId id = 1;
-    const char* title = "Main";
-    const char* battery = "82%";
-    const char* temp = "24.5C";
+    const char* title = nullptr;  // design: Main
+    const char* battery = nullptr;  // design: 82%
+    const char* temp = nullptr;  // design: 24.5C
   };
   struct Settings {
     static constexpr lgfxsb::SceneId id = 2;
-    const char* ttl = "Settings";
-    const char* row1 = "Wi-Fi";
+    const char* ttl = nullptr;  // design: Settings
+    const char* row1 = nullptr;  // design: Wi-Fi
   };
 }
 
 namespace detail {
 
 static const lgfxsb::PartDesc kParts[] = {
-  {"logo", lgfxsb::PartType::Rect, nullptr, -1},  // 0 Boot.logo
-  {"boot", lgfxsb::PartType::Text, "Booting...", -1},  // 1 Boot.boot
-  {"headerBand", lgfxsb::PartType::Rect, nullptr, -1},  // 2 Main.headerBand
-  {"title", lgfxsb::PartType::Text, "Main", -1},  // 3 Main.title
-  {"battery", lgfxsb::PartType::Text, "82%", -1},  // 4 Main.battery
-  {"temp", lgfxsb::PartType::Text, "24.5C", -1},  // 5 Main.temp
-  {"panel", lgfxsb::PartType::Rect, nullptr, -1},  // 6 Main.panel
-  {"header", lgfxsb::PartType::Rect, nullptr, -1},  // 7 Settings.header
-  {"ttl", lgfxsb::PartType::Text, "Settings", -1},  // 8 Settings.ttl
-  {"row1", lgfxsb::PartType::Text, "Wi-Fi", -1},  // 9 Settings.row1
+  {"logo", lgfxsb::PartType::Rect, -1},  // 0 Boot.logo
+  {"boot", lgfxsb::PartType::Text, -1},  // 1 Boot.boot
+  {"headerBand", lgfxsb::PartType::Rect, -1},  // 2 Main.headerBand
+  {"title", lgfxsb::PartType::Text, -1},  // 3 Main.title
+  {"battery", lgfxsb::PartType::Text, -1},  // 4 Main.battery
+  {"temp", lgfxsb::PartType::Text, -1},  // 5 Main.temp
+  {"panel", lgfxsb::PartType::Rect, -1},  // 6 Main.panel
+  {"header", lgfxsb::PartType::Rect, -1},  // 7 Settings.header
+  {"ttl", lgfxsb::PartType::Text, -1},  // 8 Settings.ttl
+  {"row1", lgfxsb::PartType::Text, -1},  // 9 Settings.row1
 };
 static constexpr uint16_t kPartCount = 10;
 
@@ -47,41 +47,41 @@ static const lgfxsb::SceneDesc kScenes[] = {
   {2, "Settings", 7, 3},
 };
 
-// {x, y, w, h, x2, y2, r, datum, size, color, fill, visible, font}
+// {x, y, w, h, x2, y2, r, datum, size, color, fill, visible, font, text}
 static const lgfxsb::PartLayout kLayouts[] = {
   // ---- Profile: Core 320x240 rot0 ----
-  {110, 80, 100, 60, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Boot.logo
-  {160, 160, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MC, 2.0f, 0x9ce5ac, true, true, nullptr},  // Boot.boot
-  {0, 0, 320, 40, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Main.headerBand
-  {12, 10, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 2.0f, 0xffffff, true, true, nullptr},  // Main.title
-  {310, 12, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TR, 1.5f, 0x9ce5ac, true, true, nullptr},  // Main.battery
-  {18, 70, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 4.0f, 0xffffff, true, true, nullptr},  // Main.temp
-  {18, 150, 284, 54, 0, 0, 0, 0, 0.0f, 0x172126, true, true, nullptr},  // Main.panel
-  {0, 0, 320, 40, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Settings.header
-  {12, 10, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 2.0f, 0xffffff, true, true, nullptr},  // Settings.ttl
-  {18, 60, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 2.0f, 0xffffff, true, true, nullptr},  // Settings.row1
+  {110, 80, 100, 60, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Boot.logo
+  {160, 160, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MC, 2.0f, 0x9ce5ac, true, true, nullptr, "Booting..."},  // Boot.boot
+  {0, 0, 320, 40, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Main.headerBand
+  {12, 10, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 2.0f, 0xffffff, true, true, nullptr, "Main"},  // Main.title
+  {310, 12, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TR, 1.5f, 0x9ce5ac, true, true, nullptr, "82%"},  // Main.battery
+  {18, 70, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 4.0f, 0xffffff, true, true, nullptr, "24.5C"},  // Main.temp
+  {18, 150, 284, 54, 0, 0, 0, 0, 0.0f, 0x172126, true, true, nullptr, nullptr},  // Main.panel
+  {0, 0, 320, 40, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Settings.header
+  {12, 10, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 2.0f, 0xffffff, true, true, nullptr, "Settings"},  // Settings.ttl
+  {18, 60, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 2.0f, 0xffffff, true, true, nullptr, "Wi-Fi"},  // Settings.row1
   // ---- Profile: Stick 135x240 rot0 ----
-  {30, 80, 75, 50, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Boot.logo
-  {69, 148, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MC, 1.5f, 0x9ce5ac, true, true, nullptr},  // Boot.boot
-  {0, 0, 135, 30, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Main.headerBand
-  {8, 7, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Main.title
-  {8, 180, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0x9ce5ac, true, true, nullptr},  // Main.battery
-  {10, 60, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 3.5f, 0xffffff, true, true, nullptr},  // Main.temp
-  {10, 110, 115, 60, 0, 0, 0, 0, 0.0f, 0x172126, true, true, nullptr},  // Main.panel
-  {0, 0, 135, 30, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Settings.header
-  {8, 7, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Settings.ttl
-  {10, 40, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Settings.row1
+  {30, 80, 75, 50, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Boot.logo
+  {69, 148, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MC, 1.5f, 0x9ce5ac, true, true, nullptr, "Boot..."},  // Boot.boot
+  {0, 0, 135, 30, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Main.headerBand
+  {8, 7, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr, "Main"},  // Main.title
+  {8, 180, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0x9ce5ac, true, true, nullptr, "82%"},  // Main.battery
+  {10, 60, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 3.5f, 0xffffff, true, true, nullptr, "24.5"},  // Main.temp
+  {10, 110, 115, 60, 0, 0, 0, 0, 0.0f, 0x172126, true, true, nullptr, nullptr},  // Main.panel
+  {0, 0, 135, 30, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Settings.header
+  {8, 7, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr, "Settings"},  // Settings.ttl
+  {10, 40, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr, "Wi-Fi"},  // Settings.row1
   // ---- Profile: Cardputer 240x135 rot0 ----
-  {80, 30, 80, 40, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Boot.logo
-  {120, 88, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MC, 1.5f, 0x9ce5ac, true, true, nullptr},  // Boot.boot
-  {0, 0, 240, 26, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Main.headerBand
-  {8, 5, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Main.title
-  {232, 6, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TR, 1.25f, 0x9ce5ac, true, true, nullptr},  // Main.battery
-  {12, 40, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 3.0f, 0xffffff, true, true, nullptr},  // Main.temp
-  {12, 86, 216, 40, 0, 0, 0, 0, 0.0f, 0x172126, true, false, nullptr},  // Main.panel
-  {0, 0, 240, 26, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr},  // Settings.header
-  {8, 5, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Settings.ttl
-  {12, 36, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr},  // Settings.row1
+  {80, 30, 80, 40, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Boot.logo
+  {120, 88, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MC, 1.5f, 0x9ce5ac, true, true, nullptr, "Booting..."},  // Boot.boot
+  {0, 0, 240, 26, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Main.headerBand
+  {8, 5, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr, "Main"},  // Main.title
+  {232, 6, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TR, 1.25f, 0x9ce5ac, true, true, nullptr, "82%"},  // Main.battery
+  {12, 40, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 3.0f, 0xffffff, true, true, nullptr, "24.5C"},  // Main.temp
+  {12, 86, 216, 40, 0, 0, 0, 0, 0.0f, 0x172126, true, false, nullptr, nullptr},  // Main.panel
+  {0, 0, 240, 26, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Settings.header
+  {8, 5, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr, "Settings"},  // Settings.ttl
+  {12, 36, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TL, 1.5f, 0xffffff, true, true, nullptr, "Wi-Fi"},  // Settings.row1
 };
 
 static const lgfxsb::ProfileDesc kProfiles[] = {
@@ -149,22 +149,22 @@ class Screen : public lgfxsb::RendererT<Canvas> {
   void show(lgfxsb::SceneId id) { renderScene(id, nullptr, 0); }
   void show(const Scene::Boot& s) {
     lgfxsb::Value v[2];
-    v[1] = lgfxsb::Value::text(s.boot);
+    if (s.boot) v[1] = lgfxsb::Value::text(s.boot);
     renderScene(Scene::Boot::id, v, 2, _ov_Boot ? &_ovt_Boot : nullptr, &s, &_ov_Boot);
   }
   void setOverlay(void (*fn)(Canvas&, const Scene::Boot&)) { _ov_Boot = fn; }
   void show(const Scene::Main& s) {
     lgfxsb::Value v[5];
-    v[1] = lgfxsb::Value::text(s.title);
-    v[2] = lgfxsb::Value::text(s.battery);
-    v[3] = lgfxsb::Value::text(s.temp);
+    if (s.title) v[1] = lgfxsb::Value::text(s.title);
+    if (s.battery) v[2] = lgfxsb::Value::text(s.battery);
+    if (s.temp) v[3] = lgfxsb::Value::text(s.temp);
     renderScene(Scene::Main::id, v, 5, _ov_Main ? &_ovt_Main : nullptr, &s, &_ov_Main);
   }
   void setOverlay(void (*fn)(Canvas&, const Scene::Main&)) { _ov_Main = fn; }
   void show(const Scene::Settings& s) {
     lgfxsb::Value v[3];
-    v[1] = lgfxsb::Value::text(s.ttl);
-    v[2] = lgfxsb::Value::text(s.row1);
+    if (s.ttl) v[1] = lgfxsb::Value::text(s.ttl);
+    if (s.row1) v[2] = lgfxsb::Value::text(s.row1);
     renderScene(Scene::Settings::id, v, 3, _ov_Settings ? &_ovt_Settings : nullptr, &s, &_ov_Settings);
   }
   void setOverlay(void (*fn)(Canvas&, const Scene::Settings&)) { _ov_Settings = fn; }

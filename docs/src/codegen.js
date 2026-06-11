@@ -25,13 +25,17 @@ function flatten(project) {
 }
 
 // Build the typed scene struct body (Text -> const char* field).
+// The field default is null ("unset"): the renderer then draws the per-profile
+// design text (§8.7), so a fixed label can differ per device. Assigning the
+// field overrides it (one runtime value across all profiles).
 function structBody(scene, indent, defProfile) {
   const pad = '  '.repeat(indent);
   let out = '';
   for (const p of scene.parts) {
     if (p.type === 'Text') {
       const lo = placement(defProfile, scene.id, p.id);
-      out += `${pad}const char* ${p.id} = ${cstr(lo ? lo.text : '')};\n`;
+      const hint = lo && lo.text ? `  // design: ${String(lo.text).replace(/\s+/g, ' ').slice(0, 40)}` : '';
+      out += `${pad}const char* ${p.id} = nullptr;${hint}\n`;
     }
   }
   return out;
@@ -72,11 +76,9 @@ export function generateHeader(project, opts = {}) {
   const assetIndexOf = (id) => (project.assets || []).findIndex((a) => a.id === id);
   flat.forEach((f) => {
     const p = f.part;
-    const text = p.type === 'Text'
-      ? cstr((placement(defProfile, f.sceneId, p.id) || {}).text || '')
-      : 'nullptr';
+    // Text content lives per-profile in kLayouts (§8.7); PartDesc is geometry-free.
     const ai = (p.type === 'Image' && p.asset) ? assetIndexOf(p.asset) : -1;
-    s += `  {${cstr(p.id)}, lgfxsb::PartType::${PART_ENUM[p.type]}, ${text}, ${ai}},  // ${f.gi} ${f.sceneId}.${p.id}\n`;
+    s += `  {${cstr(p.id)}, lgfxsb::PartType::${PART_ENUM[p.type]}, ${ai}},  // ${f.gi} ${f.sceneId}.${p.id}\n`;
   });
   s += `};\nstatic constexpr uint16_t kPartCount = ${flat.length};\n\n`;
 
@@ -88,7 +90,7 @@ export function generateHeader(project, opts = {}) {
   s += `};\n\n`;
 
   // layouts [profile][part]
-  s += `// {x, y, w, h, x2, y2, r, datum, size, color, fill, visible, font}\n`;
+  s += `// {x, y, w, h, x2, y2, r, datum, size, color, fill, visible, font, text}\n`;
   s += `static const lgfxsb::PartLayout kLayouts[] = {\n`;
   profiles.forEach((pr) => {
     // Only fonts enabled for this profile may be referenced — that is the
@@ -110,7 +112,8 @@ export function generateHeader(project, opts = {}) {
       const fill = ((f.part.type === 'Rect' || f.part.type === 'Circle') && e.fill === false) ? 'false' : 'true';
       const vis = (e.visible === false) ? 'false' : 'true';
       const font = (isText && e.font && enabled.has(e.font)) ? `&lgfx::v1::fonts::${e.font}` : 'nullptr';
-      s += `  {${x}, ${y}, ${w}, ${h}, ${x2}, ${y2}, ${r}, ${datum}, ${fmtFloat(size)}, ${color}, ${fill}, ${vis}, ${font}},  // ${f.sceneId}.${f.part.id}\n`;
+      const text = isText ? cstr(e.text || '') : 'nullptr';
+      s += `  {${x}, ${y}, ${w}, ${h}, ${x2}, ${y2}, ${r}, ${datum}, ${fmtFloat(size)}, ${color}, ${fill}, ${vis}, ${font}, ${text}},  // ${f.sceneId}.${f.part.id}\n`;
     });
   });
   s += `};\n\n`;
@@ -200,7 +203,8 @@ export function generateHeader(project, opts = {}) {
     } else {
       s += `  void show(const Scene::${sc.id}& s) {\n    lgfxsb::Value v[${sc.parts.length}];\n`;
       texts.forEach(({ p, k }) => {
-        s += `    v[${k}] = lgfxsb::Value::text(s.${p.id});\n`;
+        // null = unset -> leave Value::None so the per-profile design text shows (§8.7).
+        s += `    if (s.${p.id}) v[${k}] = lgfxsb::Value::text(s.${p.id});\n`;
       });
       s += `    renderScene(Scene::${sc.id}::id, v, ${sc.parts.length}, ${ov});\n  }\n`;
     }

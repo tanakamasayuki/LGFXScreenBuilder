@@ -23,7 +23,6 @@ namespace lgfxsb
   {
     const char *id = nullptr;
     PartType type = PartType::Rect;
-    const char *text = nullptr;   // Text preview string (used when there is no dynamic value)
     int16_t assetIndex = -1;      // referenced asset for Image (-1 = none)
   };
 
@@ -42,8 +41,10 @@ namespace lgfxsb
     bool visible = true;
     const void *font = nullptr; // Text preset font: &lgfx::v1::fonts::X, or null = default.
                           // void* keeps this header framework-agnostic (the Renderer
-                          // casts to const lgfx::v1::IFont*). Trailing field so older
-                          // generated headers value-initialize it to null.
+                          // casts to const lgfx::v1::IFont*).
+    const char *text = nullptr; // Text design/preview string for THIS profile (§8.7).
+                          // Used when no dynamic value is supplied, so each profile
+                          // can show its own fixed-label text. null = empty.
   };
 
   struct SceneDesc
