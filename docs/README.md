@@ -57,7 +57,9 @@ python -m http.server 8000 --directory docs
   — and the runtime applies it before drawing; verified end-to-end on the host
   backend (`tests/codegen_roundtrip` renders a Text in a preset GFX font).
 - **i18n** (SPEC §14): all UI strings go through `src/i18n.js` (`t()` + `data-i18n`),
-  en/ja with an en fallback and a language switcher; default follows the browser.
+  en / ja / zh-Hans / zh-Hant / ko / es / fr / de with an en fallback and a language
+  switcher; default follows the browser. Full key parity is guarded by
+  `../tools/check-i18n.mjs`.
 - **Undo / Redo**: snapshot-based project history (toolbar ↶/↷ and Ctrl/Cmd+Z,
   Ctrl/Cmd+Shift+Z). Discrete edits checkpoint via `store.mutate`; drags, nudges,
   and inspector field edits checkpoint once per gesture. UI-only changes
@@ -69,9 +71,13 @@ python -m http.server 8000 --directory docs
 - **Export** mode (SPEC §10): file list (`<Project>.h`, `<Project>_example.ino`)
   with code preview, target-framework choice (M5Unified / M5GFX / LovyanGFX),
   per-profile output subset (the enum/tables are restricted to the selected
-  profiles), the sample `.ino` includes `LGFXVirtualCanvas` by default (the render
-  mode is fixed at compile time by include detection; drop it for direct drawing;
-  §10), validation checks, and per-file download.
+  profiles), and validation checks. Two output toggles: *buffered* (the sample
+  `.ino` guards `LGFXVirtualCanvas` with `#if __has_include`, falling back to direct
+  drawing; §10) and *embed AI layouts* (a comment block in the `.h`; §10.2). Save is
+  **in place**: the first save binds a file via the File System Access API and later
+  exports overwrite it silently — the core of the edit → export → screenshot loop
+  (§10.3) — with a Save As and a download fallback where the API is unavailable. The
+  sample `.ino` is a scene tour (button A on M5Unified, a timer on bare LovyanGFX/M5GFX).
 - **Code generation** (`src/codegen.js`): `generateHeader(project, opts)` (the §11
   facade + descriptor, with optional profile subset and test/screen-capture
   metadata `detail::kProfileInfo[]` / `detail::kSceneInfo[]`) and
@@ -100,7 +106,7 @@ python -m http.server 8000 --directory docs
 - `src/font-metrics.json` + `src/font-atlas.png` — host-introspected metrics +
   sample atlas (by `../tests/manual/font_introspect`)
 - `src/store.js` — reactive store (project + editor UI state) + loadProject
-- `src/i18n.js` — translations (en/ja) + `t()` + static-markup applier
+- `src/i18n.js` — translations (en/ja/zh-Hans/zh-Hant/ko/es/fr/de) + `t()` + static-markup applier
 - `src/persist.js` — save/open `.lgfxsb.json` + localStorage autosave
 - `src/codegen.js` — project model → `<Project>.h`
 - `src/design.js` — Design mode (render + interactions)

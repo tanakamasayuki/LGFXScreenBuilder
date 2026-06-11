@@ -46,8 +46,9 @@ python -m http.server 8000 --directory docs
   codegen は Text 毎に `setFont(&lgfx::v1::fonts::X)` を出力（各出力プロファイルで有効なフォントだけ＝
   プロファイル毎フラッシュ方針）、ランタイムが描画前に適用する。host backend で end-to-end 検証済み
   （`tests/codegen_roundtrip` がプリセット GFX フォントの Text を描画）。
-- **多言語化**（SPEC §14）: UI 文字列はすべて `src/i18n.js`（`t()` ＋ `data-i18n`）経由。en/ja・
-  en フォールバック・言語切替を実装。初期言語はブラウザ設定に追従。
+- **多言語化**（SPEC §14）: UI 文字列はすべて `src/i18n.js`（`t()` ＋ `data-i18n`）経由。
+  en / ja / zh-Hans / zh-Hant / ko / es / fr / de・en フォールバック・言語切替を実装。初期言語は
+  ブラウザ設定に追従。全言語のキー一致は `../tools/check-i18n.mjs` で担保。
 - **Undo / Redo**: スナップショット式のプロジェクト履歴（ツールバー ↶/↷、Ctrl/⌘+Z、
   Ctrl/⌘+Shift+Z）。離散操作は `store.mutate` で checkpoint、ドラッグ・矢印・インスペクタ編集は
   ジェスチャ単位で 1 回 checkpoint。UI のみの変更（選択・ズーム・モード）は履歴に含めない。
@@ -57,8 +58,12 @@ python -m http.server 8000 --directory docs
   （デバイス/サイズ/回転）・最初のシーンを指定。
 - **Export** モード（SPEC §10）: ファイル一覧（`<Project>.h` / `<Project>_example.ino`）＋
   コードプレビュー、対象フレームワーク選択（M5Unified / M5GFX / LovyanGFX）、プロファイル別
-  出力サブセット（enum/テーブルを選択分に限定）、サンプル `.ino` は既定で `LGFXVirtualCanvas`
-  を include（描画モードは include 検出でコンパイル時に確定。外せば直描画。§10）、検証チェック、ファイル単位ダウンロード。
+  出力サブセット（enum/テーブルを選択分に限定）、検証チェック。出力トグル 2 つ: *buffered*
+  （サンプル `.ino` が `#if __has_include` で `LGFXVirtualCanvas` をガードし、無ければ直描画にフォールバック。§10）と
+  *AIレイアウト埋め込み*（`.h` 内のコメントブロック。§10.2）。保存は**その場上書き**: 初回保存で
+  File System Access API によりファイルを束縛し、以降の Export は黙って上書きする（編集 → 出力 →
+  画面キャプチャのループの中核。§10.3）。別名保存と、API 非対応環境のダウンロードフォールバックあり。
+  サンプル `.ino` はシーンツアー（M5Unified は A ボタン、素の LovyanGFX/M5GFX はタイマー送り）。
 - **コード生成**（`src/codegen.js`）: `generateHeader(project, opts)`（§11 ファサード＋記述子、
   プロファイル絞り込み、テスト/画面キャプチャ用の `detail::kProfileInfo[]` / `detail::kSceneInfo[]`）
   ＋ `generateSketch(project, framework)`（サンプル `.ino`）。`tests/codegen_roundtrip` で
@@ -85,7 +90,7 @@ python -m http.server 8000 --directory docs
 - `src/font-metrics.json` ＋ `src/font-atlas.png` — host 内省メトリクス＋サンプルアトラス
   （`../tests/manual/font_introspect` が生成）
 - `src/store.js` — リアクティブストア（プロジェクト＋UI状態）＋ loadProject
-- `src/i18n.js` — 翻訳（en/ja）＋ `t()` ＋静的マークアップ適用
+- `src/i18n.js` — 翻訳（en/ja/zh-Hans/zh-Hant/ko/es/fr/de）＋ `t()` ＋静的マークアップ適用
 - `src/persist.js` — `.lgfxsb.json` 保存/読込 ＋ localStorage 自動保存
 - `src/codegen.js` — プロジェクトモデル → `<Project>.h`
 - `src/design.js` — Design モード（描画＋操作）

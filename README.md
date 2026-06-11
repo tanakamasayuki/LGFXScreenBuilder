@@ -1,68 +1,154 @@
 # LGFXScreenBuilder
 
-> Japanese: [README.ja.md](README.ja.md)
+> 日本語: [README.ja.md](README.ja.md)
 
-LGFXScreenBuilder is an Arduino UI authoring and generated-runtime project for LovyanGFX and M5GFX.
+Design device screens in your browser, export generated Arduino C++, and draw them
+from a small **typed** API — for [LovyanGFX](https://github.com/lovyan03/LovyanGFX),
+[M5GFX](https://github.com/m5stack/M5GFX), and [M5Unified](https://github.com/m5stack/M5Unified).
 
-The goal is to design screens in a browser-based authoring tool, export generated Arduino data, and render the result from a small typed API.
+LGFXScreenBuilder is **not** a GUI framework like LVGL. It separates *screen design*
+from *application logic*: you lay out scenes, parts, fonts, and image assets in a
+GitHub Pages authoring tool, export a header, and update the display by passing
+values to generated structs. No string IDs, no widget tree, no web server.
 
-Project status: early specification and scaffolding.
+- **Authoring tool:** <https://tanakamasayuki.github.io/LGFXScreenBuilder/>
+- **Live screenshot gallery** (every profile × scene, rendered on a host backend):
+  <https://tanakamasayuki.github.io/LGFXScreenBuilderScreenshotTest/>
 
-## Authoring Tool
+## How it works
 
-GitHub Pages:
-
-```text
-https://tanakamasayuki.github.io/LGFXScreenBuilder/
+```
+ Browser authoring tool          Your Arduino sketch
+ ────────────────────────        ───────────────────────────────
+ design scenes / parts /         #include "MyScreen.h"
+ fonts / images / profiles       screen.show(scene struct with live values)
+        │  Export .h                       ▲
+        └──────── MyScreen.h ──────────────┘
 ```
 
-Local preview:
+You design once for **multiple devices** (a *profile* per device/size). At runtime
+`Profile::Auto` picks the right layout by screen size, so one binary fits a Core,
+a StickC, a Cardputer, etc.
 
-```sh
-python -m http.server 8000 --directory docs
-```
+## Quick start (Arduino)
 
-Then open:
-
-```text
-http://localhost:8000/
-```
-
-Pages is served from the `docs/` directory on the `main` branch. Use relative paths such as `./app.js` and `./styles.css` so the app works both locally and under the GitHub Pages project path.
-
-## Arduino API Direction
-
-The preferred generated API avoids string IDs in normal user code.
+1. Install this library (Library Manager → *LGFXScreenBuilder*, or clone into your
+   `libraries/` folder) plus your display library (M5Unified, M5GFX, or LovyanGFX).
+2. Open the authoring tool, design your screens, and **Export .h** (e.g. `MyScreen.h`).
+   Drop it next to your `.ino`.
+3. Fill a scene struct with live values and draw it:
 
 ```cpp
-screen.show(Scene::Boot{});
+#include <M5Unified.h>
+#include <LGFXScreenBuilder.h>
+#include "MyScreen.h"          // exported from the authoring tool
 
-Scene::Main main;
-main.header.title = "Main";
-main.header.battery = 82;
-main.body.temperature = "24.5C";
+using namespace MyScreen;       // optional: omit Scene:: / Profile:: / Screen
 
-screen.show(main);
+static Screen screen(M5.Display);
+
+void setup() {
+  M5.begin();
+  screen.begin();               // Profile::Auto resolves by screen size
+
+  screen.show(Scene::Boot{});   // a screen with no live data
+
+  Scene::Main main;             // fields are the parts you named in the editor
+  main.title   = "Main";
+  main.battery = "82%";
+  main.temp    = "24.5C";
+  screen.show(main);            // draw it
+}
+
+void loop() { M5.update(); }
 ```
 
-See [SPEC.md](SPEC.md) for the specification (Japanese: [SPEC.ja.md](SPEC.ja.md)).
+Static parts (background rectangles, labels, images) live in the exported header;
+your code only supplies the values that change. See [examples/](examples/).
+
+## Features
+
+- **One design, many devices.** A profile per device holds an independent layout of
+  the same parts; `Profile::Auto` selects by screen size and profile order.
+- **Parts:** rounded rectangles, lines, circles, single-line text (anchored by
+  datum, scaled by multiplier), and PNG/JPEG image assets (decoded to RGB565).
+- **Preset fonts, per profile.** Browse a catalog of LovyanGFX fonts (filter by
+  rendered height, script, fixed/proportional, …), adopt a subset, and enable each
+  font only on the profiles that need it — small screens stay within their flash
+  budget (the tool shows the exact per-font flash cost).
+- **Per-profile design text.** Each profile can carry its own placeholder string;
+  your code overrides it at runtime via the scene struct.
+- **AI layout I/O.** Copy a scene as self-contained JSON, hand it to an AI with
+  [docs/AI_LAYOUT_IO.md](docs/AI_LAYOUT_IO.md), and paste the result back.
+- **Dynamic overlay** (gauges, bars, waveforms) composited into the same buffer as
+  the static parts — see [examples/OverlayM5Unified/](examples/OverlayM5Unified/).
+- **Buffered or direct drawing.** Tiled double-buffering via the optional
+  `LGFXVirtualCanvas` library reduces flicker; drop it to draw directly.
+- **Host screenshots.** Generated metadata lets a host backend render every
+  profile × scene to PNG for regression testing — see the live gallery above.
+- **Localized UI:** English, Japanese, Simplified/Traditional Chinese, Korean,
+  Spanish, French, German.
+
+## The generated API
+
+The exported `MyScreen.h` defines a typed facade — no string IDs in normal use:
+
+```cpp
+screen.show(sceneId);                 // a scene by metadata index (preview/tour state)
+screen.show(Scene::Main{...});        // a scene with live values (per-scene overload)
+screen.setProfile(Profile::Core);     // force a profile (default: Profile::Auto)
+screen.setOverlay(mainOverlay);       // optional dynamic drawing for one scene (§11.4)
+```
+
+Passing an unknown scene type is a compile error; the API only knows *this*
+project's scenes and profiles.
+
+## Examples
+
+| Example | Target | Shows |
+| --- | --- | --- |
+| [BasicLovyanGFX](examples/BasicLovyanGFX/) | LovyanGFX | minimal `show()` on a bare LovyanGFX device |
+| [BasicM5Unified](examples/BasicM5Unified/) | M5Unified | minimal `show()` on M5 hardware |
+| [ExportedSample](examples/ExportedSample/) | M5Unified | verbatim Export output — a scene tour (button A advances) |
+| [OverlayM5Unified](examples/OverlayM5Unified/) | M5Unified | a dynamic overlay (live battery bar) over static parts |
+
+`ExportedSample` and `OverlayM5Unified` regenerate their `MyScreen.h` from a stored
+project via `tools/gen-fixtures.mjs`, so they always match the current codegen.
+
+## Documentation
+
+- [SPEC.md](SPEC.md) — full specification (Japanese: [SPEC.ja.md](SPEC.ja.md))
+- [docs/AI_LAYOUT_IO.md](docs/AI_LAYOUT_IO.md) — the layout-JSON contract handed to an AI
+- [docs/README.md](docs/README.md) — the authoring tool itself (developer notes)
 
 ## Tests
 
-The initial test scaffold uses pytest, Arduino CLI, and the `lang-ship:host` LovyanGFX backend.
+The authoring tool is plain ES modules (no build step). Repository guards run under
+Node, and screen rendering is checked on the `lang-ship:host` LovyanGFX backend via
+pytest and Arduino CLI:
 
 ```sh
-cd tests
-uv run pytest -v
+# Node guards (generated headers / project format / AI block / i18n parity)
+node tools/gen-fixtures.mjs --check
+node tools/check-formats.mjs --check
+node tools/check-ai-layout-embed.mjs
+node tools/check-i18n.mjs
+
+# Host rendering tests
+cd tests && uv run pytest -v
 ```
 
-## Release
+## Local preview of the authoring tool
 
-Release automation is provided by:
+GitHub Pages serves the `docs/` directory on `main`. To preview locally:
 
-```text
-.github/workflows/release.yml
-tools/bump_version.py
+```sh
+python -m http.server 8000 --directory docs
+# open http://localhost:8000/
 ```
 
-The release workflow is copied from the shared Arduino library release toolkit and should remain common with other libraries unless the toolkit itself is updated.
+## License & release
+
+[MIT](LICENSE). Release automation lives in `.github/workflows/release.yml` and
+`tools/bump_version.py`, shared with other Arduino libraries; the version is in
+[library.properties](library.properties).
