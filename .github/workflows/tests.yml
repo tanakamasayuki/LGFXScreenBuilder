@@ -39,6 +39,11 @@ jobs:
       - name: Check embedded AI-layout block parses
         run: node tools/check-ai-layout-embed.mjs
 
+      # SPEC §14: every language table must match the en key set (no missing key
+      # silently falling back to English, no stray typo'd key).
+      - name: Check i18n key parity
+        run: node tools/check-i18n.mjs
+
       - name: Install SDL2 (headless LovyanGFX / M5GFX backend)
         run: |
           sudo apt-get update

@@ -1236,9 +1236,8 @@ Requirements:
 - Can download the export result as a ZIP or multiple files.
 - It is desirable that editing work can continue after the page is loaded, even without a network connection.
 - UI strings are localized via key management equivalent to `data-i18n` or an equivalent mechanism, and wording is not scattered across HTML/logic.
-- The initially bundled languages are `ja` and `en`, and `en` is the default for unsupported browser languages.
-- Candidate extension languages are major languages such as `zh-Hans`, `zh-Hant`, `ko`, `es`, `de`, `fr`.
-- When a translation key is missing, fall back to `en`.
+- The bundled languages are `en`, `ja`, `zh-Hans`, `zh-Hant`, `ko`, `es`, `fr`, and `de`; `en` is the default for unsupported browser languages. The browser language auto-selects the initial one (Chinese resolves to `zh-Hant` for Taiwan/Hong Kong/Macau or an explicit `-hant` tag, otherwise `zh-Hans`).
+- When a translation key is missing, fall back to `en`. CI enforces full key parity across every language table (`tools/check-i18n.mjs`), so a forgotten key fails the build instead of leaking English at runtime.
 - Accessibility wording other than display text, such as `placeholder`, `aria-label`, and `title`, is also a translation target.
 
 ### 14.1 Release Bundling and Self-Hosting (Pinning a Past Version)
