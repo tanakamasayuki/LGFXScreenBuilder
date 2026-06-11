@@ -33,6 +33,12 @@ jobs:
       - name: Check project files are canonical
         run: node tools/check-formats.mjs --check
 
+      # SPEC §10.2: the embedded AI-layout comment block is a contract the
+      # gallery parses from the *.h alone — ensure it stays opt-in, "*/"-free,
+      # parseable, and faithful to buildAiLayout.
+      - name: Check embedded AI-layout block parses
+        run: node tools/check-ai-layout-embed.mjs
+
       - name: Install SDL2 (headless LovyanGFX / M5GFX backend)
         run: |
           sudo apt-get update

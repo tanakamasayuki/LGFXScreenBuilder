@@ -891,6 +891,7 @@ LGFXSB-AI-LAYOUTS END */
 - `scenes[]` holds one entry per scene, each **identical to the single-scene "Copy AI JSON" export of §8.15** (one scene across all profiles, self-contained including the `fonts[]` context), in project scene order. A consumer can hand any one entry to an AI verbatim.
 - The embedded JSON **escapes `/` as `\/`**. This is valid JSON, and it guarantees the sequence `*/` can never occur inside the block, so the block comment cannot terminate early. A reader extracts the text between the sentinels and parses it with a normal JSON parser (no un-escaping needed; re-serialize to normalize if a clean copy is wanted).
 - The toggle state is persisted in the project's output settings (§9). The default is **off** so headers stay lean for users who do not need it.
+- Because this block is a consumed contract, CI verifies its invariants (`tools/check-ai-layout-embed.mjs`): opt-in, free of `*/`, parseable as-is between the sentinels, and faithful to the §8.15 output for every scene.
 
 This block is the single source for tools such as the screenshot gallery: they parse the header once to obtain scene names, descriptions, profiles, and the per-scene AI JSON (for example, a "copy this scene's layout" button), with **no dependency on `.lgfxsb.json`**.
 
