@@ -826,7 +826,7 @@ Arduino 向けエクスポートでは、以下を生成する。
 - 低レベル API 用のパーツ ID 定義
 - テスト・画面キャプチャ用のプロファイル一覧およびシーン一覧メタ情報
 - 描画モードは `LGFXVirtualCanvas.h` の include 検出でコンパイル時に決まる（直描画 / LGFXVirtualCanvas 分割ダブルバッファ。後述）
-- サンプル利用コード（`<Project>_example.ino`）
+- サンプル利用コード（`<Project>_example.ino`）— **シーンツアー**: 各シーンをプロファイル毎のデザイン状態で `screen.show(id)` により順に表示し、M5Unified は**ボタン A**、bare LovyanGFX/M5GFX は**タイマー**（約 2.5 秒）で送る。ライブデータの投入方法はコメントで示す
 
 サンプル利用コードは対象フレームワークに応じて生成する。LovyanGFX は `LGFX_AUTODETECT` と `display.init()`、M5Unified は `M5.begin()` と `M5.Display` を用いるなど、include と初期化が異なる（描画 API は共通）。
 

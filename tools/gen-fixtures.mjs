@@ -15,7 +15,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { generateHeader } from '../docs/src/codegen.js';
+import { generateHeader, generateSketch } from '../docs/src/codegen.js';
 import { isProject } from '../docs/src/persist.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -30,6 +30,13 @@ const FIXTURES = [
     headers: [
       'examples/BasicLovyanGFX/MyScreen.h',
       'examples/BasicM5Unified/MyScreen.h',
+      'examples/ExportedSample/MyScreen.h',
+    ],
+    // ExportedSample is the verbatim Export output (header + sample sketch), so
+    // its .ino IS generated here (unlike the hand-curated Basic* sketches) and
+    // stays in lockstep with generateSketch via --check.
+    sketches: [
+      { path: 'examples/ExportedSample/ExportedSample.ino', framework: 'M5Unified' },
     ],
   },
   {
@@ -79,7 +86,8 @@ export function regenerate(mode, only = null) {
     // Non-committed headers (gitignored, regenerated at test time) are produced
     // by --write but skipped by --check (they are absent on a pristine checkout).
     if (mode === 'check' && fx.committed === false) continue;
-    const header = generateHeader(loadProject(fx.source));
+    const project = loadProject(fx.source);
+    const header = generateHeader(project);
     const next = norm(header);
     for (const rel of fx.headers) {
       const path = join(root, rel);
@@ -88,6 +96,18 @@ export function regenerate(mode, only = null) {
       if (cur === next) continue;
       if (mode === 'write') { writeFileSync(path, header); written.push(rel); }
       else stale.push(rel);
+    }
+    // Generated sample sketches (e.g. ExportedSample): the .ino is the verbatim
+    // generateSketch output, regenerated/checked like a header.
+    for (const sk of fx.sketches || []) {
+      const raw = generateSketch(project, sk.framework);
+      const want = norm(raw);
+      const path = join(root, sk.path);
+      let cur = null;
+      try { cur = norm(readFileSync(path, 'utf8')); } catch { /* missing → stale */ }
+      if (cur === want) continue;
+      if (mode === 'write') { writeFileSync(path, raw); written.push(sk.path); }
+      else stale.push(sk.path);
     }
   }
   return { written, stale };

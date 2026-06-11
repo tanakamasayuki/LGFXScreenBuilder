@@ -837,7 +837,7 @@ The Arduino-bound export generates the following.
 - Part ID definitions for the low-level API
 - Profile-list and scene-list metadata for tests and screen capture
 - The render mode is decided at compile time by whether `<LGFXVirtualCanvas.h>` is included (direct drawing / LGFXVirtualCanvas tiled double buffering; see below)
-- Sample usage code (`<Project>_example.ino`)
+- Sample usage code (`<Project>_example.ino`) — a **scene tour**: it shows each scene in turn in its per-profile design state via `screen.show(id)`, advancing on **button A** (M5Unified) or a **timer** (~2.5 s, bare LovyanGFX/M5GFX), with a comment showing how to push live data through a scene struct
 
 The sample usage code is generated according to the target framework. LovyanGFX uses `LGFX_AUTODETECT` and `display.init()`, M5Unified uses `M5.begin()` and `M5.Display`, etc.—the includes and initialization differ (the drawing API is common).
 
