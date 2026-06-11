@@ -31,8 +31,9 @@ static int g_batteryPct = 100;
 //     タイル毎に複数回走るため冪等であること（同入力→同描画）。
 //     gfx をテンプレートにするとキャンバス型名を書かずに済む（GFX=Canvas に推論）。
 template <class GFX>
-void mainOverlay(GFX& g, const Scene::Main& s) {
-  (void)s;  // en: this demo reads g_batteryPct; s carries the typed text fields  / ja: 本例は g_batteryPct を使用。s は型付きテキスト
+void mainOverlay(GFX &g, const Scene::Main &s)
+{
+  (void)s; // en: this demo reads g_batteryPct; s carries the typed text fields  / ja: 本例は g_batteryPct を使用。s は型付きテキスト
   // en: Profile-relative geometry so it fits Core / Stick / Cardputer alike.
   // ja: プロファイル相対の座標。Core / Stick / Cardputer いずれにも収まる。
   const int w = g.width(), h = g.height();
@@ -43,9 +44,9 @@ void mainOverlay(GFX& g, const Scene::Main& s) {
 
   // en: Color shifts with the level (green -> amber -> red).
   // ja: 残量で色が変わる（緑→橙→赤）。
-  uint32_t fill = (g_batteryPct > 50) ? 0x4caf50
-                : (g_batteryPct > 20) ? 0xffb300
-                                      : 0xe53935;
+  uint32_t fill = (g_batteryPct > 50)   ? 0x4caf50
+                  : (g_batteryPct > 20) ? 0xffb300
+                                        : 0xe53935;
   const int fillW = barW * g_batteryPct / 100;
 
   g.drawRoundRect(x, y, barW, barH, barH / 3, 0xffffff);
@@ -53,26 +54,29 @@ void mainOverlay(GFX& g, const Scene::Main& s) {
     g.fillRoundRect(x + 1, y + 1, fillW - 2, barH - 2, barH / 3, fill);
 }
 
-void setup() {
+void setup()
+{
   M5.begin();
-  screen.begin();              // en: Profile::Auto resolves by screen size  / ja: 画面サイズで自動判定
-  screen.setOverlay(mainOverlay);  // en: register once  / ja: 一度だけ登録
+  screen.begin();                 // en: Profile::Auto resolves by screen size  / ja: 画面サイズで自動判定
+  screen.setOverlay(mainOverlay); // en: register once  / ja: 一度だけ登録
 }
 
-void loop() {
+void loop()
+{
   M5.update();
 
   // en: Advance state OUTSIDE the overlay (sensor read / animation goes here).
   // ja: 状態は overlay の外で進める（センサ取得やアニメはここ）。
   static int dir = -1;
   g_batteryPct += dir;
-  if (g_batteryPct <= 0 || g_batteryPct >= 100) dir = -dir;
+  if (g_batteryPct <= 0 || g_batteryPct >= 100)
+    dir = -dir;
 
   Scene::Main main;
   static char buf[8];
   snprintf(buf, sizeof(buf), "%d%%", g_batteryPct);
-  main.battery = buf;          // en: text label stays in sync with the bar  / ja: テキストもバーと同期
-  screen.show(main);           // en: overlay runs automatically (per tile when buffered)  / ja: overlay が自動実行（バッファ時はタイル毎）
+  main.battery = buf; // en: text label stays in sync with the bar  / ja: テキストもバーと同期
+  screen.show(main);  // en: overlay runs automatically (per tile when buffered)  / ja: overlay が自動実行（バッファ時はタイル毎）
 
   delay(33);
 }
