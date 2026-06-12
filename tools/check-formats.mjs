@@ -23,7 +23,10 @@ import { dirname, join, relative } from 'node:path';
 import { serialize, isProject } from '../docs/src/persist.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SKIP_DIRS = new Set(['node_modules', '.git', 'build']);
+// `compat` holds frozen golden projects pinned to a PAST formatVersion (§9.2);
+// they must NOT be re-serialized to the current format. tools/check-compat.mjs
+// guards them instead (load → migrate → generate → compare).
+const SKIP_DIRS = new Set(['node_modules', '.git', 'build', 'compat']);
 
 function findProjectFiles(dir) {
   const out = [];

@@ -44,6 +44,12 @@ jobs:
       - name: Check i18n key parity
         run: node tools/check-i18n.mjs
 
+      # SPEC §9.2 Layer 3: frozen-format goldens must still load, migrate, and
+      # regenerate the same header. (The matching render-pixel golden runs in the
+      # pytest step below: tests/compat/*.)
+      - name: Check format-compat goldens
+        run: node tools/check-compat.mjs
+
       - name: Install SDL2 (headless LovyanGFX / M5GFX backend)
         run: |
           sudo apt-get update

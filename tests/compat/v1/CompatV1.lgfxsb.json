@@ -1,0 +1,401 @@
+{
+  "formatVersion": 1,
+  "name": "CompatV1",
+  "targetLibrary": "M5Unified",
+  "background": "#000000",
+  "profiles": [
+    {
+      "id": "Core",
+      "w": 320,
+      "h": 240,
+      "rotation": 0,
+      "fonts": [
+        "FreeSans12pt7b"
+      ],
+      "layout": {
+        "Boot": {
+          "bg": {
+            "x": 0,
+            "y": 0,
+            "w": 320,
+            "h": 240,
+            "r": 0,
+            "fill": true,
+            "color": "#101418",
+            "visible": true
+          },
+          "msg": {
+            "x": 160,
+            "y": 120,
+            "datum": "MC",
+            "size": 2,
+            "color": "#9ce5ac",
+            "text": "Booting...",
+            "visible": true
+          }
+        },
+        "Showcase": {
+          "bg": {
+            "x": 0,
+            "y": 0,
+            "w": 320,
+            "h": 240,
+            "r": 0,
+            "fill": true,
+            "color": "#0b0f12",
+            "visible": true
+          },
+          "frame": {
+            "x": 8,
+            "y": 8,
+            "w": 304,
+            "h": 224,
+            "r": 10,
+            "fill": false,
+            "color": "#2a3a44",
+            "visible": true
+          },
+          "sep": {
+            "x": 16,
+            "y": 48,
+            "x2": 304,
+            "y2": 48,
+            "color": "#3a4a55",
+            "visible": true
+          },
+          "dotF": {
+            "x": 60,
+            "y": 160,
+            "r": 24,
+            "fill": true,
+            "color": "#4caf50",
+            "visible": true
+          },
+          "ring": {
+            "x": 140,
+            "y": 160,
+            "r": 24,
+            "fill": false,
+            "color": "#ffb300",
+            "visible": true
+          },
+          "heading": {
+            "x": 160,
+            "y": 28,
+            "datum": "TC",
+            "size": 1,
+            "color": "#ffffff",
+            "text": "Showcase",
+            "visible": true,
+            "font": "FreeSans12pt7b"
+          },
+          "note": {
+            "x": 16,
+            "y": 200,
+            "datum": "TL",
+            "size": 1.5,
+            "color": "#9ce5ac",
+            "text": "core",
+            "visible": true
+          },
+          "icon": {
+            "x": 260,
+            "y": 140,
+            "w": 40,
+            "h": 40,
+            "visible": true
+          }
+        }
+      }
+    },
+    {
+      "id": "Stick",
+      "w": 135,
+      "h": 240,
+      "rotation": 0,
+      "fonts": [
+        "FreeSans12pt7b"
+      ],
+      "layout": {
+        "Boot": {
+          "bg": {
+            "x": 0,
+            "y": 0,
+            "w": 135,
+            "h": 240,
+            "r": 0,
+            "fill": true,
+            "color": "#101418",
+            "visible": true
+          },
+          "msg": {
+            "x": 67,
+            "y": 120,
+            "datum": "MC",
+            "size": 1.5,
+            "color": "#9ce5ac",
+            "text": "Boot...",
+            "visible": true
+          }
+        },
+        "Showcase": {
+          "bg": {
+            "x": 0,
+            "y": 0,
+            "w": 135,
+            "h": 240,
+            "r": 0,
+            "fill": true,
+            "color": "#0b0f12",
+            "visible": true
+          },
+          "frame": {
+            "x": 4,
+            "y": 4,
+            "w": 127,
+            "h": 232,
+            "r": 8,
+            "fill": false,
+            "color": "#2a3a44",
+            "visible": true
+          },
+          "sep": {
+            "x": 8,
+            "y": 40,
+            "x2": 127,
+            "y2": 40,
+            "color": "#3a4a55",
+            "visible": true
+          },
+          "dotF": {
+            "x": 40,
+            "y": 150,
+            "r": 18,
+            "fill": true,
+            "color": "#4caf50",
+            "visible": true
+          },
+          "ring": {
+            "x": 95,
+            "y": 150,
+            "r": 18,
+            "fill": false,
+            "color": "#ffb300",
+            "visible": true
+          },
+          "heading": {
+            "x": 67,
+            "y": 22,
+            "datum": "TC",
+            "size": 1,
+            "color": "#ffffff",
+            "text": "Show",
+            "visible": true,
+            "font": "FreeSans12pt7b"
+          },
+          "note": {
+            "x": 8,
+            "y": 210,
+            "datum": "TL",
+            "size": 1.5,
+            "color": "#9ce5ac",
+            "text": "stick",
+            "visible": true
+          },
+          "icon": {
+            "x": 100,
+            "y": 130,
+            "w": 28,
+            "h": 28,
+            "visible": true
+          }
+        }
+      }
+    },
+    {
+      "id": "CoreRot",
+      "w": 320,
+      "h": 240,
+      "rotation": 1,
+      "fonts": [
+        "FreeSans12pt7b"
+      ],
+      "layout": {
+        "Boot": {
+          "bg": {
+            "x": 0,
+            "y": 0,
+            "w": 240,
+            "h": 320,
+            "r": 0,
+            "fill": true,
+            "color": "#101418",
+            "visible": true
+          },
+          "msg": {
+            "x": 120,
+            "y": 160,
+            "datum": "MC",
+            "size": 2,
+            "color": "#9ce5ac",
+            "text": "Booting...",
+            "visible": true
+          }
+        },
+        "Showcase": {
+          "bg": {
+            "x": 0,
+            "y": 0,
+            "w": 240,
+            "h": 320,
+            "r": 0,
+            "fill": true,
+            "color": "#0b0f12",
+            "visible": true
+          },
+          "frame": {
+            "x": 8,
+            "y": 8,
+            "w": 224,
+            "h": 304,
+            "r": 10,
+            "fill": false,
+            "color": "#2a3a44",
+            "visible": true
+          },
+          "sep": {
+            "x": 16,
+            "y": 56,
+            "x2": 224,
+            "y2": 56,
+            "color": "#3a4a55",
+            "visible": true
+          },
+          "dotF": {
+            "x": 60,
+            "y": 200,
+            "r": 22,
+            "fill": true,
+            "color": "#4caf50",
+            "visible": true
+          },
+          "ring": {
+            "x": 140,
+            "y": 200,
+            "r": 22,
+            "fill": false,
+            "color": "#ffb300",
+            "visible": true
+          },
+          "heading": {
+            "x": 120,
+            "y": 32,
+            "datum": "TC",
+            "size": 1,
+            "color": "#ffffff",
+            "text": "Showcase",
+            "visible": true,
+            "font": "FreeSans12pt7b"
+          },
+          "note": {
+            "x": 16,
+            "y": 280,
+            "datum": "TL",
+            "size": 1.5,
+            "color": "#9ce5ac",
+            "text": "rot1",
+            "visible": true
+          },
+          "icon": {
+            "x": 180,
+            "y": 180,
+            "w": 40,
+            "h": 40,
+            "visible": true
+          }
+        }
+      }
+    }
+  ],
+  "scenes": [
+    {
+      "id": "Boot",
+      "desc": "splash shown right after boot",
+      "parts": [
+        {
+          "id": "bg",
+          "type": "Rect",
+          "desc": "background fill"
+        },
+        {
+          "id": "msg",
+          "type": "Text",
+          "desc": "boot message (per-profile text)"
+        }
+      ]
+    },
+    {
+      "id": "Showcase",
+      "desc": "exercises every part type, a preset font, and an image asset",
+      "parts": [
+        {
+          "id": "bg",
+          "type": "Rect",
+          "desc": "background fill"
+        },
+        {
+          "id": "frame",
+          "type": "Rect",
+          "desc": "outlined rounded frame (fill off, r>0)"
+        },
+        {
+          "id": "sep",
+          "type": "Line",
+          "desc": "divider line"
+        },
+        {
+          "id": "dotF",
+          "type": "Circle",
+          "desc": "filled circle"
+        },
+        {
+          "id": "ring",
+          "type": "Circle",
+          "desc": "outlined circle (fill off)"
+        },
+        {
+          "id": "heading",
+          "type": "Text",
+          "desc": "text in an adopted preset font"
+        },
+        {
+          "id": "note",
+          "type": "Text",
+          "desc": "default-font text, per-profile string + datum"
+        },
+        {
+          "id": "icon",
+          "type": "Image",
+          "desc": "image asset",
+          "asset": "logo1"
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "logo1",
+      "w": 1,
+      "h": 1,
+      "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "rgb565": [
+        63488
+      ]
+    }
+  ],
+  "fonts": [
+    {
+      "name": "FreeSans12pt7b"
+    }
+  ]
+}
