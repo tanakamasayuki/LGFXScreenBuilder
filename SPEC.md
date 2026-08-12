@@ -163,7 +163,7 @@ Inside the Arduino runtime, a common drawing API of LovyanGFX and M5GFX is assum
 
 Drawing is resolved based on the currently selected profile (§8.9).
 
-- Full-screen fills and background clears are based on the physical size of the actual device (`gfx.width()` / `gfx.height()`).
+- Full-screen fills and background clears are based on the physical size of the actual device (`gfx.width()` / `gfx.height()`). A transparent scene (§8.16) performs no background clear at all.
 - Each part is drawn with the logical coordinates of the currently selected profile treated as absolute pixels, with the origin at the top-left. No coordinate scaling is performed.
 - Drawing that extends outside the physical screen is left to the clipping of the drawing backend.
 - Rotation applies the currently selected profile's rotation value (0–3) relative to the underlying display's standard orientation, via `setRotation((base + rotation) % 4)` (§8.9.3).
@@ -199,6 +199,8 @@ Examples:
 - Info
 
 A scene has a unique ID. On the Arduino side, scenes can be switched using the ID or a generated constant.
+
+A scene may also be marked **transparent**, which makes it an overlay drawn on top of the screen already on the panel instead of a full screen of its own (§8.16).
 
 ### 8.2 Part Management
 
@@ -684,7 +686,7 @@ The AI-facing interface contract is a standalone, **English-only** document, [do
 
 Format:
 
-- Top-level: `format`, `version`, `spec` (the URL of `docs/AI_LAYOUT_IO.md`, so an AI given only the JSON can fetch the contract), `scene` (Scene ID), `desc` (description), optional `background` (visual context), `fonts[]` (adopted-font context; not editable), and `profiles[]`.
+- Top-level: `format`, `version`, `spec` (the URL of `docs/AI_LAYOUT_IO.md`, so an AI given only the JSON can fetch the contract), `scene` (Scene ID), `desc` (description), optional `transparent` (the overlay flag of §8.16 — editable, since it changes what the scene may rely on), optional `background` and `transparentColor` (visual context; the latter only for a transparent scene), `fonts[]` (adopted-font context; not editable), and `profiles[]`.
 - Value types are explicit in the contract: `w`/`h`/`x`/`y`/`rot`/`version` are integers; `size` is a number that may be fractional; `color` is `"#rrggbb"`; `visible` is boolean.
 - Top-level `fonts[]`: adopted fonts with `name`, `family`, `content` (`digits` / `latin` / `ja` / `cn` / `tw` / `ko`), nominal `size`/`unit`, and approximate rendered `height`. This is emitted as authoritative context for choosing existing fonts, but importing the JSON does not add or change font assets.
 - Each profile: `id`, `w`, `h`, `rot`, `fonts[]` (the adopted font names enabled for that profile; not editable), and `parts[]`.
@@ -706,6 +708,31 @@ Import (implemented): the Design screen's **"Paste AI JSON"** action opens a dia
 - **Validation:** part IDs must be C identifiers and types known; an `asset` name not in the project is cleared to null (warning). The scene draw order is re-normalized.
 
 File-based import and automatic creation of project profiles referenced by the JSON are outside the current scope. Profile creation stays a Devices-mode action (§15).
+
+### 8.16 Transparent Scenes (Overlay / Dialog)
+
+A scene can be marked **transparent**: it is drawn **on top of whatever is already on the panel**, with no background of its own. The motivating case is a dialog — a confirmation box over a running screen — where redrawing the whole screen to show a box is both wasteful and visibly flickery.
+
+This rests on LGFXVirtualCanvas's transparent transfer (its SPEC §22, added in **1.4.0**): the tile is cleared with a **color key** and pushed with that color masked out, so every pixel the scene did not draw keeps showing the panel. That is what lets a *shaped* overlay — rounded corners, a drop shadow — sit on an existing image instead of a rectangle.
+
+**Model.** Transparency is a property of the **scene** (`scene.transparent`), because "is this screen a dialog" is the same decision on every device; per-profile variation would only produce layouts that disagree about what they are. The color key is a property of the **project** (`project.transparentColor`, default `#002400`), because it is a palette-level reservation: the one color the project's artwork never paints. The default is LovyanGFX's `TFT_TRANSPARENT` (RGB565 `0x0120`) expressed as RGB888, i.e. LGFXVirtualCanvas's own default, so a project that leaves it alone needs no runtime configuration.
+
+**Runtime behavior.** The mode a build resolves to (§10) decides *how*, not *whether*:
+
+- **Buffered** (`<LGFXVirtualCanvas.h>` included): the engine sets the color key, turns the library's per-tile auto-clear back on for the duration of the render, and calls `renderTransparent()`. Auto-clear is required here — `setAutoClear(false)` combined with `renderTransparent()` is explicitly unsupported (LGFXVirtualCanvas SPEC §22.3) — so it is toggled per render rather than left off as it is for opaque scenes, which clear themselves via `fillScreen()`.
+- **Direct**: nothing special is needed. Skipping the background fill *is* the transparency: the parts are opaque, so everything they do not cover is left untouched. The result differs only in that the drawing is not atomic (it can flicker), like any direct-mode drawing.
+- **Buffered on LGFXVirtualCanvas < 1.4.0**: `renderTransparent()` does not exist, so a transparent scene is drawn as an **ordinary opaque screen** (the background is filled) and the build emits a `#warning`. This is a deliberate degradation rather than a hard error: it keeps a project that does not use the feature building against an older library. `Screen::supportsTransparentScenes()` reports which case a build is in, alongside `isBuffered()`.
+
+**Contract with the application.** The library does not track layers; which screen is under the dialog and when it is dismissed stays with the sketch. Two consequences:
+
+- **Dismissing means redrawing the screen underneath.** Showing a transparent scene never touched those pixels, so nothing else can restore them.
+- A part painted **in the color key** is punched out — it becomes a hole, not a shape. The authoring tool guards this: Export lists any part in a transparent scene whose color matches the key, compared **after RGB565 quantization**, because that is the depth at which the panel and the mask actually work.
+
+**Authoring tool.** The scene inspector carries the flag and the scene list marks such scenes. On the canvas a transparent scene shows the **image-editor checkerboard** instead of a background color, since what shows through is genuinely unknown at design time — it is whatever the device had on screen. Parts painted in the color key get the same grid (filled shapes) or a warning outline. The grid squares are a fixed CSS size and deliberately **do not scale with zoom**: like a transparency grid in an image editor, they are chrome, not content. The color-key picker appears in Output settings only once the project has a transparent scene.
+
+**Generated output.** Both fields are emitted **only when used** (§10.1's append rule makes this safe): a transparent scene appends `true` to its `SceneDesc`, and `Project::transparentColor` is emitted only when the project has one. A project without a transparent scene therefore generates byte-identical output to before the feature existed, and its `.lgfxsb.json` is unchanged — which is why this was an additive change that did **not** bump `formatVersion` (§9.2, Layer 1).
+
+**Not in scope.** Alpha blending / semi-transparency (the mask is per-pixel all-or-nothing; true compositing needs a full framebuffer or a panel read-back), and bounding-box optimization — the overlay is currently rendered through the full-screen `LGFXVirtualScreen`, so the draw callback runs for every tile even when the dialog is small. Routing a transparent scene through an `LGFXVirtualSprite` sized to the scene's parts is the natural next step (§16).
 
 ## 9. Project File
 
@@ -731,6 +758,7 @@ The project file includes the following.
 - Part definitions
 - Asset definitions
 - Font definitions
+- Scene-level `transparent` flag (§8.16) and the project-level `transparentColor` color key; both are stored only when in use (absent = opaque / the default key)
 - Output settings (the render-mode `buffered` flag = use LGFXVirtualCanvas; absent means true = buffered. §10. The `embedAiLayouts` flag = embed the AI layout comment block in the generated header; absent/false means off. §10.2)
 
 A part's layout is held keyed by the profile ID, as a **complete value per profile** (§8.2). There is no concept of a base or a diff. For a single profile, only one set. The generated structures are determined only by the part's ID and type, and do not depend on profile or layout values.
@@ -856,6 +884,8 @@ Detection looks at whether the header was **actually included** (whether the det
 
 The resolved mode is observable via `screen.isBuffered()` (true = tiled double buffering / false = direct drawing), so a wrong include order that silently disables buffering can be noticed.
 
+Transparent scenes (§8.16) additionally require **LGFXVirtualCanvas 1.4.0 or newer** in a buffered build (the version is checked through its `LGFXVIRTUALCANVAS_VERSION_*` macros); an older one draws them opaque with a `#warning`. Direct drawing has no such requirement.
+
 Include-order rule: place `<LGFXVirtualCanvas.h>` **before all generated screen headers**. Including multiple generated headers (multiple screens) does not collide, because no public macros are emitted; every screen reads the same `LGFXVIRTUALCANVAS_H`, so following the rule yields a consistent mode across all screens. Including an older `LGFXVirtualCanvas` that lacks the detection macro resolves to direct drawing (no version requirement is imposed).
 
 Caveat (multiple translation units): a single `.ino` is fine. If generated headers are used from several `.cpp` files with inconsistent include presence per TU, the drawing-surface type can differ across TUs and cause an ODR violation. For multi-TU builds, fix the mode project-wide via a build flag or similar.
@@ -874,7 +904,7 @@ The header comment at the top of the generated output records **`FORMAT_VERSION`
 
 Compatibility between the generated `.h` and the runtime (the `LGFXScreenBuilder.h` engine) is **best-effort backward compatibility**: a newer engine should, as a rule, read headers produced by older tool versions. The runtime data contract (the `lgfxsb::Project` descriptor) aims to be **additive and layout-stable**; if a breaking runtime change is unavoidable, the **data-contract version is bumped and re-generation is advised**.
 
-The descriptor is initialized as a **positional aggregate**. New fields are **appended**, and the library structs carry a **default member initializer equal to the legacy/neutral value**. Because aggregate initialization is valid with fewer initializers than members, a `.h` generated by an older tool (omitting the new field) **still compiles, and the omitted field takes its default**. Reordering, removing, or mid-inserting a field shifts positions and is a breaking change — only then is the data-contract version bumped and the header regenerated. Designated initializers (C++20) and constructors are not used, for portability and flash-placement reasons.
+The descriptor is initialized as a **positional aggregate**. New fields are **appended**, and the library structs carry a **default member initializer equal to the legacy/neutral value**. Because aggregate initialization is valid with fewer initializers than members, a `.h` generated by an older tool (omitting the new field) **still compiles, and the omitted field takes its default**. The transparent-scene fields (§8.16) are the worked example: `SceneDesc::transparent` and `Project::transparentColor` are appended and emitted **only when a scene uses them**, so a project without a transparent scene generates the same bytes it did before the fields existed. Reordering, removing, or mid-inserting a field shifts positions and is a breaking change — only then is the data-contract version bumped and the header regenerated. Designated initializers (C++20) and constructors are not used, for portability and flash-placement reasons.
 
 The **guaranteed recovery path is re-generation from the project file** (§9.2). The project file ⇄ tool backward compatibility (strongly secured in §9.2) is the source of truth; the generated `.h` is a derivative that can, in the worst case, be regenerated to follow the latest runtime. This is intentionally weaker than surface A (the project file), and is supported by re-generation always being cheap (`tools/gen-fixtures.mjs`).
 
@@ -998,6 +1028,7 @@ public:
   void setProfile(Profile p);                  // accepts only this type (other projects are type errors)
 
   bool isBuffered() const;                      // observe the resolved mode (true = buffered / false = direct)
+  bool supportsTransparentScenes() const;       // false only when buffered on LGFXVirtualCanvas < 1.4.0 (§8.16)
 
   void show(lgfxsb::SceneId id);                // for tests/capture (draws with preview values)
   void show(const Scene::Boot& s);              // overload per scene type in this project
@@ -1019,7 +1050,7 @@ The receiving type for `gfx` is `lgfx::LGFX_Device` (a subclass of the `LovyanGF
 
 `show(lgfxsb::SceneId id)` is an auxiliary API for host tests and screen capture. It draws a scene enumerated from `detail::kSceneInfo[]` using the generated preview strings instead of dynamic Text values. Normal application code should use the typed overloads that accept generated scene structures.
 
-The actual-device render mode is fixed at compile time by the `LGFXVirtualCanvas.h` include detection of §10; there is no runtime switch. The generated facade selects the drawing-surface type `Canvas` (direct: `lgfx::LGFXBase`, buffered: `LGFXVirtualCanvas`) from the detection and instantiates the shared engine with it. The resolved mode is observable via `screen.isBuffered()` (true = tiled double buffering / false = direct drawing), which helps notice a wrong include order.
+The actual-device render mode is fixed at compile time by the `LGFXVirtualCanvas.h` include detection of §10; there is no runtime switch. The generated facade selects the drawing-surface type `Canvas` (direct: `lgfx::LGFXBase`, buffered: `LGFXVirtualCanvas`) from the detection and instantiates the shared engine with it. The resolved mode is observable via `screen.isBuffered()` (true = tiled double buffering / false = direct drawing), which helps notice a wrong include order. `screen.supportsTransparentScenes()` reports whether transparent scenes (§8.16) are honored in this build.
 
 ### 11.2 Usage Example
 
@@ -1321,6 +1352,8 @@ The following are considered in the future.
 - Multi-language documentation
 - Static text designation (fixed text not exposed as a value; §16.1)
 - Font context JSON (limited subset for AI / font asset management; §16.2)
+- Bounding-box overlays: render a transparent scene (§8.16) through an `LGFXVirtualSprite` sized to its parts, so the draw callback and the masked scan cover only the dialog instead of the whole screen
+- Per-scene color key, if a project ever needs two different transparent palettes (§8.16 keeps it project-wide today)
 
 ### 16.1 Static text (fixed-text designation)
 

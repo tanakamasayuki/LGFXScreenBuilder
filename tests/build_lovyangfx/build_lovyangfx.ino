@@ -53,6 +53,13 @@ void setup()
 
   const bool saved = savePng(lcd, "output/build_lovyangfx.png");
   Serial.printf("PNG saved=%d\n", saved);
+
+  // Transparent scene (§8.16) in DIRECT mode: there is no masked transfer here,
+  // but skipping the background fill is exactly equivalent - the parts are opaque,
+  // so everything they do not cover keeps showing Main.
+  Serial.printf("TRANSPARENT %d\n", (int)screen.supportsTransparentScenes());
+  screen.show(Scene::Dialog{});
+  Serial.printf("DIALOG saved=%d\n", savePng(lcd, "output/dialog.png"));
   Serial.println("TEST done");
 }
 

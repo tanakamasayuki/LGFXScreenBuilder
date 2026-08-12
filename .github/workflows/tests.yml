@@ -108,7 +108,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [BasicLovyanGFX, BasicM5Unified, ExportedSample, OverlayM5Unified]
+        example: [BasicLovyanGFX, BasicM5Unified, ExportedSample, OverlayM5Unified, DialogM5Unified]
         profile: [esp32, display_core]
     steps:
       - name: Checkout repo

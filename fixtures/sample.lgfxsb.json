@@ -109,6 +109,56 @@
             "text": "Wi-Fi",
             "visible": true
           }
+        },
+        "Dialog": {
+          "shadow": {
+            "x": 66,
+            "y": 76,
+            "w": 200,
+            "h": 100,
+            "r": 10,
+            "fill": true,
+            "color": "#000000",
+            "visible": true
+          },
+          "box": {
+            "x": 60,
+            "y": 70,
+            "w": 200,
+            "h": 100,
+            "r": 10,
+            "fill": true,
+            "color": "#1e2a30",
+            "visible": true
+          },
+          "frame": {
+            "x": 60,
+            "y": 70,
+            "w": 200,
+            "h": 100,
+            "r": 10,
+            "fill": false,
+            "color": "#9ce5ac",
+            "visible": true
+          },
+          "msg": {
+            "x": 160,
+            "y": 105,
+            "datum": "MC",
+            "size": 2,
+            "color": "#ffffff",
+            "text": "Delete?",
+            "visible": true
+          },
+          "hint": {
+            "x": 160,
+            "y": 145,
+            "datum": "MC",
+            "size": 1.5,
+            "color": "#9ce5ac",
+            "text": "A:OK  B:Cancel",
+            "visible": true
+          }
         }
       }
     },
@@ -215,6 +265,56 @@
             "size": 1.5,
             "color": "#ffffff",
             "text": "Wi-Fi",
+            "visible": true
+          }
+        },
+        "Dialog": {
+          "shadow": {
+            "x": 14,
+            "y": 84,
+            "w": 115,
+            "h": 80,
+            "r": 8,
+            "fill": true,
+            "color": "#000000",
+            "visible": true
+          },
+          "box": {
+            "x": 10,
+            "y": 80,
+            "w": 115,
+            "h": 80,
+            "r": 8,
+            "fill": true,
+            "color": "#1e2a30",
+            "visible": true
+          },
+          "frame": {
+            "x": 10,
+            "y": 80,
+            "w": 115,
+            "h": 80,
+            "r": 8,
+            "fill": false,
+            "color": "#9ce5ac",
+            "visible": true
+          },
+          "msg": {
+            "x": 67,
+            "y": 105,
+            "datum": "MC",
+            "size": 1.5,
+            "color": "#ffffff",
+            "text": "Delete?",
+            "visible": true
+          },
+          "hint": {
+            "x": 67,
+            "y": 140,
+            "datum": "MC",
+            "size": 1,
+            "color": "#9ce5ac",
+            "text": "A:OK B:No",
             "visible": true
           }
         }
@@ -325,6 +425,56 @@
             "text": "Wi-Fi",
             "visible": true
           }
+        },
+        "Dialog": {
+          "shadow": {
+            "x": 44,
+            "y": 34,
+            "w": 160,
+            "h": 75,
+            "r": 8,
+            "fill": true,
+            "color": "#000000",
+            "visible": true
+          },
+          "box": {
+            "x": 40,
+            "y": 30,
+            "w": 160,
+            "h": 75,
+            "r": 8,
+            "fill": true,
+            "color": "#1e2a30",
+            "visible": true
+          },
+          "frame": {
+            "x": 40,
+            "y": 30,
+            "w": 160,
+            "h": 75,
+            "r": 8,
+            "fill": false,
+            "color": "#9ce5ac",
+            "visible": true
+          },
+          "msg": {
+            "x": 120,
+            "y": 55,
+            "datum": "MC",
+            "size": 1.5,
+            "color": "#ffffff",
+            "text": "Delete?",
+            "visible": true
+          },
+          "hint": {
+            "x": 120,
+            "y": 88,
+            "datum": "MC",
+            "size": 1,
+            "color": "#9ce5ac",
+            "text": "A:OK  B:Cancel",
+            "visible": true
+          }
         }
       }
     }
@@ -393,6 +543,38 @@
         },
         {
           "id": "row1",
+          "type": "Text",
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "id": "Dialog",
+      "desc": "前の画面に重ねる確認ダイアログ（透過シーン）",
+      "transparent": true,
+      "parts": [
+        {
+          "id": "shadow",
+          "type": "Rect",
+          "desc": ""
+        },
+        {
+          "id": "box",
+          "type": "Rect",
+          "desc": ""
+        },
+        {
+          "id": "frame",
+          "type": "Rect",
+          "desc": ""
+        },
+        {
+          "id": "msg",
+          "type": "Text",
+          "desc": "確認メッセージ"
+        },
+        {
+          "id": "hint",
           "type": "Text",
           "desc": ""
         }

@@ -53,6 +53,13 @@ namespace lgfxsb
     const char *name = nullptr;
     uint16_t partStart = 0;   // start index into parts[]
     uint16_t partCount = 0;
+
+    // Transparent (overlay) scene (§8.16): a dialog-style screen drawn ON TOP of
+    // whatever is already on the panel. The background fill is skipped and, in a
+    // buffered build, the tile is pushed with Project::transparentColor masked
+    // out. Appended per the evolution rule above: a header from an older tool
+    // omits it and every scene stays opaque.
+    bool transparent = false;
   };
 
   // Profile definition (§8.9). Auto-detection is based on screen size only.
@@ -89,6 +96,12 @@ namespace lgfxsb
     // take the defaults below (see the evolution rule at the top of this file).
     const AssetDesc *assets = nullptr;   // image assets (RGB565); referenced by PartDesc::assetIndex
     uint16_t assetCount = 0;
+
+    // Color-key for transparent scenes (§8.16), 0xRRGGBB. Only meaningful when a
+    // scene has SceneDesc::transparent set; a project without one omits it, so
+    // the default stands. The default is LovyanGFX's TFT_TRANSPARENT (RGB565
+    // 0x0120) expressed as RGB888 == LGFXVirtualCanvas's own default.
+    uint32_t transparentColor = 0x002400;
   };
 
 } // namespace lgfxsb

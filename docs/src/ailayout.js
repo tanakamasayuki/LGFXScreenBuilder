@@ -5,13 +5,13 @@
 // Node, like codegen.js.
 //
 // Shape (1 scene x all profiles):
-//   { format, version, scene, desc, background?, profiles: [
+//   { format, version, scene, desc, transparent?, background?, profiles: [
 //       { id, w, h, rot, parts: [ <part> ... ] } ] }
 // A <part> mirrors model.js placement factories. The part SET (id/type)
 // is identical across every profile (data contract §8.2); only placement
 // differs per profile.
 
-import { sceneById, placement, profileFonts } from './model.js';
+import { sceneById, placement, profileFonts, isTransparentScene, transparentColorOf } from './model.js';
 import { contentOf, fontByName, heightOf } from './fonts.js';
 
 // The AI-facing interface contract, embedded in the output as `spec` so an AI
@@ -82,7 +82,14 @@ export function buildAiLayout(project, sceneId) {
     spec: AI_LAYOUT_DOC_URL, // where to read the field types and rules
     scene: scene.id,
     desc: scene.desc || '',
+    // Transparent (overlay) scene (§8.16): editable, and it changes what the AI
+    // should design — no background of its own, so it must not rely on one.
+    // Emitted only when set, mirroring how the model stores it.
+    transparent: isTransparentScene(scene) || undefined,
+    // Visual context. For a transparent scene the color key matters more than the
+    // background (a part painted in it is punched out), so it comes along too.
     background: project.background || undefined, // dropped by JSON.stringify when undefined
+    transparentColor: isTransparentScene(scene) ? transparentColorOf(project) : undefined,
     fonts,
     profiles,
   };

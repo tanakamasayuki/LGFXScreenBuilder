@@ -17,7 +17,9 @@ python -m http.server 8000 --directory docs
   tabs); each profile holds an independent layout per scene (SPEC §8.9.6). Canvas
   rendering of all part types (Rect with corner radius / fill, Line, Circle with
   fill, Text with datum, Image), layer list, inspector, drag-move, arrow-key
-  nudge/resize (§8.14), zoom, and scene-level properties on deselect. Scenes and
+  nudge/resize (§8.14), zoom, and scene-level properties on deselect (including the
+  transparent-scene flag of §8.16, which swaps the canvas background for the
+  image-editor checkerboard and marks parts painted in the color key). Scenes and
   parts can be added (the part type is picked from a "+ Add" dropdown), reordered
   (↑/↓), renamed, and deleted (from the right-side inspector); adding or removing a
   part/scene updates every profile's layout in lockstep (§8.9.6). The layer panel

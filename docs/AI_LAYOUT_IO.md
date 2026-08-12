@@ -32,7 +32,9 @@ fit a tall one.
   "spec": "https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.md",
   "scene": "Main",            // screen name (a C identifier)
   "desc": "",                 // free-text note about the screen
+  "transparent": true,        // OPTIONAL: this screen is an overlay (see below); omit for a normal screen
   "background": "#000000",    // full-screen background color (context; usually leave as-is)
+  "transparentColor": "#002400", // only present when "transparent": the color that becomes a hole (context)
   "fonts": [                  // adopted fonts available to this layout (context; do not edit)
     { "name": "Font4", "family": "Font4", "content": "latin", "size": null, "unit": null, "height": null },
     { "name": "efontJA_16", "family": "efontJA", "content": "ja", "size": 16, "unit": "px", "height": 16 }
@@ -51,6 +53,28 @@ fit a tall one.
   context for choosing Text `font` values; echo it back unchanged.
 - profile `fonts` — the font names enabled and selectable on that profile. A Text
   may use only `null` or a font name from the same profile's `fonts` array.
+
+### Transparent screens (overlays)
+
+`"transparent": true` marks the screen as an **overlay**: a dialog drawn on top of
+whatever screen the device is already showing. It has **no background of its own** —
+every pixel the parts do not cover keeps showing the screen underneath.
+
+Design consequences, when you see this flag:
+
+- **Do not rely on the background color.** `background` is what the *other* screens
+  paint; this one paints nothing. Cover what you need to cover with a Rect.
+- **Do not fill the whole screen** just to get a backdrop. That defeats the purpose:
+  the point is that only the dialog is drawn. Keep it to a box (usually centered,
+  with a margin), a border, and text.
+- **Never use `transparentColor` as a part color.** That exact color is dropped from
+  the transfer, so a part painted in it becomes a hole rather than a shape.
+- Nothing else changes: parts, coordinates, and per-profile layout work as usual.
+
+The flag is **editable**: set it when the user asks for a dialog / popup / toast
+screen, and remove it (omit the field) when they ask for a normal full screen.
+`transparentColor` is context only — echo it back unchanged, and never invent it for
+a screen that is not transparent.
 
 ---
 
@@ -85,6 +109,7 @@ outside `w`×`h` is clipped. Keep parts inside the screen.
 | `height` (font) | **integer or null** | approximate rendered pixel height at Text `size: 1`. |
 | `color` | **string** | `"#rrggbb"` (6 hex digits, lowercase). |
 | `visible`, `fill` | **boolean** | `true` / `false`. `fill` is used by Rect and Circle. |
+| `transparent` | **boolean** | top-level only, and only when `true` (omit it otherwise). |
 | `id`, `type`, `datum`, `text`, `family`, `content` | **string** | — |
 | `asset`, `font`, `unit` | **string or null** | an asset name / font name / unit, or `null`. |
 | `scene`, `desc`, `spec`, `format` | **string** | — |
@@ -343,6 +368,7 @@ them, causing duplication or mismatch).
 - Don't invent `asset` names — only reference assets that already exist.
 - Don't change `Image.asset` unless explicitly requested, and never add image-slice fields.
 - Don't change a part's `id` or `type` between profiles.
+- Don't paint a part in `transparentColor` on a transparent screen (it becomes a hole), and don't give a transparent screen a full-screen background Rect.
 - Don't add fields not described here, and don't include comments or trailing commas.
 
 ---

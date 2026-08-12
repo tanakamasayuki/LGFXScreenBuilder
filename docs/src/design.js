@@ -7,6 +7,7 @@ import {
   addPart, removePart, renamePart, addScene, removeScene, renameScene, moveScene,
   absOrigin, reorderPart, assetById, profileFonts,
   reconcileAiLayout, applyAiLayout,
+  isTransparentScene, transparentColorOf, to565,
 } from './model.js';
 import { loadMetrics, metricsFor, approxCss, approxWeight, fontByName, fontDetailUrl } from './fonts.js';
 import { aiLayoutJson, parseAiLayout } from './ailayout.js';
@@ -43,7 +44,8 @@ function renderScenes() {
   for (const s of store.project.scenes) {
     const it = document.createElement('div');
     it.className = 'sitem' + (s.id === store.ui.sceneId ? ' active' : '');
-    it.innerHTML = `<span>${s.id}</span><span class="cnt">${t('cnt.parts', { n: s.parts.length })}</span>`;
+    const badge = isTransparentScene(s) ? ` <span class="tbadge" title="${t('field.transparentHint')}">${t('badge.transparent')}</span>` : '';
+    it.innerHTML = `<span>${s.id}${badge}</span><span class="cnt">${t('cnt.parts', { n: s.parts.length })}</span>`;
     it.onclick = () => { lineKeyMode = 'move'; update((st) => { st.ui.sceneId = s.id; st.ui.selected = null; }); };
     el.appendChild(it);
   }
@@ -75,10 +77,18 @@ function renderCanvas() {
   scale = store.ui.zoom;
   scr.style.width = dw * scale + 'px';
   scr.style.height = dh * scale + 'px';
-  scr.style.background = store.project.background;
-  scr.innerHTML = '';
-
   const scene = curScene();
+  // A transparent scene has no background of its own: what shows through is
+  // whatever the device already had on screen. Unknowable here, so it gets the
+  // image-editor checkerboard (§8.16) instead of a color.
+  const transparent = isTransparentScene(scene);
+  scr.classList.toggle('transparent', transparent);
+  scr.style.background = transparent ? '' : store.project.background;
+  scr.innerHTML = '';
+  // Parts painted in the color key are punched out of the transfer on the device,
+  // so they read as holes here too — same checkerboard, same meaning.
+  const key565 = to565(transparentColorOf(store.project));
+  const isKey = (css) => transparent && to565(css) === key565;
   for (const def of scene.parts) {
     const e = curPlacement(def.id);
     if (!e) continue;
@@ -97,6 +107,7 @@ function renderCanvas() {
 
     if (def.type === 'Text') {
       d.style.color = e.color;
+      if (isKey(e.color)) d.classList.add('keywarn');
       // Size = chosen font's native px height × multiplier (default font = 8px).
       // Family/style approximate the preset (exact glyphs come from the device).
       const cat = e.font ? fontByName(e.font) : null;
@@ -127,6 +138,7 @@ function renderCanvas() {
         d.style.width = len + 'px';
         d.style.height = Math.max(1, scale) + 'px';
         d.style.background = e.color;
+        if (isKey(e.color)) d.classList.add('keywarn');
         d.style.transformOrigin = '0 50%';
         d.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
       } else if (def.type === 'Circle') {
@@ -140,6 +152,10 @@ function renderCanvas() {
           d.style.background = 'transparent';
           d.style.border = `${Math.max(1, scale)}px solid ${e.color}`;
           d.style.boxSizing = 'border-box';
+          if (isKey(e.color)) d.classList.add('keywarn');
+        } else if (isKey(e.color)) {
+          d.classList.add('punch');
+          d.style.border = '0';
         } else {
           d.style.background = e.color;
           d.style.border = '0';
@@ -154,6 +170,10 @@ function renderCanvas() {
           d.style.background = 'transparent';
           d.style.border = `${Math.max(1, scale)}px solid ${e.color}`;
           d.style.boxSizing = 'border-box';
+          if (isKey(e.color)) d.classList.add('keywarn');
+        } else if (isKey(e.color)) {
+          d.classList.add('punch');
+          d.style.border = '0';
         } else {
           d.style.background = e.color;
           d.style.border = '0';
@@ -324,11 +344,23 @@ function renderSceneProps() {
   $('props').innerHTML =
     `<div class="field"><label>${t('field.sceneId')}</label><input type="text" id="s-id" value="${s.id}"></div>` +
     readout(t('field.partCount'), s.parts.length) +
+    // Transparent (overlay) scene (§8.16). Lives on the scene, not the profile:
+    // "is this screen a dialog" is the same decision on every device.
+    `<div class="field"><label>${t('field.transparent')}</label>` +
+    `<input type="checkbox" id="s-transparent" ${isTransparentScene(s) ? 'checked' : ''} style="width:auto;min-height:auto"></div>` +
+    `<p class="sub">${t('field.transparentHint')}</p>` +
     `<div class="field"><label>${t('field.descScene')}</label><textarea id="s-desc" rows="3">${s.desc || ''}</textarea></div>` +
     `<p class="sub">${t('hint.sceneProps')}</p>` +
     `<div class="delrow"><button class="mini danger" id="scene-del" ${lastScene ? 'disabled' : ''}>${t('btn.delScene')}</button></div>`;
   const dsc = $('s-desc');
   if (dsc) dsc.oninput = (ev) => { s.desc = ev.target.value; };
+  const tr = $('s-transparent');
+  // Stored only when on, so opaque scenes stay absent from the project file.
+  if (tr) tr.onchange = () => mutate((st) => {
+    const sc = sceneById(st.project, st.ui.sceneId);
+    if (tr.checked) sc.transparent = true;
+    else delete sc.transparent;
+  });
   const idInp = $('s-id');
   if (idInp) idInp.addEventListener('change', () => {
     const nid = renameScene(store.project, s.id, idInp.value);

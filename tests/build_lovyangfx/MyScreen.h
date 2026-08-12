@@ -23,6 +23,13 @@ namespace Scene {
     const char* ttl = nullptr;  // design: Settings
     const char* row1 = nullptr;  // design: Wi-Fi
   };
+  // Transparent scene: drawn ON TOP of whatever is on the panel (no background
+  // fill). Show the screen underneath again to dismiss it.
+  struct Dialog {
+    static constexpr lgfxsb::SceneId id = 3;
+    const char* msg = nullptr;  // design: Delete?
+    const char* hint = nullptr;  // design: A:OK B:Cancel
+  };
 }
 
 namespace detail {
@@ -38,13 +45,19 @@ static const lgfxsb::PartDesc kParts[] = {
   {"header", lgfxsb::PartType::Rect, -1},  // 7 Settings.header
   {"ttl", lgfxsb::PartType::Text, -1},  // 8 Settings.ttl
   {"row1", lgfxsb::PartType::Text, -1},  // 9 Settings.row1
+  {"shadow", lgfxsb::PartType::Rect, -1},  // 10 Dialog.shadow
+  {"box", lgfxsb::PartType::Rect, -1},  // 11 Dialog.box
+  {"frame", lgfxsb::PartType::Rect, -1},  // 12 Dialog.frame
+  {"msg", lgfxsb::PartType::Text, -1},  // 13 Dialog.msg
+  {"hint", lgfxsb::PartType::Text, -1},  // 14 Dialog.hint
 };
-static constexpr uint16_t kPartCount = 10;
+static constexpr uint16_t kPartCount = 15;
 
 static const lgfxsb::SceneDesc kScenes[] = {
   {0, "Boot", 0, 2},
   {1, "Main", 2, 5},
   {2, "Settings", 7, 3},
+  {3, "Dialog", 10, 5, true},
 };
 
 // {x, y, w, h, x2, y2, r, datum, size, color, fill, visible, font, text}
@@ -60,6 +73,11 @@ static const lgfxsb::PartLayout kLayouts[] = {
   {0, 0, 320, 40, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Settings.header
   {12, 10, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TopLeft, 2.0f, 0xffffff, true, true, nullptr, "Settings"},  // Settings.ttl
   {18, 60, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TopLeft, 2.0f, 0xffffff, true, true, nullptr, "Wi-Fi"},  // Settings.row1
+  {66, 76, 200, 100, 0, 0, 10, 0, 0.0f, 0x000000, true, true, nullptr, nullptr},  // Dialog.shadow
+  {60, 70, 200, 100, 0, 0, 10, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Dialog.box
+  {60, 70, 200, 100, 0, 0, 10, 0, 0.0f, 0x9ce5ac, false, true, nullptr, nullptr},  // Dialog.frame
+  {160, 105, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MidCenter, 2.0f, 0xffffff, true, true, nullptr, "Delete?"},  // Dialog.msg
+  {160, 145, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MidCenter, 1.5f, 0x9ce5ac, true, true, nullptr, "A:OK  B:Cancel"},  // Dialog.hint
   // ---- Profile: Stick 135x240 rot0 ----
   {30, 80, 75, 50, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Boot.logo
   {69, 148, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MidCenter, 1.5f, 0x9ce5ac, true, true, nullptr, "Boot..."},  // Boot.boot
@@ -71,6 +89,11 @@ static const lgfxsb::PartLayout kLayouts[] = {
   {0, 0, 135, 30, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Settings.header
   {8, 7, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TopLeft, 1.5f, 0xffffff, true, true, nullptr, "Settings"},  // Settings.ttl
   {10, 40, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TopLeft, 1.5f, 0xffffff, true, true, nullptr, "Wi-Fi"},  // Settings.row1
+  {14, 84, 115, 80, 0, 0, 8, 0, 0.0f, 0x000000, true, true, nullptr, nullptr},  // Dialog.shadow
+  {10, 80, 115, 80, 0, 0, 8, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Dialog.box
+  {10, 80, 115, 80, 0, 0, 8, 0, 0.0f, 0x9ce5ac, false, true, nullptr, nullptr},  // Dialog.frame
+  {67, 105, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MidCenter, 1.5f, 0xffffff, true, true, nullptr, "Delete?"},  // Dialog.msg
+  {67, 140, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MidCenter, 1.0f, 0x9ce5ac, true, true, nullptr, "A:OK B:No"},  // Dialog.hint
   // ---- Profile: Cardputer 240x135 rot0 ----
   {80, 30, 80, 40, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Boot.logo
   {120, 88, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MidCenter, 1.5f, 0x9ce5ac, true, true, nullptr, "Booting..."},  // Boot.boot
@@ -82,6 +105,11 @@ static const lgfxsb::PartLayout kLayouts[] = {
   {0, 0, 240, 26, 0, 0, 0, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Settings.header
   {8, 5, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TopLeft, 1.5f, 0xffffff, true, true, nullptr, "Settings"},  // Settings.ttl
   {12, 36, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::TopLeft, 1.5f, 0xffffff, true, true, nullptr, "Wi-Fi"},  // Settings.row1
+  {44, 34, 160, 75, 0, 0, 8, 0, 0.0f, 0x000000, true, true, nullptr, nullptr},  // Dialog.shadow
+  {40, 30, 160, 75, 0, 0, 8, 0, 0.0f, 0x1e2a30, true, true, nullptr, nullptr},  // Dialog.box
+  {40, 30, 160, 75, 0, 0, 8, 0, 0.0f, 0x9ce5ac, false, true, nullptr, nullptr},  // Dialog.frame
+  {120, 55, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MidCenter, 1.5f, 0xffffff, true, true, nullptr, "Delete?"},  // Dialog.msg
+  {120, 88, 0, 0, 0, 0, 0, (uint8_t)lgfxsb::Datum::MidCenter, 1.0f, 0x9ce5ac, true, true, nullptr, "A:OK  B:Cancel"},  // Dialog.hint
 };
 
 static const lgfxsb::ProfileDesc kProfiles[] = {
@@ -114,19 +142,21 @@ static constexpr SceneInfo kSceneInfo[] = {
   {"Boot", Scene::Boot::id, 0},
   {"Main", Scene::Main::id, 1},
   {"Settings", Scene::Settings::id, 2},
+  {"Dialog", Scene::Dialog::id, 3},
 };
-static constexpr uint16_t kSceneInfoCount = 3;
+static constexpr uint16_t kSceneInfoCount = 4;
 
 
 } // namespace detail
 
 static const lgfxsb::Project project = {
   detail::kProfiles, 3,
-  detail::kScenes, 3,
+  detail::kScenes, 4,
   detail::kParts, detail::kPartCount,
   detail::kLayouts,
   /*background*/ 0x000000,
   nullptr, 0,
+  /*transparentColor*/ 0x002400,
 };
 
 #if defined(LGFXVIRTUALCANVAS_H)
@@ -143,6 +173,8 @@ class Screen : public lgfxsb::RendererT<Canvas> {
   static void _ovt_Main(Canvas& g, const void* s, const void* fnp) { (*static_cast<void (*const*)(Canvas&, const Scene::Main&)>(fnp))(g, *static_cast<const Scene::Main*>(s)); }
   void (*_ov_Settings)(Canvas&, const Scene::Settings&) = nullptr;
   static void _ovt_Settings(Canvas& g, const void* s, const void* fnp) { (*static_cast<void (*const*)(Canvas&, const Scene::Settings&)>(fnp))(g, *static_cast<const Scene::Settings*>(s)); }
+  void (*_ov_Dialog)(Canvas&, const Scene::Dialog&) = nullptr;
+  static void _ovt_Dialog(Canvas& g, const void* s, const void* fnp) { (*static_cast<void (*const*)(Canvas&, const Scene::Dialog&)>(fnp))(g, *static_cast<const Scene::Dialog*>(s)); }
  public:
   explicit Screen(lgfx::LGFX_Device& gfx) : Base(gfx, project) {}
   void setProfile(Profile p) { _profile = static_cast<uint8_t>(p); }
@@ -168,6 +200,13 @@ class Screen : public lgfxsb::RendererT<Canvas> {
     renderScene(Scene::Settings::id, v, 3, _ov_Settings ? &_ovt_Settings : nullptr, &s, &_ov_Settings);
   }
   void setOverlay(void (*fn)(Canvas&, const Scene::Settings&)) { _ov_Settings = fn; }
+  void show(const Scene::Dialog& s) {
+    lgfxsb::Value v[5];
+    if (s.msg) v[3] = lgfxsb::Value::text(s.msg);
+    if (s.hint) v[4] = lgfxsb::Value::text(s.hint);
+    renderScene(Scene::Dialog::id, v, 5, _ov_Dialog ? &_ovt_Dialog : nullptr, &s, &_ov_Dialog);
+  }
+  void setOverlay(void (*fn)(Canvas&, const Scene::Dialog&)) { _ov_Dialog = fn; }
 };
 
 } // namespace MyScreen

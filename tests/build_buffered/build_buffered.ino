@@ -54,6 +54,13 @@ void setup() {
 
   screen.show(Scene::Main{}); // static parts + overlay, composited per tile
   Serial.printf("PNG saved=%d\n", savePng(lcd, "output/build_buffered.png"));
+
+  // Transparent scene (§8.16): pushed with the color key masked out, so Main
+  // must still be on the panel around the dialog. Needs LGFXVirtualCanvas
+  // 1.4.0+ in a buffered build, which this sketch.yaml pins.
+  Serial.printf("TRANSPARENT %d\n", (int)screen.supportsTransparentScenes());
+  screen.show(Scene::Dialog{});
+  Serial.printf("DIALOG saved=%d\n", savePng(lcd, "output/dialog.png"));
   Serial.println("TEST done");
 }
 

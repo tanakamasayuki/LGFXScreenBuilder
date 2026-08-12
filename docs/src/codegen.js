@@ -4,7 +4,10 @@
 //
 // Output shape matches examples/Basic/MyScreen.h. Generated-code comments are
 // English-only per SPEC §10/§13.
-import { sceneById, placement, DATUMS, profileFonts } from './model.js';
+import {
+  sceneById, placement, DATUMS, profileFonts,
+  isTransparentScene, hasTransparentScene, transparentColorOf,
+} from './model.js';
 import { buildAiLayout, AI_LAYOUT_DOC_URL } from './ailayout.js';
 import { FORMAT_VERSION } from './version.js';
 
@@ -72,6 +75,10 @@ export function generateHeader(project, opts = {}) {
   // Scene structs
   s += `namespace Scene {\n`;
   project.scenes.forEach((sc, i) => {
+    if (isTransparentScene(sc)) {
+      s += `  // Transparent scene: drawn ON TOP of whatever is on the panel (no background\n`;
+      s += `  // fill). Show the screen underneath again to dismiss it.\n`;
+    }
     s += `  struct ${sc.id} {\n    static constexpr lgfxsb::SceneId id = ${i};\n`;
     s += structBody(sc, 2, defProfile);
     s += `  };\n`;
@@ -90,10 +97,14 @@ export function generateHeader(project, opts = {}) {
   });
   s += `};\nstatic constexpr uint16_t kPartCount = ${flat.length};\n\n`;
 
+  // A transparent scene appends the flag; opaque scenes stay at the four legacy
+  // fields so a project without one generates byte-identical output to before
+  // (§8.16). SceneDesc::transparent defaults to false for the omitted case.
   s += `static const lgfxsb::SceneDesc kScenes[] = {\n`;
   project.scenes.forEach((sc, i) => {
     const r = sceneRange[sc.id];
-    s += `  {${i}, ${cstr(sc.id)}, ${r.start}, ${r.count}},\n`;
+    const transp = isTransparentScene(sc) ? ', true' : '';
+    s += `  {${i}, ${cstr(sc.id)}, ${r.start}, ${r.count}${transp}},\n`;
   });
   s += `};\n\n`;
 
@@ -179,7 +190,13 @@ export function generateHeader(project, opts = {}) {
   s += `  detail::kParts, detail::kPartCount,\n`;
   s += `  detail::kLayouts,\n`;
   s += `  /*background*/ ${hex(project.background)},\n`;
-  s += assets.length ? `  detail::kAssets, ${assets.length},\n};\n\n` : `  nullptr, 0,\n};\n\n`;
+  s += assets.length ? `  detail::kAssets, ${assets.length},\n` : `  nullptr, 0,\n`;
+  // Color key, emitted only when a scene actually needs it; otherwise the
+  // descriptor keeps its legacy shape and Project::transparentColor defaults.
+  if (hasTransparentScene(project)) {
+    s += `  /*transparentColor*/ ${hex(transparentColorOf(project))},\n`;
+  }
+  s += `};\n\n`;
 
   // Render mode is fixed at compile time by whether <LGFXVirtualCanvas.h> was
   // included before this header (§10): the drawing-surface type Canvas is the
@@ -316,6 +333,10 @@ export function generateSketch(project, framework, opts = {}) {
       ? `// Tours every screen: press button A for the next one.\n`
       : `// Tours every screen: auto-advances every 2.5 s.\n`;
   }
+  if (hasTransparentScene(project)) {
+    s += `// A transparent scene lands on top of the screen shown before it; the next\n`;
+    s += `// screen in the tour repaints the whole panel again.\n`;
+  }
   s += `${inc}\n`;
   if (buffered) {
     // __has_include guard: keep compiling even if the LGFXVirtualCanvas library
@@ -323,6 +344,10 @@ export function generateSketch(project, framework, opts = {}) {
     // this whole block to always draw directly.
     s += `// Tiled double-buffering (less flicker). Install the LGFXVirtualCanvas library;\n`;
     s += `// without it this falls back to direct drawing. Delete this block to draw directly.\n`;
+    if (hasTransparentScene(project)) {
+      s += `// This project has a transparent scene, so buffered drawing wants\n`;
+      s += `// LGFXVirtualCanvas 1.4.0 or newer (older versions draw it opaque).\n`;
+    }
     s += `#if __has_include(<LGFXVirtualCanvas.h>)\n`;
     s += `#include <LGFXVirtualCanvas.h>\n`;
     s += `#else\n`;

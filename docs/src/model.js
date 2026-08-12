@@ -2,15 +2,36 @@
 //
 // Shape (rich editor form; serialized to .lgfxsb.json, §9):
 //   project = {
-//     name, targetLibrary, background ('#rrggbb'),
+//     name, targetLibrary, background ('#rrggbb'), transparentColor ('#rrggbb'),
 //     profiles: [{ id, w, h, rotation, layout }],
 //       layout: { [sceneId]: { [partId]: placement } }   // per profile, per scene, per part
-//     scenes:   [{ id, desc, parts:[{ id, type, desc, asset }] }],
+//     scenes:   [{ id, desc, transparent, parts:[{ id, type, desc, asset }] }],
 //   }
 // Each profile holds a complete, independent layout per scene (no base/override; §8.9.6).
 // The generated struct depends only on part id/type (§8.2); placement lives here.
 
 export const PART_TYPES = ['Rect', 'Line', 'Circle', 'Text', 'Image'];
+
+// Color key for transparent (overlay) scenes (§8.16). Default = LovyanGFX's
+// TFT_TRANSPARENT (RGB565 0x0120) as #rrggbb, i.e. LGFXVirtualCanvas's own
+// default, so a project that never touches the setting needs no C++ side change.
+export const DEFAULT_TRANSPARENT_COLOR = '#002400';
+export const transparentColorOf = (project) =>
+  (project && project.transparentColor) || DEFAULT_TRANSPARENT_COLOR;
+// A scene drawn on top of whatever is already on the panel (dialogs etc.): no
+// background fill, and the color key is masked out of the transfer.
+export const isTransparentScene = (scene) => !!(scene && scene.transparent);
+// Whether the project needs the transparent-scene fields in its generated header.
+export const hasTransparentScene = (project) =>
+  (project.scenes || []).some(isTransparentScene);
+
+// RGB565 quantization: the panel (and therefore the color-key comparison) is
+// 16-bit, so two distinct #rrggbb values can collide once drawn. Used by the
+// export check that warns about a part painted in the key color (§8.16).
+export function to565(css) {
+  const v = parseInt(String(css || '#000000').replace('#', ''), 16) || 0;
+  return (((v >> 16) & 0xF8) << 8) | (((v >> 8) & 0xFC) << 3) | ((v & 0xFF) >> 3);
+}
 
 // 9-point datum codes, ordering matches lgfxsb::Datum / LovyanGFX textdatum_t.
 // Display labels are localized via i18n (datum.<code>).
@@ -60,6 +81,15 @@ export function sampleProject() {
         { id: 'row1', type: 'Text', desc: '' },
       ],
     },
+    {
+      id: 'Dialog', desc: '前の画面に重ねる確認ダイアログ（透過シーン）', transparent: true, parts: [
+        { id: 'shadow', type: 'Rect', desc: '' },
+        { id: 'box', type: 'Rect', desc: '' },
+        { id: 'frame', type: 'Rect', desc: '' },
+        { id: 'msg', type: 'Text', desc: '確認メッセージ' },
+        { id: 'hint', type: 'Text', desc: '' },
+      ],
+    },
   ];
 
   const profiles = [
@@ -82,6 +112,13 @@ export function sampleProject() {
           ttl: text(12, 10, 'TL', 2, '#ffffff', 'Settings'),
           row1: text(18, 60, 'TL', 2, '#ffffff', 'Wi-Fi'),
         },
+        Dialog: {
+          shadow: rect(66, 76, 200, 100, '#000000', true, 10),
+          box: rect(60, 70, 200, 100, '#1e2a30', true, 10),
+          frame: rect(60, 70, 200, 100, '#9ce5ac', true, 10, false),
+          msg: text(160, 105, 'MC', 2, '#ffffff', 'Delete?'),
+          hint: text(160, 145, 'MC', 1.5, '#9ce5ac', 'A:OK  B:Cancel'),
+        },
       },
     },
     {
@@ -103,6 +140,13 @@ export function sampleProject() {
           ttl: text(8, 7, 'TL', 1.5, '#ffffff', 'Settings'),
           row1: text(10, 40, 'TL', 1.5, '#ffffff', 'Wi-Fi'),
         },
+        Dialog: {
+          shadow: rect(14, 84, 115, 80, '#000000', true, 8),
+          box: rect(10, 80, 115, 80, '#1e2a30', true, 8),
+          frame: rect(10, 80, 115, 80, '#9ce5ac', true, 8, false),
+          msg: text(67, 105, 'MC', 1.5, '#ffffff', 'Delete?'),
+          hint: text(67, 140, 'MC', 1, '#9ce5ac', 'A:OK B:No'),
+        },
       },
     },
     {
@@ -123,6 +167,13 @@ export function sampleProject() {
           header: rect(0, 0, 240, 26, '#1e2a30'),
           ttl: text(8, 5, 'TL', 1.5, '#ffffff', 'Settings'),
           row1: text(12, 36, 'TL', 1.5, '#ffffff', 'Wi-Fi'),
+        },
+        Dialog: {
+          shadow: rect(44, 34, 160, 75, '#000000', true, 8),
+          box: rect(40, 30, 160, 75, '#1e2a30', true, 8),
+          frame: rect(40, 30, 160, 75, '#9ce5ac', true, 8, false),
+          msg: text(120, 55, 'MC', 1.5, '#ffffff', 'Delete?'),
+          hint: text(120, 88, 'MC', 1, '#9ce5ac', 'A:OK  B:Cancel'),
         },
       },
     },
@@ -527,7 +578,12 @@ export function reconcileAiLayout(project, obj) {
     if (sig !== canonSig) warnings.push(`profile "${p.id}" part set differs from "${canonical.id}" — "${canonical.id}" used as the definition.`);
   }
 
-  return { errors, warnings, sceneId, exists: !!existingScene, mode: existingScene ? 'update' : 'add', partDefs, layouts, partCount: partDefs.length };
+  return {
+    errors, warnings, sceneId, exists: !!existingScene,
+    mode: existingScene ? 'update' : 'add',
+    transparent: obj.transparent === true, // scene-level flag (§8.16); absent = opaque
+    partDefs, layouts, partCount: partDefs.length,
+  };
 }
 
 // Apply a parsed AI layout (mutates project). Updates the scene if its id exists,
@@ -539,6 +595,10 @@ export function applyAiLayout(project, obj) {
   const desc = typeof obj.desc === 'string' ? obj.desc : '';
   if (scene) { scene.parts = r.partDefs; scene.desc = desc || scene.desc || ''; }
   else { scene = { id: r.sceneId, desc, parts: r.partDefs }; project.scenes.push(scene); }
+  // Transparent is a property of the scene, so it round-trips like desc: the flag
+  // is only stored when set, keeping opaque scenes out of the file (§8.16).
+  if (r.transparent) scene.transparent = true;
+  else delete scene.transparent;
   for (const pr of project.profiles) pr.layout[r.sceneId] = r.layouts[pr.id];
   return { ok: true, sceneId: r.sceneId, mode: r.mode, warnings: r.warnings };
 }

@@ -11,7 +11,12 @@ The initial tests are intentionally small:
 `build_lovyangfx/` and `codegen_roundtrip/` build and render in **direct** mode;
 `build_buffered/` covers the **tiled double-buffer** path (SPEC §10) by including
 `<LGFXVirtualCanvas.h>` before `<LGFXScreenBuilder.h>` — it asserts `isBuffered()`
-is true and that the tiled+overlay frame is non-blank. That test pulls
+is true and that the tiled+overlay frame is non-blank.
+
+Both also cover **transparent scenes** (SPEC §8.16): they show the `Dialog` scene over
+the `Main` frame and check that the dialog drew, that every pixel outside its bounding
+box is byte-identical to the frame underneath (a plain opaque render would have wiped
+it), and — in the buffered build — that the color key never reached the panel. That test pulls
 `LGFXVirtualCanvas` from the Arduino library index (pinned in its `sketch.yaml`).
 
 As the runtime and generator mature, add snapshot and pixel-diff tests here, following the same pattern used by `LGFXVirtualCanvas`.

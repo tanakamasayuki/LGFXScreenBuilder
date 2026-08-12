@@ -2,7 +2,10 @@
 // and download. The first included profile is the final Auto fallback (§8.9).
 import { store } from './store.js';
 import { generateHeader, generateSketch } from './codegen.js';
-import { isValidId } from './model.js';
+import {
+  isValidId, hasTransparentScene, isTransparentScene, transparentColorOf,
+  placement, to565,
+} from './model.js';
 import { saveText, saveAsText, boundFileName, ACCEPT } from './persist.js';
 import { flash } from './toast.js';
 import { t } from './i18n.js';
@@ -88,6 +91,25 @@ function renderChecks() {
     { ok: allValid, t: t('check.idValid') },
     { ok: !dup, t: t('check.idUnique') },
   ];
+  // Transparent scenes (§8.16): the color key is masked out of the transfer, so a
+  // part painted in it becomes a hole instead of a shape. Compared after RGB565
+  // quantization, because that is the depth the panel — and the mask — work at.
+  if (hasTransparentScene(pr)) {
+    const key = to565(transparentColorOf(pr));
+    const hits = new Set();
+    for (const s of pr.scenes) {
+      if (!isTransparentScene(s)) continue;
+      for (const p of s.parts) {
+        for (const prof of pr.profiles) {
+          const e = placement(prof, s.id, p.id);
+          if (e && e.color && to565(e.color) === key) { hits.add(`${s.id}.${p.id}`); break; }
+        }
+      }
+    }
+    checks.push(hits.size
+      ? { ok: false, t: t('check.keyCollision', { list: [...hits].join(', ') }) }
+      : { ok: true, t: t('check.keyClear') });
+  }
   if (included.size === 0) checks.push({ ok: false, t: t('check.selectProfile') });
   else if (included.size === 1) checks.push({ ok: true, t: t('check.single', { id: [...included][0] }) });
   else checks.push({ ok: true, t: t('check.multi', { id: [...included][0] }) });
@@ -106,6 +128,10 @@ export function renderExport() {
   const nameEl = $('export-name');
   if (document.activeElement !== nameEl) nameEl.value = store.project.name || '';
   $('export-buffered').checked = buffered();
+  // The color key only matters when a transparent scene exists, so the field is
+  // hidden until then rather than adding noise to every project (§8.16).
+  $('export-transp-field').hidden = !hasTransparentScene(store.project);
+  $('export-transp').value = transparentColorOf(store.project);
   $('export-embed-ai').checked = embedAi();
   reconcile();
   renderFiles();
@@ -136,6 +162,10 @@ export function initExport() {
   });
   $('export-buffered').addEventListener('change', () => {
     store.project.buffered = $('export-buffered').checked;
+    renderExport();
+  });
+  $('export-transp').addEventListener('input', () => {
+    store.project.transparentColor = $('export-transp').value;
     renderExport();
   });
   $('export-embed-ai').addEventListener('change', () => {

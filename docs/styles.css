@@ -58,7 +58,25 @@ select.icon { padding: 0 4px; }
 .stage { display: grid; place-content: safe center; justify-items: center; padding: 18px; overflow: auto; min-height: 0; }
 .device { padding: 12px; border: 1px solid #253137; border-radius: 8px; background: #263238; }
 .screen { position: relative; overflow: hidden; background: var(--screen); border: 1px solid #000; touch-action: none; user-select: none; }
+/* Transparent (overlay) scene (§8.16): there is no background to preview — the
+   device shows whatever was on the panel — so the canvas gets the image-editor
+   checkerboard. The squares are a fixed CSS size on purpose: like an editor's
+   transparency grid, it is chrome, not content, so it must not scale with zoom. */
+.screen.transparent {
+  background-color: #f4f6f7;
+  background-image: conic-gradient(#c6ccd0 0 25%, #f4f6f7 0 50%, #c6ccd0 0 75%, #f4f6f7 0);
+  background-size: 16px 16px;
+}
 .part { position: absolute; border: 1px solid transparent; overflow: hidden; white-space: nowrap; box-sizing: border-box; cursor: move; }
+/* A part painted in the color key is punched out of the transfer on the device,
+   so a filled shape reads as a hole (same grid) and any other part gets flagged. */
+.part.punch {
+  background-color: #f4f6f7;
+  background-image: conic-gradient(#c6ccd0 0 25%, #f4f6f7 0 50%, #c6ccd0 0 75%, #f4f6f7 0);
+  background-size: 8px 8px;
+  outline: 1px dashed #e0a03c;
+}
+.part.keywarn { outline: 1px dashed #e0a03c; outline-offset: 1px; }
 .part.text { display: flex; align-items: center; color: #fff; font-weight: 650; }
 .part.image { background: #2a3940; border: 1px dashed #5d6d73; }
 .part.selected { border-color: var(--sel); box-shadow: 0 0 0 1px var(--sel) inset; }
@@ -77,6 +95,8 @@ select.icon { padding: 0 4px; }
 .pitem.active { border-color: #8fcac5; background: #e1f2f0; }
 .pitem.dropok { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent) inset; }
 .sitem .cnt, .pitem .ty { color: var(--muted); font-size: 11px; }
+/* Marks a transparent (overlay) scene in the scene list (§8.16). */
+.tbadge { display: inline-block; padding: 0 5px; border-radius: 8px; font-size: 10px; font-weight: 600; vertical-align: 1px; background: #fbeccd; color: #7a5210; border: 1px solid #e0a03c; }
 
 .field { display: grid; gap: 4px; margin-bottom: 9px; }
 .field .lab { display: flex; justify-content: space-between; align-items: baseline; }

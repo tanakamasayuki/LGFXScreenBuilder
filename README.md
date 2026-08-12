@@ -82,8 +82,13 @@ your code only supplies the values that change. See [examples/](examples/).
   [docs/AI_LAYOUT_IO.md](docs/AI_LAYOUT_IO.md), and paste the result back.
 - **Dynamic overlay** (gauges, bars, waveforms) composited into the same buffer as
   the static parts — see [examples/OverlayM5Unified/](examples/OverlayM5Unified/).
+- **Transparent scenes.** Mark a scene as an overlay and it is drawn on top of the
+  screen already on the panel, with no background of its own — a dialog with rounded
+  corners shows the running screen through them, and the screen below is never
+  redrawn. See [examples/DialogM5Unified/](examples/DialogM5Unified/).
 - **Buffered or direct drawing.** Tiled double-buffering via the optional
-  `LGFXVirtualCanvas` library reduces flicker; drop it to draw directly.
+  `LGFXVirtualCanvas` library reduces flicker; drop it to draw directly (transparent
+  scenes want `LGFXVirtualCanvas` 1.4.0 or newer when buffered).
 - **Host screenshots.** Generated metadata lets a host backend render every
   profile × scene to PNG for regression testing — see the live gallery above.
 - **Localized UI:** English, Japanese, Simplified/Traditional Chinese, Korean,
@@ -111,9 +116,10 @@ project's scenes and profiles.
 | [BasicM5Unified](examples/BasicM5Unified/) | M5Unified | minimal `show()` on M5 hardware |
 | [ExportedSample](examples/ExportedSample/) | M5Unified | verbatim Export output — a scene tour (button A advances) |
 | [OverlayM5Unified](examples/OverlayM5Unified/) | M5Unified | a dynamic overlay (live battery bar) over static parts |
+| [DialogM5Unified](examples/DialogM5Unified/) | M5Unified | a transparent scene: a dialog over a screen that is never redrawn |
 
-`ExportedSample` and `OverlayM5Unified` regenerate their `MyScreen.h` from a stored
-project via `tools/gen-fixtures.mjs`, so they always match the current codegen.
+Every example regenerates its `MyScreen.h` from a stored project via
+`tools/gen-fixtures.mjs`, so they always match the current codegen.
 
 ## Documentation
 

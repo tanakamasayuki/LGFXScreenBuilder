@@ -25,7 +25,9 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
   "spec": "https://tanakamasayuki.github.io/LGFXScreenBuilder/AI_LAYOUT_IO.md",
   "scene": "Main",            // 画面名（C 識別子）
   "desc": "",                 // 画面の自由記述メモ
+  "transparent": true,        // 任意: この画面はオーバーレイ（後述）。通常画面では省略する
   "background": "#000000",    // 全画面背景色（文脈情報。通常はそのまま）
+  "transparentColor": "#002400", // "transparent" のときだけ present。穴になる色（文脈情報）
   "fonts": [                  // このレイアウトで利用可能な採用済みフォント（文脈情報。編集しない）
     { "name": "Font4", "family": "Font4", "content": "latin", "size": null, "unit": null, "height": null },
     { "name": "efontJA_16", "family": "efontJA", "content": "ja", "size": 16, "unit": "px", "height": 16 }
@@ -42,6 +44,19 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 - `rot` — 回転 0–3。`0` はパネルのネイティブ向きです。`w`/`h` はすでにその向きを反映しています。
 - トップレベル `fonts` — プロジェクトで採用済みのプリセットフォント。Text の `font` 選択のための文脈情報です。変更せず返します。
 - profile の `fonts` — その profile で有効かつ選択可能なフォント名。Text は `null` または同じ profile の `fonts` 配列にあるフォント名だけを使えます。
+
+### 透過画面（オーバーレイ）
+
+`"transparent": true` はその画面を**オーバーレイ**として指定します。実機がすでに出している画面の上に重ねて描かれるダイアログです。**自前の背景を持たない**ため、パーツが覆っていない画素は下の画面がそのまま見えます。
+
+このフラグがある場合の設計上の帰結:
+
+- **背景色に依拠しない。** `background` は*他の*画面が塗る色で、この画面は何も塗りません。隠したい部分は Rect で覆います。
+- **背景代わりに全画面を塗らない。** それでは目的（ダイアログだけを描く）が失われます。ボックス（通常は余白を取って中央）と枠、テキスト程度に留めます。
+- **`transparentColor` をパーツの色に使わない。** その色は転送から落とされるため、その色のパーツは図形ではなく穴になります。
+- それ以外は通常どおりです。パーツ・座標・profile ごとのレイアウトは変わりません。
+
+このフラグは**編集対象**です。ダイアログ／ポップアップ／トースト画面を依頼されたら設定し、通常の全画面を依頼されたら外します（field を省略）。`transparentColor` は文脈情報なので変更せず返し、透過でない画面に勝手に付けてはいけません。
 
 ---
 
@@ -71,6 +86,7 @@ AI は回答として、**この形式どおりの layout JSON**を出力しま�
 | `height` (font) | **integer or null** | Text `size: 1` のおおよその描画高さ（px）。 |
 | `color` | **string** | `"#rrggbb"`（6 桁 hex、小文字）。 |
 | `visible`, `fill` | **boolean** | `true` / `false`。`fill` は Rect と Circle で使う。 |
+| `transparent` | **boolean** | トップレベルのみ。`true` のときだけ出す（それ以外は省略）。 |
 | `id`, `type`, `datum`, `text`, `family`, `content` | **string** | — |
 | `asset`, `font`, `unit` | **string or null** | asset 名 / font 名 / 単位、または `null`。 |
 | `scene`, `desc`, `spec`, `format` | **string** | — |
@@ -254,6 +270,7 @@ LovyanGFX/M5GFX の `drawLine(x, y, x2, y2, color)` に対応します。stroke-
 - `asset` 名を捏造しない。既存 asset だけを参照する。
 - 明示的に依頼されない限り `Image.asset` を変更しない。画像スライス用 field を追加しない。
 - profile 間で part の `id` や `type` を変えない。
+- 透過画面でパーツを `transparentColor` で塗らない（穴になる）。透過画面に全画面の背景 Rect を置かない。
 - ここにない field を追加しない。コメントや末尾カンマを含めない。
 
 ---

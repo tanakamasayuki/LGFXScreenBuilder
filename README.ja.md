@@ -82,8 +82,12 @@ void loop() { M5.update(); }
   [docs/AI_LAYOUT_IO.ja.md](docs/AI_LAYOUT_IO.ja.md) と一緒に AI へ渡し、結果を貼り戻せます。
 - **動的オーバーレイ**（ゲージ・バー・波形）を静的パーツと同じバッファに合成 —
   [examples/OverlayM5Unified/](examples/OverlayM5Unified/) を参照。
+- **透過シーン。** シーンをオーバーレイ指定すると、自前の背景を持たず、パネルに出ている
+  画面の上に重ねて描かれます。角丸ダイアログの角からは動作中の画面が見え、下の画面は
+  描き直されません — [examples/DialogM5Unified/](examples/DialogM5Unified/) を参照。
 - **バッファ描画 / 直接描画。** 任意の `LGFXVirtualCanvas` ライブラリによるタイル分割
-  ダブルバッファでちらつきを低減。外せば直接描画になります。
+  ダブルバッファでちらつきを低減。外せば直接描画になります（バッファ時の透過シーンには
+  `LGFXVirtualCanvas` 1.4.0 以降が必要）。
 - **host 画面キャプチャ。** 生成メタデータにより host バックエンドで全プロファイル × 全シーンを
   PNG 化し回帰テストできます（上記ギャラリー）。
 - **多言語 UI:** 英語・日本語・簡体字中国語・繁体字中国語・韓国語・スペイン語・フランス語・ドイツ語。
@@ -110,9 +114,10 @@ screen.setOverlay(mainOverlay);       // 1 シーン向けの任意の動的描�
 | [BasicM5Unified](examples/BasicM5Unified/) | M5Unified | M5 ハードでの最小 `show()` |
 | [ExportedSample](examples/ExportedSample/) | M5Unified | Export 出力そのまま — シーンツアー（A ボタンで送り） |
 | [OverlayM5Unified](examples/OverlayM5Unified/) | M5Unified | 静的パーツ上の動的オーバーレイ（電池バー） |
+| [DialogM5Unified](examples/DialogM5Unified/) | M5Unified | 透過シーン: 下を描き直さずに重ねるダイアログ |
 
-`ExportedSample` と `OverlayM5Unified` の `MyScreen.h` は、保存済みプロジェクトから
-`tools/gen-fixtures.mjs` で再生成されるため、常に現行の codegen と一致します。
+各 example の `MyScreen.h` は、保存済みプロジェクトから `tools/gen-fixtures.mjs` で
+再生成されるため、常に現行の codegen と一致します。
 
 ## ドキュメント
 

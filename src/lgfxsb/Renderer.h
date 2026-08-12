@@ -14,8 +14,27 @@
 // tiled double-buffered LGFXVirtualCanvas; otherwise it draws directly to the
 // device. The engine is templated on the canvas type `Canvas` (the generated
 // header selects it), so the same part-drawing code drives both.
+
+// Transparent (overlay) scene support (§8.16). A direct build needs nothing at
+// all — not clearing the screen already leaves the panel showing through. A
+// buffered build needs LGFXVirtualCanvas >= 1.4.0 for renderTransparent(); with
+// an older one a transparent scene degrades to an ordinary opaque screen.
+#if !defined(LGFXVIRTUALCANVAS_H)
+#define LGFXSB_TRANSPARENT_SCENES 1
+#elif (LGFXVIRTUALCANVAS_VERSION_MAJOR > 1) || \
+    (LGFXVIRTUALCANVAS_VERSION_MAJOR == 1 && LGFXVIRTUALCANVAS_VERSION_MINOR >= 4)
+#define LGFXSB_TRANSPARENT_SCENES 1
+#else
+#define LGFXSB_TRANSPARENT_SCENES 0
+#warning "LGFXVirtualCanvas < 1.4.0: transparent (overlay) scenes are drawn as ordinary opaque screens. Update the library to 1.4.0 or newer."
+#endif
+
 namespace lgfxsb
 {
+
+  // The macro above as a value, so only the one `#if` that guards the call to
+  // renderTransparent() has to be a preprocessor conditional.
+  static constexpr bool kTransparentScenes = (LGFXSB_TRANSPARENT_SCENES != 0);
 
   template <class Canvas>
   class RendererT
@@ -91,6 +110,15 @@ namespace lgfxsb
       return _gfx->color565((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
     }
 
+    // Whether this scene is drawn as a transparent overlay (§8.16). False when
+    // the build cannot honor it (buffered on LGFXVirtualCanvas < 1.4.0), so the
+    // scene degrades to an ordinary opaque screen instead of drawing onto an
+    // uninitialized tile.
+    bool isTransparentScene(const SceneDesc *sc) const
+    {
+      return kTransparentScenes && sc && sc->transparent;
+    }
+
     // Draw a whole scene onto a canvas: clear, parts, then the overlay. Templated
     // on `Canvas` so the same code drives the device (direct) and the tiled
     // LGFXVirtualCanvas (buffered); in buffered mode it runs once per tile.
@@ -98,7 +126,11 @@ namespace lgfxsb
                      const Value *values, uint16_t valueCount,
                      OverlayThunk overlay, const void *scene, const void *fnp)
     {
-      g.fillScreen(color565(_project.background));
+      // A transparent scene must NOT paint a background: buffered mode has
+      // already auto-cleared the tile with the color key (LGFXVirtualCanvas SPEC
+      // §22.3), and in direct mode leaving the pixels alone IS the transparency.
+      if (!isTransparentScene(sc))
+        g.fillScreen(color565(_project.background));
       if (sc)
       {
         for (uint16_t k = 0; k < sc->partCount; ++k)
@@ -231,13 +263,30 @@ namespace lgfxsb
         const void *scene;
         const void *fnp;
       } ctx{this, sc, pi, values, valueCount, overlay, scene, fnp};
-      _vscreen.render(
-          [](LGFXVirtualCanvas &g, void *p)
-          {
-            Ctx *c = static_cast<Ctx *>(p);
-            c->self->drawSceneTo(g, c->sc, c->pi, c->values, c->count, c->overlay, c->scene, c->fnp);
-          },
-          &ctx);
+      // Spelled as a raw function pointer (not `auto`) so both render() and
+      // renderTransparent() resolve to their DrawRaw overload.
+      void (*const draw)(LGFXVirtualCanvas &, void *) = [](LGFXVirtualCanvas &g, void *p)
+      {
+        Ctx *c = static_cast<Ctx *>(p);
+        c->self->drawSceneTo(g, c->sc, c->pi, c->values, c->count, c->overlay, c->scene, c->fnp);
+      };
+#if LGFXSB_TRANSPARENT_SCENES
+      if (isTransparentScene(sc))
+      {
+        // Overlay: push the tiles with the color key masked out so the screen
+        // underneath survives (§8.16). renderTransparent() clears each tile with
+        // the key itself, so the library's auto-clear has to be back on for it —
+        // setAutoClear(false) + renderTransparent() is explicitly unsupported
+        // (LGFXVirtualCanvas SPEC §22.3). Restored right after, since an opaque
+        // scene relies on drawSceneTo()'s own fillScreen().
+        _vscreen.setTransparentColor(static_cast<uint32_t>(_project.transparentColor));
+        _vscreen.setAutoClear(true);
+        _vscreen.renderTransparent(draw, &ctx);
+        _vscreen.setAutoClear(false);
+        return;
+      }
+#endif
+      _vscreen.render(draw, &ctx);
 #else
       // Direct: draw straight to the device (Canvas == lgfx::LGFXBase).
       drawSceneTo(*_gfx, sc, pi, values, valueCount, overlay, scene, fnp);
@@ -254,7 +303,8 @@ namespace lgfxsb
     {
 #if defined(LGFXVIRTUALCANVAS_H)
       // drawSceneTo() clears each tile via fillScreen(), so the library's own
-      // per-tile auto-clear is redundant.
+      // per-tile auto-clear is redundant. (renderScene() turns it back on for the
+      // duration of a transparent scene, which needs it; §8.16.)
       _vscreen.setAutoClear(false);
 #endif
     }
@@ -273,6 +323,11 @@ namespace lgfxsb
       return false;
 #endif
     }
+
+    // Whether transparent (overlay) scenes are honored in this build (§8.16).
+    // False only for a buffered build on LGFXVirtualCanvas < 1.4.0, where such a
+    // scene is drawn as an ordinary opaque screen.
+    bool supportsTransparentScenes() const { return kTransparentScenes; }
   };
 
   // Direct-drawing engine, and a backward-compatible name for headers written
@@ -280,3 +335,6 @@ namespace lgfxsb
   using Renderer = RendererT<lgfx::LGFXBase>;
 
 } // namespace lgfxsb
+
+// Not part of the public surface: the value lives on as lgfxsb::kTransparentScenes.
+#undef LGFXSB_TRANSPARENT_SCENES
