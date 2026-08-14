@@ -115,14 +115,41 @@ export function codepointsOfSet(id) {
 // One click for the cases people actually build. These are not a separate kind
 // of set — they just fill in a selection, which stays editable afterwards.
 
+// `sample` is the preview string the template switches to. Without it every
+// template would preview the same characters and the difference between, say,
+// a clock and a Japanese UI would be invisible — which is the whole point of
+// looking at a preview.
 export const TEMPLATES = [
-  { id: 'clock', sets: ['digits'], text: ':./- ' },
-  { id: 'clockJa', sets: ['digits', 'jaPunct'], text: ':./- 年月日時分秒曜月火水木金土日午前後' },
-  { id: 'sensor', sets: ['digits', 'symUnits'], text: ':./%+- ' },
-  { id: 'latinUi', sets: ['ascii', 'latinExt', 'symUnits'], text: '' },
-  { id: 'japaneseUi', sets: ['ascii', 'hiragana', 'katakana', 'jaPunct', 'hanJa1', 'symUnits'], text: '' },
-  { id: 'japaneseFull', sets: ['ascii', 'latinExt', 'hiragana', 'katakana', 'jaPunct', 'hanJa4', 'symUnits', 'symMath'], text: '' },
-  { id: 'multilingual', sets: ['ascii', 'latinExt', 'hiragana', 'katakana', 'jaPunct', 'hanAll', 'hangulAll', 'symUnits'], text: '' },
+  { id: 'clock', sets: ['digits'], text: ':./- ', sample: '12:34' },
+  {
+    id: 'clockJa',
+    sets: ['digits', 'jaPunct'],
+    text: ':./- 年月日時分秒曜月火水木金土日午前後',
+    sample: '12:34 火曜日',
+  },
+  { id: 'sensor', sets: ['digits', 'symUnits'], text: ':./%+- ', sample: '25.6℃ 60%' },
+  { id: 'latinUi', sets: ['ascii', 'latinExt', 'symUnits'], text: '', sample: 'Hello 25.6℃ 100%' },
+  {
+    id: 'japaneseUi',
+    sets: ['ascii', 'hiragana', 'katakana', 'jaPunct', 'hanJa1', 'symUnits'],
+    text: '',
+    sample: 'こんにちは 25.6℃ 気温',
+  },
+  {
+    id: 'japaneseFull',
+    sets: ['ascii', 'latinExt', 'hiragana', 'katakana', 'jaPunct', 'hanJa4', 'symUnits', 'symMath'],
+    text: '',
+    sample: 'こんにちは 25.6℃ 薔薇',
+  },
+  { id: 'chineseUi', sets: ['ascii', 'hanCn1', 'symUnits'], text: '', sample: '你好 25.6℃ 温度' },
+  { id: 'chineseTwUi', sets: ['ascii', 'hanTw1', 'symUnits'], text: '', sample: '你好 25.6℃ 溫度' },
+  { id: 'koreanUi', sets: ['ascii', 'hangulKs', 'symUnits'], text: '', sample: '안녕하세요 25.6℃' },
+  {
+    id: 'multilingual',
+    sets: ['ascii', 'latinExt', 'hiragana', 'katakana', 'jaPunct', 'hanAll', 'hangulAll', 'symUnits'],
+    text: '',
+    sample: 'こんにちは 你好 안녕하세요 25.6℃',
+  },
 ];
 
 export const templateById = (id) => TEMPLATES.find((t) => t.id === id) || null;

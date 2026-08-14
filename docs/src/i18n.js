@@ -274,6 +274,9 @@ export const MESSAGES = {
     'cs.tpl.latinUi': 'Latin UI',
     'cs.tpl.japaneseUi': 'Japanese UI',
     'cs.tpl.japaneseFull': 'Japanese (full)',
+    'cs.tpl.chineseUi': 'Chinese UI (Simpl.)',
+    'cs.tpl.chineseTwUi': 'Chinese UI (Trad.)',
+    'cs.tpl.koreanUi': 'Korean UI',
     'cs.tpl.multilingual': 'Multilingual',
   },
   ja: {
@@ -545,6 +548,9 @@ export const MESSAGES = {
     'cs.tpl.latinUi': '英数UI',
     'cs.tpl.japaneseUi': '日本語UI',
     'cs.tpl.japaneseFull': '日本語（フル）',
+    'cs.tpl.chineseUi': '中国語UI（簡体）',
+    'cs.tpl.chineseTwUi': '中国語UI（繁体）',
+    'cs.tpl.koreanUi': '韓国語UI',
     'cs.tpl.multilingual': '多言語',
   },
   'zh-Hans': {
@@ -816,6 +822,9 @@ export const MESSAGES = {
     'cs.tpl.latinUi': '拉丁界面',
     'cs.tpl.japaneseUi': '日文界面',
     'cs.tpl.japaneseFull': '日文（完整）',
+    'cs.tpl.chineseUi': '中文界面（简体）',
+    'cs.tpl.chineseTwUi': '中文界面（繁体）',
+    'cs.tpl.koreanUi': '韩文界面',
     'cs.tpl.multilingual': '多语言',
   },
   'zh-Hant': {
@@ -1087,6 +1096,9 @@ export const MESSAGES = {
     'cs.tpl.latinUi': '拉丁介面',
     'cs.tpl.japaneseUi': '日文介面',
     'cs.tpl.japaneseFull': '日文（完整）',
+    'cs.tpl.chineseUi': '中文介面（簡體）',
+    'cs.tpl.chineseTwUi': '中文介面（繁體）',
+    'cs.tpl.koreanUi': '韓文介面',
     'cs.tpl.multilingual': '多語言',
   },
   ko: {
@@ -1358,6 +1370,9 @@ export const MESSAGES = {
     'cs.tpl.latinUi': '라틴 UI',
     'cs.tpl.japaneseUi': '일본어 UI',
     'cs.tpl.japaneseFull': '일본어(전체)',
+    'cs.tpl.chineseUi': '중국어 UI(간체)',
+    'cs.tpl.chineseTwUi': '중국어 UI(번체)',
+    'cs.tpl.koreanUi': '한국어 UI',
     'cs.tpl.multilingual': '다국어',
   },
   es: {
@@ -1629,6 +1644,9 @@ export const MESSAGES = {
     'cs.tpl.latinUi': 'Interfaz latina',
     'cs.tpl.japaneseUi': 'Interfaz japonesa',
     'cs.tpl.japaneseFull': 'Japonés (completo)',
+    'cs.tpl.chineseUi': 'Interfaz china (simpl.)',
+    'cs.tpl.chineseTwUi': 'Interfaz china (trad.)',
+    'cs.tpl.koreanUi': 'Interfaz coreana',
     'cs.tpl.multilingual': 'Multilingüe',
   },
   fr: {
@@ -1900,6 +1918,9 @@ export const MESSAGES = {
     'cs.tpl.latinUi': 'Interface latine',
     'cs.tpl.japaneseUi': 'Interface japonaise',
     'cs.tpl.japaneseFull': 'Japonais (complet)',
+    'cs.tpl.chineseUi': 'Interface chinoise (simpl.)',
+    'cs.tpl.chineseTwUi': 'Interface chinoise (trad.)',
+    'cs.tpl.koreanUi': 'Interface coréenne',
     'cs.tpl.multilingual': 'Multilingue',
   },
   de: {
@@ -2171,6 +2192,9 @@ export const MESSAGES = {
     'cs.tpl.latinUi': 'Lateinische UI',
     'cs.tpl.japaneseUi': 'Japanische UI',
     'cs.tpl.japaneseFull': 'Japanisch (vollständig)',
+    'cs.tpl.chineseUi': 'Chinesische UI (verein.)',
+    'cs.tpl.chineseTwUi': 'Chinesische UI (trad.)',
+    'cs.tpl.koreanUi': 'Koreanische UI',
     'cs.tpl.multilingual': 'Mehrsprachig',
   },
 };

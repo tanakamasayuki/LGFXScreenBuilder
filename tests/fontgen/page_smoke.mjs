@@ -105,6 +105,37 @@ await page.fill('#fg-size', '16');
 await page.waitForFunction(() => document.querySelector('#fg-live').height === 16, null, { timeout: 60000 });
 check(true, 'changing the line height updates the live preview');
 
+// Applying a template must switch the preview string too, or every template
+// previews the same characters and the difference is invisible.
+console.log('templates change the preview:');
+const tplSample = async (label) => {
+  await page.locator('#fg-presets .cs-templates .fchip').filter({ hasText: label }).first().click();
+  await page.waitForTimeout(50);
+  return page.inputValue('#fg-live-sample');
+};
+const clockSample = await tplSample(/^Clock$|^時計$/);
+const jaSample = await tplSample(/Japanese UI|日本語UI/);
+const koSample = await tplSample(/Korean UI|韓国語UI/);
+check(clockSample !== jaSample && jaSample !== koSample,
+  `each template previews its own string (${clockSample} / ${jaSample} / ${koSample})`);
+check(/[ぁ-ん]/.test(jaSample), 'the Japanese template previews Japanese');
+check(/[가-힣]/.test(koSample), 'the Korean template previews Korean');
+
+// And the sample must actually render — a template whose own sample falls
+// outside its own selection would warn instead of drawing.
+await page.waitForFunction(() => {
+  const s = document.querySelector('#fg-live-status').textContent;
+  return s && !s.includes('…');
+}, null, { timeout: 90000 });
+const koStatus = await page.locator('#fg-live-status').innerText();
+check(!/not in the selected|選択中の文字種に含まれません/.test(koStatus),
+  `a template's own sample is inside its own selection (${koStatus.trim().slice(0, 70)})`);
+
+// The Korean and Chinese templates exist at all — Japanese should not be the
+// only language with a starting point.
+const tplNames = await page.locator('#fg-presets .cs-templates .fchip').allInnerTexts();
+check(tplNames.length >= 10, `templates cover more than Japanese (${tplNames.length}: ${tplNames.join(', ')})`);
+
 // The local-file licence warning must be present — it is the whole reason
 // local files are allowed at all.
 await page.click('#fg-tab-local');

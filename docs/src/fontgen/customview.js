@@ -25,10 +25,15 @@ let live = null;
 // tracks the selection, so the preview never shows characters the generated
 // font will not contain.
 let sampleEdited = false;
+// A template's own preview string, kept while it still fits the selection.
+let preferredSample = '';
 
 function syncSample() {
   if (sampleEdited || !dlg) return;
-  $('cf-live-sample').value = autoSample(dlgCharset());
+  const cps = dlgCharset();
+  const have = new Set(cps);
+  const fits = preferredSample && [...preferredSample].every((c) => have.has(c.codePointAt(0)));
+  $('cf-live-sample').value = fits ? preferredSample : autoSample(cps);
 }
 
 const blankRecipe = () => ({
@@ -167,6 +172,7 @@ export function openDialog(name = null) {
   $('cf-preview-wrap').hidden = true;
 
   sampleEdited = false;
+  preferredSample = '';
 
   setTab(dlg.recipe.source.kind);
   charsetUI.render();
@@ -261,7 +267,7 @@ export function initCustomFonts() {
   $('cf-live-sample').addEventListener('input', () => {
     // Blanking the field hands control back to the selection.
     sampleEdited = $('cf-live-sample').value.trim() !== '';
-    if (!sampleEdited) syncSample();
+    if (!sampleEdited) { preferredSample = ''; syncSample(); }
     live.refresh();
   });
   $('cf-live-zoom').addEventListener('change', () => live.refresh(0));
@@ -283,6 +289,7 @@ export function initCustomFonts() {
     setSets: (v) => { dlg.recipe.sets = v; updateCount(); live?.refresh(); },
     getText: () => dlg.recipe.customText,
     setText: (v) => { dlg.recipe.customText = v; $('cf-custom').value = v; },
+    setSample: (v) => { preferredSample = v; sampleEdited = false; },
   });
 
   $('cf-charmap-details').addEventListener('toggle', renderCharmapPanel);

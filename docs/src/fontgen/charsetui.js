@@ -22,10 +22,11 @@ const fmt = (n) => n.toLocaleString();
  *   host      - container element
  *   getSets   - () => string[]      current selection
  *   setSets   - (string[]) => void  called on every change
- *   getText   - () => string        current custom text (templates append to it)
- *   setText   - (string) => void
+ *   getText    - () => string       current custom text
+ *   setText    - (string) => void
+ *   setSample  - (string) => void  preview string a template switches to
  */
-export function createCharsetUI({ host, getSets, setSets, getText, setText }) {
+export function createCharsetUI({ host, getSets, setSets, getText, setText, setSample }) {
   function apply(next) {
     setSets(next);
     render();
@@ -45,8 +46,11 @@ export function createCharsetUI({ host, getSets, setSets, getText, setText }) {
       b.title = t('cs.tplApply');
       b.onclick = () => {
         // A template replaces the selection rather than adding to it: half of
-        // one template plus half of another is nobody's intent.
+        // one template plus half of another is nobody's intent. The preview
+        // string switches with it, so the difference between templates is
+        // visible rather than something to infer from the counts.
         setText(tpl.text || '');
+        setSample?.(tpl.sample || '');
         apply([...tpl.sets]);
       };
       row.appendChild(b);

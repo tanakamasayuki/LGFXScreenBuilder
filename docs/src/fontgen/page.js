@@ -125,10 +125,17 @@ let live = null;
 // Whether the user typed their own sample. Until they do, the sample tracks the
 // selection, so the preview never shows characters the font will not contain.
 let sampleEdited = false;
+// A template's own preview string, kept while it still fits the selection so
+// that toggling one checkbox does not throw away the sample that made the
+// template's point.
+let preferredSample = '';
 
 function syncSample() {
   if (sampleEdited) return;
-  $('fg-live-sample').value = autoSample(currentCharset());
+  const cps = currentCharset();
+  const have = new Set(cps);
+  const fits = preferredSample && [...preferredSample].every((c) => have.has(c.codePointAt(0)));
+  $('fg-live-sample').value = fits ? preferredSample : autoSample(cps);
 }
 
 // A sample that shows off whatever the user actually selected.
@@ -303,7 +310,7 @@ export function initFontgen() {
   $('fg-live-sample').addEventListener('input', () => {
     // Blanking the field hands control back to the selection.
     sampleEdited = $('fg-live-sample').value.trim() !== '';
-    if (!sampleEdited) syncSample();
+    if (!sampleEdited) { preferredSample = ''; syncSample(); }
     live.refresh();
   });
   $('fg-live-zoom').addEventListener('change', () => live.refresh(0));
@@ -332,6 +339,7 @@ export function initFontgen() {
     setSets: (v) => { state.sets = v; updateCharsetSummary(); live?.refresh(); },
     getText: () => state.customText,
     setText: (v) => { state.customText = v; $('fg-custom').value = v; },
+    setSample: (v) => { preferredSample = v; sampleEdited = false; },
   });
 
   fillCharmapScope();
