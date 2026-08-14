@@ -221,6 +221,16 @@ export const MESSAGES = {
     'cf.rebuilding': 'Rebuilding generated fonts…',
     'cf.rebuildingOne': 'Rebuilding {name}: {done} / {total}…',
     'cf.rebuildFailed': 'Could not rebuild: {list}. Open Fonts and supply the font file again.',
+
+    // --- charset inspector (§8.7.7) ---
+    'cm.show': 'Show the characters',
+    'cm.scope': 'Show',
+    'cm.scopeSelected': 'Everything selected',
+    'cm.note': 'Grouped by Unicode block. Use the browser’s find (Ctrl+F) to check for a specific character.',
+    'cm.missingNote': 'Struck through = not in this typeface ({n}). Everything else is in the generated font.',
+    'cm.empty': 'No characters selected.',
+    'fg.codeFull': 'Full generated header ({total}).',
+    'fg.codeTruncated': 'Preview only — first {shown} of {total}. Download the .h for the complete file.',
   },
   ja: {
     'app.note': '静的レイアウトエディタ',
@@ -438,6 +448,16 @@ export const MESSAGES = {
     'cf.rebuilding': '生成フォントを再構築中…',
     'cf.rebuildingOne': '{name} を再構築中: {done} / {total}…',
     'cf.rebuildFailed': '再構築できませんでした: {list}。Fonts でフォントファイルを指定し直してください。',
+
+    // --- charset inspector (§8.7.7) ---
+    'cm.show': '収録文字を表示',
+    'cm.scope': '表示対象',
+    'cm.scopeSelected': '選択中のすべて',
+    'cm.note': 'Unicode ブロック別。特定の文字があるかはブラウザの検索（Ctrl+F）で確認できます。',
+    'cm.missingNote': '取り消し線＝この書体に無い文字（{n}）。それ以外は生成フォントに含まれます。',
+    'cm.empty': '文字が選択されていません。',
+    'fg.codeFull': '生成されたヘッダの全文（{total}）。',
+    'fg.codeTruncated': 'これは先頭部分のみの表示です（{total} 中 {shown}）。完全なファイルは .h をダウンロードしてください。',
   },
   'zh-Hans': {
     'app.note': '静态布局编辑器',
@@ -655,6 +675,16 @@ export const MESSAGES = {
     'cf.rebuilding': '正在重新生成字体…',
     'cf.rebuildingOne': '正在重新生成 {name}：{done} / {total}…',
     'cf.rebuildFailed': '无法重新生成：{list}。请在 Fonts 中重新提供字体文件。',
+
+    // --- charset inspector (§8.7.7) ---
+    'cm.show': '显示收录字符',
+    'cm.scope': '显示范围',
+    'cm.scopeSelected': '已选择的全部',
+    'cm.note': '按 Unicode 区块分组。可用浏览器查找（Ctrl+F）确认某个字符是否存在。',
+    'cm.missingNote': '删除线＝该字体没有的字符（{n}）。其余都包含在生成的字体中。',
+    'cm.empty': '尚未选择任何字符。',
+    'fg.codeFull': '生成头文件全文（{total}）。',
+    'fg.codeTruncated': '仅显示开头部分（{total} 中的 {shown}）。完整文件请下载 .h。',
   },
   'zh-Hant': {
     'app.note': '靜態佈局編輯器',
@@ -872,6 +902,16 @@ export const MESSAGES = {
     'cf.rebuilding': '正在重新產生字型…',
     'cf.rebuildingOne': '正在重新產生 {name}：{done} / {total}…',
     'cf.rebuildFailed': '無法重新產生：{list}。請在 Fonts 中重新提供字型檔。',
+
+    // --- charset inspector (§8.7.7) ---
+    'cm.show': '顯示收錄字元',
+    'cm.scope': '顯示範圍',
+    'cm.scopeSelected': '已選擇的全部',
+    'cm.note': '依 Unicode 區塊分組。可用瀏覽器尋找（Ctrl+F）確認某個字元是否存在。',
+    'cm.missingNote': '刪除線＝該字型沒有的字元（{n}）。其餘都包含在產生的字型中。',
+    'cm.empty': '尚未選擇任何字元。',
+    'fg.codeFull': '產生的標頭檔全文（{total}）。',
+    'fg.codeTruncated': '僅顯示開頭部分（{total} 中的 {shown}）。完整檔案請下載 .h。',
   },
   ko: {
     'app.note': '정적 레이아웃 편집기',
@@ -1089,6 +1129,16 @@ export const MESSAGES = {
     'cf.rebuilding': '생성된 폰트를 다시 만드는 중…',
     'cf.rebuildingOne': '{name} 재생성 중: {done} / {total}…',
     'cf.rebuildFailed': '재생성하지 못했습니다: {list}. Fonts에서 폰트 파일을 다시 지정하세요.',
+
+    // --- charset inspector (§8.7.7) ---
+    'cm.show': '수록 문자 보기',
+    'cm.scope': '표시 대상',
+    'cm.scopeSelected': '선택한 전체',
+    'cm.note': '유니코드 블록별로 묶었습니다. 특정 문자가 있는지는 브라우저 찾기(Ctrl+F)로 확인하세요.',
+    'cm.missingNote': '취소선 = 이 서체에 없는 문자({n}개). 나머지는 생성된 폰트에 포함됩니다.',
+    'cm.empty': '선택된 문자가 없습니다.',
+    'fg.codeFull': '생성된 헤더 전문({total}).',
+    'fg.codeTruncated': '앞부분만 표시합니다({total} 중 {shown}). 전체 파일은 .h를 내려받으세요.',
   },
   es: {
     'app.note': 'Editor de diseño estático',
@@ -1306,6 +1356,16 @@ export const MESSAGES = {
     'cf.rebuilding': 'Reconstruyendo las fuentes generadas…',
     'cf.rebuildingOne': 'Reconstruyendo {name}: {done} / {total}…',
     'cf.rebuildFailed': 'No se pudo reconstruir: {list}. Abre Fuentes y vuelve a aportar el archivo.',
+
+    // --- charset inspector (§8.7.7) ---
+    'cm.show': 'Ver los caracteres',
+    'cm.scope': 'Mostrar',
+    'cm.scopeSelected': 'Todo lo seleccionado',
+    'cm.note': 'Agrupados por bloque Unicode. Usa la búsqueda del navegador (Ctrl+F) para comprobar un carácter concreto.',
+    'cm.missingNote': 'Tachado = no está en esta tipografía ({n}). Todo lo demás entra en la fuente generada.',
+    'cm.empty': 'No hay caracteres seleccionados.',
+    'fg.codeFull': 'Cabecera generada completa ({total}).',
+    'fg.codeTruncated': 'Solo una vista previa: los primeros {shown} de {total}. Descarga el .h para el archivo completo.',
   },
   fr: {
     'app.note': "Éditeur de mise en page statique",
@@ -1523,6 +1583,16 @@ export const MESSAGES = {
     'cf.rebuilding': 'Reconstruction des polices générées…',
     'cf.rebuildingOne': 'Reconstruction de {name} : {done} / {total}…',
     'cf.rebuildFailed': 'Reconstruction impossible : {list}. Ouvrez Polices et fournissez de nouveau le fichier.',
+
+    // --- charset inspector (§8.7.7) ---
+    'cm.show': 'Voir les caractères',
+    'cm.scope': 'Afficher',
+    'cm.scopeSelected': 'Toute la sélection',
+    'cm.note': 'Groupés par bloc Unicode. Utilisez la recherche du navigateur (Ctrl+F) pour vérifier un caractère précis.',
+    'cm.missingNote': 'Barré = absent de cette police ({n}). Tout le reste figure dans la police générée.',
+    'cm.empty': 'Aucun caractère sélectionné.',
+    'fg.codeFull': 'En-tête généré complet ({total}).',
+    'fg.codeTruncated': 'Aperçu seulement — les {shown} premiers sur {total}. Téléchargez le .h pour le fichier entier.',
   },
   de: {
     'app.note': 'Statischer Layout-Editor',
@@ -1740,6 +1810,16 @@ export const MESSAGES = {
     'cf.rebuilding': 'Erzeugte Schriften werden neu gebaut…',
     'cf.rebuildingOne': '{name} wird neu gebaut: {done} / {total}…',
     'cf.rebuildFailed': 'Neubau fehlgeschlagen: {list}. Öffne Schriften und gib die Datei erneut an.',
+
+    // --- charset inspector (§8.7.7) ---
+    'cm.show': 'Zeichen anzeigen',
+    'cm.scope': 'Anzeigen',
+    'cm.scopeSelected': 'Alles Ausgewählte',
+    'cm.note': 'Nach Unicode-Block gruppiert. Ob ein bestimmtes Zeichen dabei ist, findest du mit der Browsersuche (Strg+F).',
+    'cm.missingNote': 'Durchgestrichen = in dieser Schriftart nicht vorhanden ({n}). Alles andere steckt in der erzeugten Schrift.',
+    'cm.empty': 'Keine Zeichen ausgewählt.',
+    'fg.codeFull': 'Vollständiger erzeugter Header ({total}).',
+    'fg.codeTruncated': 'Nur eine Vorschau — die ersten {shown} von {total}. Für die ganze Datei das .h herunterladen.',
   },
 };
 

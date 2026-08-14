@@ -377,6 +377,17 @@
       </div>
       <p class="sub"><strong id="cf-charcount"></strong> <span id="cf-estimate"></span></p>
 
+      <!-- Same inspector as the standalone page: a count cannot answer
+           "is ℃ in there", so the actual characters are listed. -->
+      <details class="fg-charmap" id="cf-charmap-details">
+        <summary data-i18n="cm.show">Show the characters</summary>
+        <div class="fg-row">
+          <label><span data-i18n="cm.scope">Show</span><select id="cf-charmap-scope"></select></label>
+          <span class="sub" id="cf-charmap-note"></span>
+        </div>
+        <div class="cm-host" id="cf-charmap"></div>
+      </details>
+
       <div class="fg-preview-wrap" id="cf-preview-wrap" hidden><canvas id="cf-preview"></canvas></div>
       <p class="sub np-err" id="cf-err"></p>
       <p class="sub" id="cf-status"></p>

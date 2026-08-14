@@ -60,6 +60,18 @@ await page.waitForSelector('#cf-overlay:not([hidden])');
 await page.fill('#cf-name', 'PanelFont');
 await page.fill('#cf-size', '16');
 await page.selectOption('#cf-family', 'Roboto');
+
+// The dialog carries the same charset inspector as the standalone page: a
+// preset must be inspectable as characters, not just as a count.
+await page.evaluate(() => { document.querySelector('#cf-charmap-details').open = true; });
+await page.waitForSelector('#cf-charmap .cm-block');
+const dlgMap = await page.locator('#cf-charmap').innerText();
+check(dlgMap.includes('Basic Latin (ASCII)'), 'the dialog lists the selected characters by block');
+await page.selectOption('#cf-charmap-scope', 'units');
+await page.waitForFunction(() => document.querySelector('#cf-charmap').innerText.includes('℃'));
+check(true, 'a single preset can be inspected from the dialog');
+await page.selectOption('#cf-charmap-scope', '');
+
 // Default preset is ASCII; that is enough and keeps the run quick.
 await page.click('#cf-ok');
 // The dialog closes only after the font has actually been built and adopted.

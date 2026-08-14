@@ -110,6 +110,19 @@
         <span class="sub" id="fg-estimate"></span>
         <span class="fg-warn-text" id="fg-charwarn"></span>
       </div>
+
+      <!-- A count alone cannot answer "is ℃ in there". The inspector lists the
+           actual characters, grouped by Unicode block and findable with Ctrl+F. -->
+      <details class="fg-charmap" id="fg-charmap-details">
+        <summary data-i18n="cm.show">Show the characters</summary>
+        <div class="fg-row">
+          <label><span data-i18n="cm.scope">Show</span>
+            <select id="fg-charmap-scope"></select>
+          </label>
+          <span class="sub" id="fg-charmap-note"></span>
+        </div>
+        <div class="cm-host" id="fg-charmap"></div>
+      </details>
     </section>
 
     <!-- ---------------- 4. generate ---------------- -->
@@ -149,6 +162,7 @@
           <button id="fg-copy" data-i18n="fg.copy">Copy to clipboard</button>
           <button id="fg-download-bin" data-i18n="fg.downloadBin">Download raw .u8g2</button>
         </div>
+        <p class="sub" id="fg-code-note"></p>
         <pre class="fg-code" id="fg-code"></pre>
       </div>
     </section>

@@ -14,6 +14,8 @@ LGFXScreenBuilder は LVGL のような GUI フレームワークでは**あり�
 文字列 ID も、ウィジェットツリーも、Web サーバーも不要です。
 
 - **オーサリングツール:** <https://tanakamasayuki.github.io/LGFXScreenBuilder/>
+- **フォントジェネレータ**（単独版 — 本ライブラリを使わなくても `.h` をダウンロードできます）:
+  <https://tanakamasayuki.github.io/LGFXScreenBuilder/fontgen.html>
 - **画面キャプチャギャラリー**（全プロファイル × 全シーンを host バックエンドで描画）:
   <https://tanakamasayuki.github.io/LGFXScreenBuilderScreenshotTest/>
 

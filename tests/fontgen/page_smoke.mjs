@@ -93,6 +93,23 @@ await page.locator('#fg-presets .fchip', { hasText: /Units|単位/ }).first().cl
 const counted = await page.locator('#fg-charcount').innerText();
 check(/\d/.test(counted), `charset summary shows a count (${counted})`);
 
+// A count alone cannot answer "which characters is this?" — the inspector must
+// list them, and must be able to show one preset on its own.
+console.log('charset inspector:');
+await page.evaluate(() => { document.querySelector('#fg-charmap-details').open = true; });
+await page.waitForSelector('#fg-charmap .cm-block');
+const mapAll = await page.locator('#fg-charmap').innerText();
+check(mapAll.includes('℃'), 'the selected set lists ℃ as an actual character');
+check(mapAll.includes('Basic Latin (ASCII)'), 'characters are grouped by Unicode block');
+check(/U\+0020/.test(mapAll), 'each block shows its codepoint range');
+
+await page.selectOption('#fg-charmap-scope', 'kana');
+await page.waitForFunction(() => document.querySelector('#fg-charmap').innerText.includes('Hiragana'));
+const mapKana = await page.locator('#fg-charmap').innerText();
+check(mapKana.includes('あ') && mapKana.includes('ア'), 'a single preset can be inspected on its own');
+check(!mapKana.includes('Basic Latin (ASCII)'), 'inspecting one preset does not show the others');
+await page.selectOption('#fg-charmap-scope', '');
+
 await page.click('#fg-generate');
 await page.waitForSelector('#fg-output:not([hidden])', { timeout: 120000 });
 
@@ -101,6 +118,7 @@ const res = await page.evaluate(() => ({
   glyphs: Number(document.querySelector('#fg-res-glyphs').textContent.replace(/[^0-9]/g, '')),
   height: document.querySelector('#fg-res-height').textContent,
   code: document.querySelector('#fg-code').textContent,
+  codeNote: document.querySelector('#fg-code-note').textContent,
   // ink in the preview canvas proves glyph bitmaps actually rendered
   ink: (() => {
     const cv = document.querySelector('#fg-preview');
@@ -122,6 +140,11 @@ check(res.ink > 50, `preview canvas has ink (${res.ink})`);
 check(res.code.includes('lgfx::U8g2font'), 'header declares an lgfx::U8g2font');
 check(res.code.includes('Apache License 2.0'), 'header carries the licence notice');
 check(/Typeface\s*:\s*Roboto/.test(res.code), 'header names the typeface');
+// The shown code must be the whole file, not a silently elided head — the
+// closing guard is the last thing in the header, so its presence proves it.
+check(/#endif \/\/ LGFXSB_FONT_TESTPANELFONT_H|#endif \/\/ LGFXSB_FONT_MYFONT_H/.test(res.code),
+  'the code pane shows the complete header, down to the closing guard');
+check(/\d/.test(res.codeNote), `the pane says how much is shown (${res.codeNote.trim()})`);
 
 // Characters the typeface lacks must be reported, not silently dropped.
 const notes = await page.locator('#fg-res-notes').innerText();
@@ -152,6 +175,16 @@ check(await inkOf('l') > 5, 'U+006C l survives (plain shapes are not mistaken fo
 // ℃ is what the units preset exists for, but Roboto has no glyph for it — so
 // the honest outcome here is "absent", which is what the notes above reported.
 check(await inkOf('℃') === 0, 'U+2103 ℃ is absent from Roboto and was not faked');
+
+// After a run the inspector doubles as the coverage report: absent characters
+// are struck through in place, so "did my ℃ make it" is one glance.
+const coverage = await page.evaluate(() => {
+  const spans = [...document.querySelectorAll('#fg-charmap .cm-missing')].map((s) => s.textContent).join('');
+  return { note: document.querySelector('#fg-charmap-note').textContent, struck: spans };
+});
+check(coverage.struck.includes('℃'), 'the inspector marks ℃ as missing from this typeface');
+check(!coverage.struck.includes('A'), 'characters the typeface does have are not marked missing');
+check(/\d/.test(coverage.note), `the inspector explains the marking (${coverage.note.trim().slice(0, 60)}…)`);
 
 check(pageErrors.length === 0, `still no uncaught errors${pageErrors.length ? ': ' + pageErrors.join('; ') : ''}`);
 

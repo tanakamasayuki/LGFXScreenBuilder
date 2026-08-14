@@ -7,7 +7,8 @@
 import { store, mutate } from '../store.js';
 import { adoptCustomFont, removeFont, customFontNames, fontEntry } from '../model.js';
 import { t } from '../i18n.js';
-import { PRESETS, PRESET_GROUPS, resolveCharset, splitBmp } from './charsets.js';
+import { PRESETS, PRESET_GROUPS, resolveCharset, splitBmp, codepointsOfPreset } from './charsets.js';
+import { renderCharmap } from './charmap.js';
 import { FONTS } from './googlefonts.js';
 import { buildFont, cachedFont, isCached, rememberLocalFile, hasLocalFile, forgetFont, recipeKey } from './build.js';
 
@@ -104,6 +105,30 @@ function updateCount() {
   $('cf-charcount').textContent = t('fg.charCount', { n: cps.length.toLocaleString() });
   const approx = Math.round(cps.length * (dlg.recipe.size * dlg.recipe.size * 0.18 + 6));
   $('cf-estimate').textContent = cps.length ? t('fg.estimate', { size: fmtBytes(approx) }) : '';
+  renderCharmapPanel();
+}
+
+function fillCharmapScope() {
+  const sel = $('cf-charmap-scope');
+  const keep = sel.value;
+  sel.innerHTML = `<option value="">${t('cm.scopeSelected')}</option>` +
+    PRESETS.map((p) => `<option value="${p.id}">${t('fg.preset.' + p.id)} (${p.count.toLocaleString()})</option>`).join('');
+  if (keep) sel.value = keep;
+}
+
+// Only rendered while the panel is open — a CJK set is twenty thousand nodes'
+// worth of text and nobody should pay for it just by opening the dialog.
+function renderCharmapPanel() {
+  if (!dlg || !$('cf-charmap-details').open) return;
+  const scope = $('cf-charmap-scope').value;
+  const cps = scope ? codepointsOfPreset(scope) : dlgCharset();
+  // After a build the same view reports coverage: characters this typeface
+  // turned out not to have are struck through where they sit.
+  const missing = !scope && dlg.built ? dlg.built.entry.missing : null;
+  $('cf-charmap-note').textContent = missing && missing.length
+    ? t('cm.missingNote', { n: missing.length.toLocaleString() })
+    : t('cm.note');
+  renderCharmap($('cf-charmap'), cps, { missing, emptyText: t('cm.empty') });
 }
 
 function setTab(kind) {
@@ -139,6 +164,8 @@ export function openDialog(name = null) {
 
   setTab(dlg.recipe.source.kind);
   renderPresetChips();
+  fillCharmapScope();
+  $('cf-charmap-details').open = false;
   updateCount();
   $('cf-overlay').hidden = false;
 }
@@ -169,6 +196,7 @@ async function buildNow() {
     });
     dlg.built = { name, entry };
     drawPreview(entry);
+    renderCharmapPanel();
     return dlg.built;
   } catch (e) {
     $('cf-err').textContent = e.message;
@@ -232,6 +260,8 @@ export function initCustomFonts() {
     $('cf-filename').textContent = file.name;
   });
 
+  $('cf-charmap-details').addEventListener('toggle', renderCharmapPanel);
+  $('cf-charmap-scope').addEventListener('change', renderCharmapPanel);
   $('cf-preview-btn').addEventListener('click', buildNow);
 
   $('cf-ok').addEventListener('click', async () => {

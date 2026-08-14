@@ -47,6 +47,25 @@
 .fg-n { opacity: .6; font-size: 11px; margin-left: 3px; }
 .fg-summary { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
 
+/* --- charset inspector -------------------------------------------------- */
+.fg-charmap { margin-top: 10px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--soft); }
+.fg-charmap > summary { cursor: pointer; font-size: 12px; color: var(--accent); }
+.fg-charmap .fg-row { margin-top: 8px; }
+.cm-host { max-height: 320px; overflow-y: auto; margin-top: 8px; }
+.cm-block + .cm-block { margin-top: 10px; }
+.cm-head { font-size: 11px; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 2px; margin-bottom: 4px; }
+/* Characters are laid out as wrapping text (not one box each) so a twenty-
+   thousand-glyph CJK set stays a handful of nodes and Ctrl+F still finds them. */
+.cm-chars {
+  font-family: "M PLUS 1 Code", "Noto Sans JP", system-ui, sans-serif;
+  font-size: 16px; line-height: 1.7; letter-spacing: .12em;
+  word-break: break-all; overflow-wrap: anywhere;
+  background: var(--panel); border-radius: 5px; padding: 5px 7px;
+}
+/* Absent from the chosen typeface: shown in place rather than in a separate
+   list, so "is my ℃ in there" is one glance. */
+.cm-missing { color: #b3261e; text-decoration: line-through; opacity: .75; }
+
 /* --- results ------------------------------------------------------------ */
 .fg-primary { border-color: var(--accent); background: var(--accent); color: #fff; font-weight: 650; }
 .fg-primary:hover:not(:disabled) { background: #0a918b; border-color: #0a918b; }

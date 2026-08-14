@@ -7,7 +7,8 @@
 //
 // The same modules back the editor's integrated flow (fontsview.js), which
 // stores a recipe and re-runs this pipeline at export time.
-import { PRESETS, PRESET_GROUPS, resolveCharset, splitBmp } from './charsets.js';
+import { PRESETS, PRESET_GROUPS, resolveCharset, splitBmp, codepointsOfPreset } from './charsets.js';
+import { renderCharmap } from './charmap.js';
 import { FONTS, findFont, loadGoogleFont } from './googlefonts.js';
 import { loadFont, unloadFont, rasterizeSet } from './rasterize.js';
 import { encodeU8g2 } from './u8g2enc.js';
@@ -79,6 +80,32 @@ function updateCharsetSummary() {
   const approx = Math.round(bmp.length * (state.size * state.size * 0.18 + 6));
   $('fg-estimate').textContent = bmp.length ? t('fg.estimate', { size: fmtBytes(approx) }) : '';
   $('fg-generate').disabled = bmp.length === 0;
+  renderCharmapPanel();
+}
+
+// --- charset inspector ----------------------------------------------------
+
+function fillCharmapScope() {
+  const sel = $('fg-charmap-scope');
+  const keep = sel.value;
+  sel.innerHTML = `<option value="">${t('cm.scopeSelected')}</option>` +
+    PRESETS.map((p) => `<option value="${p.id}">${t('fg.preset.' + p.id)} (${p.count.toLocaleString()})</option>`).join('');
+  if (keep) sel.value = keep;
+}
+
+// Rendering twenty thousand characters is not free, so it only happens while
+// the panel is actually open.
+function renderCharmapPanel() {
+  if (!$('fg-charmap-details').open) return;
+  const scope = $('fg-charmap-scope').value;
+  const cps = scope ? codepointsOfPreset(scope) : currentCharset();
+  // After a run, the same view doubles as the coverage report: characters the
+  // typeface turned out not to have are struck through where they sit.
+  const missing = !scope && state.result ? state.result.missing : null;
+  $('fg-charmap-note').textContent = missing && missing.length
+    ? t('cm.missingNote', { n: missing.length.toLocaleString() })
+    : t('cm.note');
+  renderCharmap($('fg-charmap'), cps, { missing, emptyText: t('cm.empty') });
 }
 
 const fmtBytes = (n) => (n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(2)} MB`);
@@ -238,7 +265,19 @@ function showResult() {
 
   const text = $('fg-sample').value.trim() || sampleText(r.glyphs);
   drawPreview(r.glyphs, r.font, text, Number($('fg-zoom').value));
-  $('fg-code').textContent = r.header.slice(0, 4000) + (r.header.length > 4000 ? '\n…\n' : '');
+
+  // Show the whole header. Only a set big enough to make the browser struggle
+  // is cut, and then it says so in words rather than trailing off in an ellipsis
+  // that reads like the file itself ends there.
+  const LIMIT = 512 * 1024;
+  const cut = r.header.length > LIMIT;
+  $('fg-code').textContent = cut ? r.header.slice(0, LIMIT) : r.header;
+  $('fg-code-note').textContent = cut
+    ? t('fg.codeTruncated', { shown: fmtBytes(LIMIT), total: fmtBytes(r.header.length) })
+    : t('fg.codeFull', { total: fmtBytes(r.header.length) });
+
+  // The inspector doubles as the coverage report once a run has happened.
+  renderCharmapPanel();
 }
 
 function download(filename, text, mime) {
@@ -296,6 +335,10 @@ export function initFontgen() {
 
   $('fg-custom').addEventListener('input', () => { state.customText = $('fg-custom').value; updateCharsetSummary(); });
   $('fg-ranges').addEventListener('input', () => { state.customRanges = $('fg-ranges').value; updateCharsetSummary(); });
+
+  fillCharmapScope();
+  $('fg-charmap-details').addEventListener('toggle', renderCharmapPanel);
+  $('fg-charmap-scope').addEventListener('change', renderCharmapPanel);
 
   $('fg-generate').onclick = generate;
   $('fg-zoom').addEventListener('input', () => { if (state.result) showResult(); });

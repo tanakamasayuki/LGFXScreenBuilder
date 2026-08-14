@@ -476,6 +476,16 @@ work by its own authors and is not used here. Curated sets fill what those lists
 chiefly **units & symbols**: the Japanese-mini list has `°` but not `℃` (U+2103), which is
 exactly what a thermometer UI needs.
 
+A count ("4,217 characters") does not tell anyone whether a preset covers what their screen
+needs, so both entry points carry a **charset inspector**: the resolved codepoints listed as
+real characters, grouped by Unicode block, findable with the browser's own Ctrl+F, and
+scopeable to one preset at a time. After a run the same view becomes the coverage report —
+characters the chosen typeface turned out not to have are struck through **in place**, so
+"did my ℃ make it" is one glance rather than a separate list to cross-reference. The
+generated header is likewise shown in full, and says so; only a set large enough to strain
+the browser is cut, and then it says that in words instead of trailing off in an ellipsis
+that reads like the end of the file.
+
 **Two ways to use it, one pipeline.**
 
 - **Standalone page** (`docs/fontgen.html`): typeface → size → characters → download `.h`.
