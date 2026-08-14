@@ -252,6 +252,29 @@ roundtrip('mixed', [
 // 255-byte jump-byte ceiling that encodeU8g2 reports as `skipped`.
 roundtrip('large', Array.from({ length: 120 }, (_, i) => randomGlyph(0x30 + i, 40, 40)), { height: 40, descent: 8 });
 
+// Width and height are UNSIGNED fields, which LovyanGFX's decoder reads exactly
+// at 8 bits, so they may exceed 127. The advance is SIGNED and stops at 7 bits,
+// so it is held inside that range here — a font that needs more is rejected
+// with an explicit error, checked separately below.
+roundtrip('wide', Array.from({ length: 40 }, (_, i) => {
+  const g = randomGlyph(0x4e00 + i, 200, 200);
+  return { ...g, dx: 60, x: 0, y: -20 };
+}), { height: 200, descent: 20 });
+
+// A glyph the format genuinely cannot hold must be refused with something the
+// user can act on, not a bare "too large".
+console.log('format limits:');
+try {
+  encodeU8g2([{ code: 0x3000, w: 10, h: 10, x: 0, y: 0, dx: 195, bits: new Uint8Array(100) }],
+    { height: 200, descent: 20, probeHeight: 200 });
+  fail('an advance beyond the signed 7-bit field was accepted');
+} catch (e) {
+  const named = /"　"/.test(e.message) && /195/.test(e.message) && /63/.test(e.message);
+  const advises = /character height of \d+px or less/.test(e.message);
+  if (named && advises) console.log(`  ok   the error names the character, the limit and a size that works\n       ${e.message}`);
+  else fail(`unhelpful limit error: ${e.message}`);
+}
+
 // Degenerate glyphs: a zero-size glyph (space) and an all-ink block.
 roundtrip('edge', [
   { code: 0x20, w: 0, h: 0, x: 0, y: 0, dx: 8, bits: new Uint8Array(0) },

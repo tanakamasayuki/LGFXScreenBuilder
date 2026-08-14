@@ -29,9 +29,18 @@
 // Signed fields are stored biased: the decoder does `unsigned - (1 << (cnt-1))`.
 const bias = (cnt) => 1 << (cnt - 1);
 
-// get_unsigned_bits() is only correct for cnt <= 7 (at cnt == 8 with bit_pos 0
-// it over-advances the read pointer), so every bit width is capped there.
-const MAX_BITS = 7;
+// Field widths are bounded by LovyanGFX's decoder, and the two kinds differ:
+//
+//   get_unsigned_bits(cnt) accumulates into a uint_fast8_t and masks with
+//   ((1U << cnt) - 1), so it is exact up to 8 bits.
+//   get_signed_bits(cnt) casts that to int_fast8_t before subtracting the bias;
+//   at cnt == 8 a value of 200 wraps to -56 and the result is wrong, so signed
+//   fields stop at 7.
+//
+// That asymmetry is worth keeping: width and height reach 255 rather than 127,
+// which is what lets a large font encode at all.
+const MAX_UNSIGNED_BITS = 8;
+const MAX_SIGNED_BITS = 7;
 
 // Bits needed to hold 0..max as an unsigned field.
 function unsignedBits(max) {
@@ -121,8 +130,8 @@ function writePairs(bw, pairs, b0, b1) {
 // the search is cheap even for a ten-thousand-glyph CJK set.
 function chooseRunBits(runsPerGlyph) {
   let best = null;
-  for (let b0 = 1; b0 <= MAX_BITS; b0++) {
-    for (let b1 = 1; b1 <= MAX_BITS; b1++) {
+  for (let b0 = 1; b0 <= MAX_UNSIGNED_BITS; b0++) {
+    for (let b1 = 1; b1 <= MAX_UNSIGNED_BITS; b1++) {
       let total = 0;
       for (const runs of runsPerGlyph) total += pairBits(pairsFor(runs, b0, b1), b0, b1);
       if (!best || total < best.total) best = { b0, b1, total };
@@ -159,9 +168,27 @@ export function encodeU8g2(glyphs, font) {
   const bpx = signedBits(Math.min(0, ...usable.map((g) => g.x)), Math.max(0, ...usable.map((g) => g.x)));
   const bpy = signedBits(Math.min(0, ...usable.map((g) => g.y)), Math.max(0, ...usable.map((g) => g.y)));
   const bpd = signedBits(Math.min(0, ...usable.map((g) => g.dx)), Math.max(0, ...usable.map((g) => g.dx)));
-  for (const [name, n] of [['width', bpw], ['height', bph], ['x', bpx], ['y', bpy], ['dx', bpd]]) {
-    if (n > MAX_BITS) throw new Error(`u8g2: glyph ${name} needs ${n} bits (max ${MAX_BITS}) — font size is too large for this format`);
-  }
+  // A field that does not fit is a hard format limit, not a bug to work around.
+  // Say which character hit it and what size would work, because "too large for
+  // this format" leaves the user guessing.
+  const limitFor = (name, n) => {
+    const signed = name === 'x' || name === 'y' || name === 'dx';
+    const max = signed ? MAX_SIGNED_BITS : MAX_UNSIGNED_BITS;
+    if (n <= max) return;
+    const cap = signed ? bias(max) - 1 : (1 << max) - 1;
+    const worst = usable.reduce((a, g) => (Math.abs(g[name === 'dx' ? 'dx' : name]) > Math.abs(a[name === 'dx' ? 'dx' : name]) ? g : a), usable[0]);
+    const value = Math.abs(worst[name === 'dx' ? 'dx' : name]);
+    const asked = font.probeHeight || height;
+    const fits = Math.max(1, Math.floor(asked * cap / value));
+    throw new Error(
+      `u8g2: "${String.fromCodePoint(worst.code)}" needs ${name} = ${value}px, but this format ` +
+      `stores it in ${max} bits (max ${cap}). Try a character height of ${fits}px or less.`);
+  };
+  limitFor('width', bpw);
+  limitFor('height', bph);
+  limitFor('x', bpx);
+  limitFor('y', bpy);
+  limitFor('dx', bpd);
 
   const runsPerGlyph = usable.map((g) => runsOf(g.bits));
   const { b0, b1 } = chooseRunBits(runsPerGlyph);

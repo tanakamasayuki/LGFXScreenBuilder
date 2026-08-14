@@ -287,6 +287,7 @@ const redBox = await page.evaluate(async () => {
 check(redBox.red > 20, `a character the typeface lacks is boxed in red (${redBox.red} px)`);
 check(/red crossed|\u8d64\u3044/.test(redBox.status), `the status explains the red marker (${redBox.status.trim().slice(0, 80)})`);
 
+
 // A count alone cannot answer "which characters is this?" — the inspector must
 // list them, and must be able to show one preset on its own.
 console.log('charset inspector:');
@@ -439,6 +440,21 @@ check((filled.code.match(/License  :/g) || []).length >= 2, 'with a licence for 
 // the font now, just from a different typeface.
 const afterFill = await page.evaluate(() => [...document.querySelectorAll('#fg-charmap .cm-missing')].map((x) => x.textContent).join(''));
 check(!afterFill.includes('℃'), `the inspector no longer marks ℃ missing (${afterFill || 'nothing struck'})`);
+
+// A fallback is a decision about ONE typeface's gaps, so switching typeface must
+// drop it — otherwise it sticks with no way to change or clear it.
+console.log('fallback follows the typeface:');
+const stickiness = await page.evaluate(async () => {
+  const before = !document.querySelector('#fg-fallback-clear').hidden;
+  // Switch to another typeface and back.
+  document.querySelector('#fg-fontsearch').value = 'Inter';
+  document.querySelector('#fg-fontsearch').dispatchEvent(new Event('input'));
+  const tile = [...document.querySelectorAll('#fg-fontlist .fg-font-name')].find((n) => n.textContent === 'Inter');
+  tile.closest('.fg-font').click();
+  await new Promise((r) => setTimeout(r, 100));
+  return { before, offerHidden: document.querySelector('#fg-fallback-offer').hidden };
+});
+check(stickiness.offerHidden, 'changing typeface clears the fallback decision');
 
 check(pageErrors.length === 0, `still no uncaught errors${pageErrors.length ? ': ' + pageErrors.join('; ') : ''}`);
 

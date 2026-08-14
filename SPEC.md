@@ -557,10 +557,21 @@ taken from another one. Three properties make that safe rather than merely conve
   drew from, so the header carries one attribution block per source with its author, licence
   and the characters it supplied. OFL requires exactly this.
 
-The automatic chain is Noto Sans Symbols 2 → Noto Sans → Noto Sans JP → SC → KR; the first
-is there because it exists precisely for the ranges text faces skip (measured against
-Google's own subsets it covers ← ▲ ℃ ≠ ② ☃ Ω, none of which Noto Sans has). A specific
-family can be pinned instead.
+The automatic chain is Noto Sans Symbols 2 → Noto Sans → Noto Sans JP → SC → KR, and each
+one genuinely contributes: of ‰ ℃ ℉ ← ▲ ② ☃ Ω, Symbols 2 draws ▲ ② ☃, Noto Sans draws ② Ω,
+and Noto Sans JP draws everything but Ω. (`unicode-range` is no guide here — all three
+declare coverage of all eight.) A specific family can be pinned instead.
+
+A fallback is a decision about **one** typeface's gaps, so changing the typeface, weight or
+style drops it rather than carrying it onto a font whose gaps are different; and once it is
+on it stays visible and changeable, because a setting that can only be turned on is a trap.
+
+**The format has hard limits, and they are reported as such.** u8g2 stores a glyph's width
+and height in unsigned fields (up to 8 bits, so 255) but its bearings and advance in signed
+ones — and LovyanGFX's decoder casts those through `int_fast8_t`, which caps them at 7 bits,
+so an advance cannot exceed 63px. A font whose glyphs are wider than that genuinely cannot
+be encoded; the error therefore names the character, the limit it hit and the largest
+character height that would work, rather than saying the size is "too large".
 
 Characters above U+FFFF are excluded from the curated sets at generation time rather than
 reported at selection time. A uint16 glyph encoding can never address them, so carrying one

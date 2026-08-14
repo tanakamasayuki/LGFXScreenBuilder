@@ -279,6 +279,8 @@ export const MESSAGES = {
     'cs.tpl.koreanUi': 'Korean UI',
     'cs.tpl.multilingual': 'Multilingual',
 
+    'fb.active': 'Filling gaps from another typeface. Change the source or turn it off:',
+    'fb.clear': 'Turn off',
     // --- fallback fonts (§8.7.7) ---
     'fb.checking': 'Looking for a typeface that has them…',
     'fb.offer': '{n} of the {of} missing characters can be filled in from another typeface. The generated font then carries both, and the header credits both.',
@@ -563,6 +565,8 @@ export const MESSAGES = {
     'cs.tpl.koreanUi': '韓国語UI',
     'cs.tpl.multilingual': '多言語',
 
+    'fb.active': '欠けている文字を別の書体から補完しています。補完元を変更するか、解除できます:',
+    'fb.clear': '解除',
     // --- fallback fonts (§8.7.7) ---
     'fb.checking': 'その文字を持つ書体を探しています…',
     'fb.offer': '欠けている {of} 文字のうち {n} 文字は別の書体から補完できます。生成フォントは両方のグリフを含み、ヘッダは両方を出典として記載します。',
@@ -847,6 +851,8 @@ export const MESSAGES = {
     'cs.tpl.koreanUi': '韩文界面',
     'cs.tpl.multilingual': '多语言',
 
+    'fb.active': '正在从其他字体补齐缺失字符。可更改来源或关闭：',
+    'fb.clear': '关闭',
     // --- fallback fonts (§8.7.7) ---
     'fb.checking': '正在查找拥有这些字符的字体…',
     'fb.offer': '缺失的 {of} 个字符中有 {n} 个可以从其他字体补齐。生成的字体将同时包含两者，头文件也会同时署名。',
@@ -1131,6 +1137,8 @@ export const MESSAGES = {
     'cs.tpl.koreanUi': '韓文介面',
     'cs.tpl.multilingual': '多語言',
 
+    'fb.active': '正在從其他字型補齊缺少字元。可更改來源或關閉：',
+    'fb.clear': '關閉',
     // --- fallback fonts (§8.7.7) ---
     'fb.checking': '正在尋找擁有這些字元的字型…',
     'fb.offer': '缺少的 {of} 個字元中有 {n} 個可以從其他字型補齊。產生的字型將同時包含兩者，標頭檔也會同時署名。',
@@ -1415,6 +1423,8 @@ export const MESSAGES = {
     'cs.tpl.koreanUi': '한국어 UI',
     'cs.tpl.multilingual': '다국어',
 
+    'fb.active': '없는 문자를 다른 서체에서 채우고 있습니다. 서체를 바꾸거나 끌 수 있습니다:',
+    'fb.clear': '끄기',
     // --- fallback fonts (§8.7.7) ---
     'fb.checking': '해당 문자를 가진 서체를 찾는 중…',
     'fb.offer': '없는 {of}자 중 {n}자는 다른 서체에서 채울 수 있습니다. 생성된 폰트는 양쪽 글리프를 모두 담고, 헤더는 양쪽을 모두 출처로 기록합니다.',
@@ -1699,6 +1709,8 @@ export const MESSAGES = {
     'cs.tpl.koreanUi': 'Interfaz coreana',
     'cs.tpl.multilingual': 'Multilingüe',
 
+    'fb.active': 'Rellenando huecos desde otra tipografía. Cambia el origen o desactívalo:',
+    'fb.clear': 'Desactivar',
     // --- fallback fonts (§8.7.7) ---
     'fb.checking': 'Buscando una tipografía que los tenga…',
     'fb.offer': '{n} de los {of} caracteres que faltan pueden tomarse de otra tipografía. La fuente generada llevará ambas, y la cabecera acreditará a las dos.',
@@ -1983,6 +1995,8 @@ export const MESSAGES = {
     'cs.tpl.koreanUi': 'Interface coréenne',
     'cs.tpl.multilingual': 'Multilingue',
 
+    'fb.active': 'Les manques sont comblés depuis une autre police. Changez la source ou désactivez :',
+    'fb.clear': 'Désactiver',
     // --- fallback fonts (§8.7.7) ---
     'fb.checking': 'Recherche d’une police qui les possède…',
     'fb.offer': '{n} des {of} caractères manquants peuvent être repris d’une autre police. La police générée contiendra les deux, et l’en-tête créditera les deux.',
@@ -2267,6 +2281,8 @@ export const MESSAGES = {
     'cs.tpl.koreanUi': 'Koreanische UI',
     'cs.tpl.multilingual': 'Mehrsprachig',
 
+    'fb.active': 'Lücken werden aus einer anderen Schriftart ergänzt. Quelle ändern oder abschalten:',
+    'fb.clear': 'Abschalten',
     // --- fallback fonts (§8.7.7) ---
     'fb.checking': 'Suche nach einer Schriftart, die sie hat…',
     'fb.offer': '{n} der {of} fehlenden Zeichen lassen sich aus einer anderen Schriftart ergänzen. Die erzeugte Schrift enthält dann beide, und der Header nennt beide.',

@@ -116,7 +116,7 @@ function renderFontList() {
       `<span class="fg-font-name" style="font-family:'${f.family}',sans-serif">${f.family}</span>` +
       `<span class="fg-badges"><span class="badge">${f.license.id}</span>` +
       `<span class="sub">${t('fg.script.' + f.script)}</span></span>`;
-    b.onclick = () => { state.family = f.family; renderFontList(); live?.refresh(0); };
+    b.onclick = () => { state.family = f.family; forgetFallback(); renderFontList(); live?.refresh(0); };
     host.appendChild(b);
   }
 }
@@ -212,12 +212,38 @@ async function generate() {
   }
 }
 
+// A fallback is a decision about ONE typeface's gaps. Switching typeface (or
+// weight) makes it meaningless, so it is dropped rather than silently carried
+// over to a font whose gaps are different.
+function forgetFallback() {
+  state.fallback = null;
+  state.fallbackPlan = null;
+  state.primed = null;
+  const box = $('fg-fallback-offer');
+  if (box) box.hidden = true;
+}
+
+// Show the fallback state: once it is on, it stays visible and changeable —
+// otherwise the only way back would be to reload the page.
+function showFallbackActive() {
+  const box = $('fg-fallback-offer');
+  box.hidden = false;
+  $('fg-fallback-apply').hidden = true;
+  $('fg-fallback-clear').hidden = false;
+  $('fg-fallback-text').innerHTML = `<div>${t('fb.active')}</div>`;
+  $('fg-fallback-pick').innerHTML =
+    `<option value="${FALLBACK_AUTO}">${t('fb.auto')}</option>` +
+    FALLBACK_CHAIN.map((f) => `<option value="${f}">${f}</option>`).join('');
+  $('fg-fallback-pick').value = state.fallback;
+}
+
 // Detect what a fallback could supply and offer it. Never applies anything:
 // mixing typefaces changes how the font looks, so it is the user's call.
 async function offerFallback(missing) {
   const box = $('fg-fallback-offer');
   box.hidden = true;
-  if (!missing.length || state.fallback) return;
+  if (state.fallback) { showFallbackActive(); return; }
+  if (!missing.length) return;
 
   $('fg-fallback-text').innerHTML = `<span class="sub">${t('fb.checking')}</span>`;
   box.hidden = false;
@@ -229,6 +255,7 @@ async function offerFallback(missing) {
     return;
   }
   $('fg-fallback-apply').hidden = false;
+  $('fg-fallback-clear').hidden = true;
   state.fallbackPlan = found.map((f) => f.family);
   const covered = found.reduce((a, f) => a + [...f.chars].length, 0);
   $('fg-fallback-text').innerHTML =
@@ -351,6 +378,7 @@ export function initFontgen() {
     state.localFile = { name: file.name.replace(/\.[^.]+$/, ''), buffer: await file.arrayBuffer() };
     $('fg-filename').textContent = file.name;
     if (state.name === 'MyFont') { state.name = sanitizeIdent(state.localFile.name); $('fg-name').value = state.name; }
+    forgetFallback();
     live.refresh(0);
   });
 
@@ -385,6 +413,18 @@ export function initFontgen() {
     if (pick !== FALLBACK_AUTO) state.fallbackPlan = null;
     state.fallback = pick;
     $('fg-fallback-offer').hidden = true;
+    generate();
+  };
+  // Changing the source while it is on re-runs with the new one.
+  $('fg-fallback-pick').addEventListener('change', () => {
+    if (!state.fallback) return;
+    state.fallback = $('fg-fallback-pick').value;
+    state.fallbackPlan = null;
+    generate();
+  });
+  $('fg-fallback-clear').onclick = () => {
+    state.fallback = null;
+    state.fallbackPlan = null;
     generate();
   };
   $('fg-zoom').addEventListener('input', () => { if (state.result) showResult(); });

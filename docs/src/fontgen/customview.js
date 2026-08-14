@@ -141,6 +141,7 @@ function renderCharmapPanel() {
 }
 
 function setTab(kind) {
+  if (dlg && dlg.recipe.source.kind !== kind) forgetFallback();
   dlg.recipe.source.kind = kind;
   live?.refresh(0);
   $('cf-tab-google').classList.toggle('on', kind === 'google');
@@ -174,6 +175,8 @@ export function openDialog(name = null) {
   $('cf-status').textContent = '';
   $('cf-preview-wrap').hidden = true;
   $('cf-fallback-offer').hidden = true;
+  dlg.fallbackPlan = null;
+  if (dlg.recipe.fallback) showFallbackActive();
 
   sampleEdited = false;
   preferredSample = '';
@@ -189,12 +192,39 @@ export function openDialog(name = null) {
 
 const closeDialog = () => { $('cf-overlay').hidden = true; dlg = null; };
 
+// A fallback is a decision about ONE typeface's gaps. Switching typeface (or
+// weight) makes it meaningless, so it is dropped rather than carried over to a
+// font whose gaps are different.
+function forgetFallback() {
+  if (!dlg) return;
+  dlg.recipe.fallback = null;
+  dlg.fallbackPlan = null;
+  dlg.built = null;
+  $('cf-fallback-offer').hidden = true;
+  dlg.fallbackPlan = null;
+  if (dlg.recipe.fallback) showFallbackActive();
+}
+
+// Once it is on, keep it visible and changeable — otherwise the only way back
+// would be to delete the font and start again.
+function showFallbackActive() {
+  $('cf-fallback-offer').hidden = false;
+  $('cf-fallback-apply').hidden = true;
+  $('cf-fallback-clear').hidden = false;
+  $('cf-fallback-text').innerHTML = `<div>${t('fb.active')}</div>`;
+  $('cf-fallback-pick').innerHTML =
+    `<option value="${FALLBACK_AUTO}">${t('fb.auto')}</option>` +
+    FALLBACK_CHAIN.map((f) => `<option value="${f}">${f}</option>`).join('');
+  $('cf-fallback-pick').value = dlg.recipe.fallback;
+}
+
 // Offer to fill gaps from another typeface. Never applies anything on its own:
 // mixing typefaces changes how the font looks, so it is the user's call.
 async function offerFallback(missing) {
   const box = $('cf-fallback-offer');
   box.hidden = true;
-  if (!missing.length || dlg.recipe.fallback) return;
+  if (dlg.recipe.fallback) { showFallbackActive(); return; }
+  if (!missing.length) return;
   $('cf-fallback-text').innerHTML = `<span class="sub">${t('fb.checking')}</span>`;
   box.hidden = false;
   const style = { weight: dlg.recipe.source.weight, italic: !!dlg.recipe.source.italic };
@@ -206,6 +236,7 @@ async function offerFallback(missing) {
     return;
   }
   $('cf-fallback-apply').hidden = false;
+  $('cf-fallback-clear').hidden = true;
   dlg.fallbackPlan = found.map((f) => f.family);
   const covered = found.reduce((a, f) => a + [...f.chars].length, 0);
   $('cf-fallback-text').innerHTML =
@@ -274,8 +305,8 @@ export function initCustomFonts() {
   $('cf-tab-google').addEventListener('click', () => { setTab('google'); dlg.recipe.source.family = $('cf-family').value; });
   $('cf-tab-local').addEventListener('click', () => setTab('local'));
 
-  $('cf-family').addEventListener('change', () => { dlg.recipe.source.family = $('cf-family').value; live.refresh(0); });
-  $('cf-weight').addEventListener('change', () => { dlg.recipe.source.weight = Number($('cf-weight').value); live.refresh(0); });
+  $('cf-family').addEventListener('change', () => { dlg.recipe.source.family = $('cf-family').value; forgetFallback(); live.refresh(0); });
+  $('cf-weight').addEventListener('change', () => { dlg.recipe.source.weight = Number($('cf-weight').value); forgetFallback(); live.refresh(0); });
   $('cf-size').addEventListener('input', () => { dlg.recipe.size = Number($('cf-size').value) || 32; updateCount(); live.refresh(); });
   $('cf-threshold').addEventListener('input', () => { dlg.recipe.threshold = Number($('cf-threshold').value) || 128; live.refresh(); });
 
@@ -316,6 +347,7 @@ export function initCustomFonts() {
     dlg.pendingFile = await file.arrayBuffer();
     dlg.recipe.source.family = file.name.replace(/\.[^.]+$/, '');
     $('cf-filename').textContent = file.name;
+    forgetFallback();
     live.refresh(0);
   });
 
@@ -335,6 +367,20 @@ export function initCustomFonts() {
     if (pick !== FALLBACK_AUTO) dlg.fallbackPlan = null;
     dlg.recipe.fallback = pick;
     $('cf-fallback-offer').hidden = true;
+  dlg.fallbackPlan = null;
+  if (dlg.recipe.fallback) showFallbackActive();
+    buildNow();
+  });
+  // Changing the source while it is on rebuilds with the new one.
+  $('cf-fallback-pick').addEventListener('change', () => {
+    if (!dlg || !dlg.recipe.fallback) return;
+    dlg.recipe.fallback = $('cf-fallback-pick').value;
+    dlg.fallbackPlan = null;
+    buildNow();
+  });
+  $('cf-fallback-clear').addEventListener('click', () => {
+    dlg.recipe.fallback = null;
+    dlg.fallbackPlan = null;
     buildNow();
   });
   $('cf-preview-btn').addEventListener('click', buildNow);
