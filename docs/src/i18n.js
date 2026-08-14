@@ -231,6 +231,12 @@ export const MESSAGES = {
     'cm.empty': 'No characters selected.',
     'fg.codeFull': 'Full generated header ({total}).',
     'fg.codeTruncated': 'Preview only — first {shown} of {total}. Download the .h for the complete file.',
+
+    // --- live preview (§8.7.7) ---
+    'pv.sample': 'Preview text (live)',
+    'pv.loading': 'Loading the typeface…',
+    'pv.ok': '{h}px line height · {w}px wide · {n} characters — actual output pixels.',
+    'pv.someMissing': '{n} of these characters are not in this typeface: {sample}',
   },
   ja: {
     'app.note': '静的レイアウトエディタ',
@@ -458,6 +464,12 @@ export const MESSAGES = {
     'cm.empty': '文字が選択されていません。',
     'fg.codeFull': '生成されたヘッダの全文（{total}）。',
     'fg.codeTruncated': 'これは先頭部分のみの表示です（{total} 中 {shown}）。完全なファイルは .h をダウンロードしてください。',
+
+    // --- live preview (§8.7.7) ---
+    'pv.sample': 'プレビュー文字列（即時）',
+    'pv.loading': '書体を読み込み中…',
+    'pv.ok': '行の高さ {h}px · 幅 {w}px · {n} 文字 — 実際の出力ピクセルです。',
+    'pv.someMissing': 'このうち {n} 文字はこの書体にありません: {sample}',
   },
   'zh-Hans': {
     'app.note': '静态布局编辑器',
@@ -685,6 +697,12 @@ export const MESSAGES = {
     'cm.empty': '尚未选择任何字符。',
     'fg.codeFull': '生成头文件全文（{total}）。',
     'fg.codeTruncated': '仅显示开头部分（{total} 中的 {shown}）。完整文件请下载 .h。',
+
+    // --- live preview (§8.7.7) ---
+    'pv.sample': '预览文字（实时）',
+    'pv.loading': '正在载入字体…',
+    'pv.ok': '行高 {h}px · 宽 {w}px · {n} 个字符 — 即实际输出像素。',
+    'pv.someMissing': '其中 {n} 个字符该字体没有：{sample}',
   },
   'zh-Hant': {
     'app.note': '靜態佈局編輯器',
@@ -912,6 +930,12 @@ export const MESSAGES = {
     'cm.empty': '尚未選擇任何字元。',
     'fg.codeFull': '產生的標頭檔全文（{total}）。',
     'fg.codeTruncated': '僅顯示開頭部分（{total} 中的 {shown}）。完整檔案請下載 .h。',
+
+    // --- live preview (§8.7.7) ---
+    'pv.sample': '預覽文字（即時）',
+    'pv.loading': '正在載入字型…',
+    'pv.ok': '行高 {h}px · 寬 {w}px · {n} 個字元 — 即實際輸出像素。',
+    'pv.someMissing': '其中 {n} 個字元該字型沒有：{sample}',
   },
   ko: {
     'app.note': '정적 레이아웃 편집기',
@@ -1139,6 +1163,12 @@ export const MESSAGES = {
     'cm.empty': '선택된 문자가 없습니다.',
     'fg.codeFull': '생성된 헤더 전문({total}).',
     'fg.codeTruncated': '앞부분만 표시합니다({total} 중 {shown}). 전체 파일은 .h를 내려받으세요.',
+
+    // --- live preview (§8.7.7) ---
+    'pv.sample': '미리보기 문자열(실시간)',
+    'pv.loading': '서체를 불러오는 중…',
+    'pv.ok': '줄 높이 {h}px · 너비 {w}px · {n}자 — 실제 출력 픽셀입니다.',
+    'pv.someMissing': '이 중 {n}자는 이 서체에 없습니다: {sample}',
   },
   es: {
     'app.note': 'Editor de diseño estático',
@@ -1366,6 +1396,12 @@ export const MESSAGES = {
     'cm.empty': 'No hay caracteres seleccionados.',
     'fg.codeFull': 'Cabecera generada completa ({total}).',
     'fg.codeTruncated': 'Solo una vista previa: los primeros {shown} de {total}. Descarga el .h para el archivo completo.',
+
+    // --- live preview (§8.7.7) ---
+    'pv.sample': 'Texto de vista previa (en vivo)',
+    'pv.loading': 'Cargando la tipografía…',
+    'pv.ok': '{h}px de altura de línea · {w}px de ancho · {n} caracteres — píxeles reales de salida.',
+    'pv.someMissing': '{n} de estos caracteres no están en esta tipografía: {sample}',
   },
   fr: {
     'app.note': "Éditeur de mise en page statique",
@@ -1593,6 +1629,12 @@ export const MESSAGES = {
     'cm.empty': 'Aucun caractère sélectionné.',
     'fg.codeFull': 'En-tête généré complet ({total}).',
     'fg.codeTruncated': 'Aperçu seulement — les {shown} premiers sur {total}. Téléchargez le .h pour le fichier entier.',
+
+    // --- live preview (§8.7.7) ---
+    'pv.sample': 'Texte d’aperçu (en direct)',
+    'pv.loading': 'Chargement de la police…',
+    'pv.ok': '{h}px de hauteur de ligne · {w}px de large · {n} caractères — les pixels réellement produits.',
+    'pv.someMissing': '{n} de ces caractères sont absents de cette police : {sample}',
   },
   de: {
     'app.note': 'Statischer Layout-Editor',
@@ -1820,6 +1862,12 @@ export const MESSAGES = {
     'cm.empty': 'Keine Zeichen ausgewählt.',
     'fg.codeFull': 'Vollständiger erzeugter Header ({total}).',
     'fg.codeTruncated': 'Nur eine Vorschau — die ersten {shown} von {total}. Für die ganze Datei das .h herunterladen.',
+
+    // --- live preview (§8.7.7) ---
+    'pv.sample': 'Vorschautext (live)',
+    'pv.loading': 'Schriftart wird geladen…',
+    'pv.ok': '{h}px Zeilenhöhe · {w}px breit · {n} Zeichen — die tatsächlichen Ausgabepixel.',
+    'pv.someMissing': '{n} dieser Zeichen fehlen in dieser Schriftart: {sample}',
   },
 };
 

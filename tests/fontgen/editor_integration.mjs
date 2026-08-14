@@ -57,9 +57,26 @@ await page.waitForSelector('#cf-add');
 await page.click('#cf-add');
 await page.waitForSelector('#cf-overlay:not([hidden])');
 
+// Defaults: a CJK-capable face at a line height that stays legible at 1bpp.
+check(await page.inputValue('#cf-family') === 'Noto Sans JP', 'the dialog defaults to Noto Sans JP');
+check(await page.inputValue('#cf-size') === '32', 'the dialog defaults to a 32px line height');
+
+// The dialog carries the live preview too, beside the controls it previews.
+await page.waitForFunction(() => document.querySelector('#cf-live').height === 32, null, { timeout: 90000 });
+const dlgInk = await page.evaluate(() => {
+  const cv = document.querySelector('#cf-live');
+  const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+  let n = 0;
+  for (let i = 0; i < d.length; i += 4) if (d[i + 1] > 200) n++;
+  return n;
+});
+check(dlgInk > 100, `the dialog's live preview drew glyphs (${dlgInk} px)`);
+
 await page.fill('#cf-name', 'PanelFont');
 await page.fill('#cf-size', '16');
 await page.selectOption('#cf-family', 'Roboto');
+await page.waitForFunction(() => document.querySelector('#cf-live').height === 16, null, { timeout: 90000 });
+check(true, 'changing typeface and size updates the dialog preview');
 
 // The dialog carries the same charset inspector as the standalone page: a
 // preset must be inspectable as characters, not just as a count.

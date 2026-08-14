@@ -11,6 +11,7 @@ import { PRESETS, PRESET_GROUPS, resolveCharset, splitBmp, codepointsOfPreset } 
 import { renderCharmap } from './charmap.js';
 import { FONTS, findFont, loadGoogleFont } from './googlefonts.js';
 import { loadFont, unloadFont, rasterizeSet } from './rasterize.js';
+import { drawGlyphs, createLivePreview } from './preview.js';
 import { encodeU8g2 } from './u8g2enc.js';
 import { emitHeader, sanitizeIdent } from './emit.js';
 import { t, applyStatic, setLang, getLang, detectLanguage, LANGS } from '../i18n.js';
@@ -21,11 +22,13 @@ const $ = (id) => document.getElementById(id);
 
 const state = {
   tab: 'google',            // 'google' | 'local'
-  family: 'M PLUS 1 Code',  // curated family name
+  family: 'Noto Sans JP',   // curated family name
   weight: 400,
   italic: false,
   localFile: null,          // { name, buffer }
-  size: 16,
+  // Line height. 32 by default: 1bpp CJK below ~24px loses the strokes that
+  // tell kanji apart, so the honest starting point is a size that reads.
+  size: 32,
   threshold: 128,
   name: 'MyFont',
   presets: new Set(['ascii']),
@@ -125,7 +128,7 @@ function renderFontList() {
       `<span class="fg-font-name" style="font-family:'${f.family}',sans-serif">${f.family}</span>` +
       `<span class="fg-badges"><span class="badge">${f.license.id}</span>` +
       `<span class="sub">${t('fg.script.' + f.script)}</span></span>`;
-    b.onclick = () => { state.family = f.family; renderFontList(); };
+    b.onclick = () => { state.family = f.family; renderFontList(); live?.refresh(0); };
     host.appendChild(b);
   }
 }
@@ -140,34 +143,11 @@ function setTab(tab) {
 
 // --- preview --------------------------------------------------------------
 
-// Draw a sample string from the generated 1bpp glyphs. This renders the exact
-// bitmaps that go into the header, so what the preview shows is what the panel
-// will show — not a CSS approximation of it.
-function drawPreview(glyphs, font, text, scale) {
-  const cv = $('fg-preview');
-  const byCode = new Map(glyphs.map((g) => [g.code, g]));
-  const chars = [...text].map((ch) => byCode.get(ch.codePointAt(0))).filter(Boolean);
-  const width = chars.reduce((a, g) => a + g.dx, 0) || 1;
-  cv.width = width * scale;
-  cv.height = font.height * scale;
-  const ctx = cv.getContext('2d');
-  ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = getComputedStyle(cv).getPropertyValue('--fg-preview-bg') || '#000';
-  ctx.fillRect(0, 0, cv.width, cv.height);
-  ctx.fillStyle = '#7fe3a0';
-  const baseline = font.height - font.descent;
-  let pen = 0;
-  for (const g of chars) {
-    const top = baseline - g.y - g.h; // inverse of the decoder's yoffset
-    for (let py = 0; py < g.h; py++) {
-      for (let px = 0; px < g.w; px++) {
-        if (!g.bits[py * g.w + px]) continue;
-        ctx.fillRect((pen + g.x + px) * scale, (top + py) * scale, scale, scale);
-      }
-    }
-    pen += g.dx;
-  }
-}
+// Default live-preview sample: Latin, digits, a unit and some Japanese, so the
+// pixel size of both scripts is visible at a glance.
+const LIVE_SAMPLE = 'Hello 25.6\u2103  \u3042\u30a2\u6f22\u5b57 12:34';
+
+let live = null;
 
 // A sample that shows off whatever the user actually selected.
 function sampleText(glyphs) {
@@ -264,7 +244,7 @@ function showResult() {
   $('fg-res-notes').innerHTML = notes.map((n) => `<div class="fg-note">${n}</div>`).join('');
 
   const text = $('fg-sample').value.trim() || sampleText(r.glyphs);
-  drawPreview(r.glyphs, r.font, text, Number($('fg-zoom').value));
+  drawGlyphs($('fg-preview'), r.glyphs, r.font, text, Number($('fg-zoom').value));
 
   // Show the whole header. Only a set big enough to make the browser struggle
   // is cut, and then it says so in words rather than trailing off in an ellipsis
@@ -314,11 +294,32 @@ export function initFontgen() {
   sel.value = getLang();
   sel.addEventListener('change', () => { setLang(sel.value); redrawAll(); });
 
-  $('fg-tab-google').onclick = () => setTab('google');
-  $('fg-tab-local').onclick = () => setTab('local');
+  $('fg-tab-google').onclick = () => { setTab('google'); live.refresh(0); };
+  $('fg-tab-local').onclick = () => { setTab('local'); live.refresh(0); };
   $('fg-fontsearch').addEventListener('input', renderFontList);
-  $('fg-weight').addEventListener('change', () => { state.weight = Number($('fg-weight').value); });
-  $('fg-italic').addEventListener('change', () => { state.italic = $('fg-italic').checked; });
+  $('fg-weight').addEventListener('change', () => { state.weight = Number($('fg-weight').value); live.refresh(0); });
+  $('fg-italic').addEventListener('change', () => { state.italic = $('fg-italic').checked; live.refresh(0); });
+
+  // Live preview: everything that changes how a glyph looks refreshes it.
+  $('fg-live-sample').value = LIVE_SAMPLE;
+  live = createLivePreview({
+    canvas: $('fg-live'),
+    statusEl: $('fg-live-status'),
+    t,
+    settings: () => ({
+      kind: state.tab,
+      family: state.tab === 'google' ? state.family : (state.localFile?.name || ''),
+      weight: state.weight,
+      italic: state.italic,
+      size: state.size,
+      threshold: state.threshold,
+      localBuffer: state.localFile?.buffer || null,
+      sample: $('fg-live-sample').value,
+      scale: Number($('fg-live-zoom').value),
+    }),
+  });
+  $('fg-live-sample').addEventListener('input', () => live.refresh());
+  $('fg-live-zoom').addEventListener('change', () => live.refresh(0));
 
   $('fg-file').addEventListener('change', async () => {
     const file = $('fg-file').files[0];
@@ -326,10 +327,11 @@ export function initFontgen() {
     state.localFile = { name: file.name.replace(/\.[^.]+$/, ''), buffer: await file.arrayBuffer() };
     $('fg-filename').textContent = file.name;
     if (state.name === 'MyFont') { state.name = sanitizeIdent(state.localFile.name); $('fg-name').value = state.name; }
+    live.refresh(0);
   });
 
-  bindNumber('fg-size', 'size', { min: 6, max: 120, onChange: updateCharsetSummary });
-  bindNumber('fg-threshold', 'threshold', { min: 1, max: 255 });
+  bindNumber('fg-size', 'size', { min: 6, max: 120, onChange: () => { updateCharsetSummary(); live.refresh(); } });
+  bindNumber('fg-threshold', 'threshold', { min: 1, max: 255, onChange: () => live.refresh() });
   $('fg-name').value = state.name;
   $('fg-name').addEventListener('input', () => { state.name = $('fg-name').value; });
 
@@ -359,5 +361,6 @@ function redrawAll() {
   renderFontList();
   renderPresets();
   updateCharsetSummary();
+  live?.refresh(0);
   if (state.result) showResult();
 }

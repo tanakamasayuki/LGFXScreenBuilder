@@ -338,7 +338,7 @@
 
       <div class="two">
         <div class="field"><label data-i18n="cf.name">Font name (C identifier)</label><input id="cf-name" value="MyFont"></div>
-        <div class="field"><label data-i18n="fg.size">Line height (px)</label><input id="cf-size" type="number" min="6" max="120" value="16"></div>
+        <div class="field"><label data-i18n="fg.size">Line height (px)</label><input id="cf-size" type="number" min="6" max="120" value="32"></div>
       </div>
 
       <div class="fchips" style="margin-bottom:8px">
@@ -369,6 +369,20 @@
         </div>
         <div class="field"><label data-i18n="fg.threshold">Ink threshold</label><input id="cf-threshold" type="number" min="1" max="255" value="128"></div>
       </div>
+
+      <!-- Live preview sits with the typeface/size controls, not below the
+           dialog: those are the settings you cannot judge from numbers. -->
+      <div class="fg-row">
+        <label class="grow"><span data-i18n="pv.sample">Preview text</span><input type="text" id="cf-live-sample"></label>
+        <label><span data-i18n="fg.zoom">Zoom</span>
+          <select id="cf-live-zoom">
+            <option value="1" selected>1×</option><option value="2">2×</option>
+            <option value="3">3×</option><option value="4">4×</option>
+          </select>
+        </label>
+      </div>
+      <div class="fg-preview-wrap"><canvas id="cf-live"></canvas></div>
+      <p class="sub fg-status" id="cf-live-status"></p>
 
       <div class="field"><label data-i18n="fg.stepCharset">Characters</label><div id="cf-presets"></div></div>
       <div class="two">

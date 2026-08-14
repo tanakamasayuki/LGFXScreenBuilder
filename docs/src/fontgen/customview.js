@@ -9,6 +9,7 @@ import { adoptCustomFont, removeFont, customFontNames, fontEntry } from '../mode
 import { t } from '../i18n.js';
 import { PRESETS, PRESET_GROUPS, resolveCharset, splitBmp, codepointsOfPreset } from './charsets.js';
 import { renderCharmap } from './charmap.js';
+import { drawGlyphs, createLivePreview } from './preview.js';
 import { FONTS } from './googlefonts.js';
 import { buildFont, cachedFont, isCached, rememberLocalFile, hasLocalFile, forgetFont, recipeKey } from './build.js';
 
@@ -17,10 +18,15 @@ const fmtBytes = (n) => (n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${(n / 1024).t
 
 // Dialog state; `editing` is the name being replaced, or null when adding.
 let dlg = null;
+let live = null;
+
+// Default line height 32: 1bpp CJK below ~24px loses the strokes that tell
+// kanji apart, so the starting point is a size that actually reads.
+const LIVE_SAMPLE = 'Hello 25.6\u2103  \u3042\u30a2\u6f22\u5b57 12:34';
 
 const blankRecipe = () => ({
-  source: { kind: 'google', family: 'M PLUS 1 Code', weight: 400, italic: false },
-  size: 16,
+  source: { kind: 'google', family: 'Noto Sans JP', weight: 400, italic: false },
+  size: 32,
   threshold: 128,
   presets: ['ascii'],
   customText: '',
@@ -133,6 +139,7 @@ function renderCharmapPanel() {
 
 function setTab(kind) {
   dlg.recipe.source.kind = kind;
+  live?.refresh(0);
   $('cf-tab-google').classList.toggle('on', kind === 'google');
   $('cf-tab-local').classList.toggle('on', kind === 'local');
   $('cf-src-google').hidden = kind !== 'google';
@@ -162,12 +169,15 @@ export function openDialog(name = null) {
   $('cf-status').textContent = '';
   $('cf-preview-wrap').hidden = true;
 
+  if (!$('cf-live-sample').value) $('cf-live-sample').value = LIVE_SAMPLE;
+
   setTab(dlg.recipe.source.kind);
   renderPresetChips();
   fillCharmapScope();
   $('cf-charmap-details').open = false;
   updateCount();
   $('cf-overlay').hidden = false;
+  live.refresh(0);
 }
 
 const closeDialog = () => { $('cf-overlay').hidden = true; dlg = null; };
@@ -209,31 +219,11 @@ async function buildNow() {
 
 // Draw a sample from the generated 1bpp glyphs — the same pixels the panel gets.
 function drawPreview(entry) {
-  const have = new Map(entry.glyphs.map((g) => [g.code, g]));
+  const have = new Set(entry.glyphs.map((g) => g.code));
   const text = ['Hello 25.6℃', 'あア漢字 12:34', 'ABC abc 0123']
     .find((s) => [...s].every((c) => have.has(c.codePointAt(0))))
     || entry.glyphs.slice(0, 20).map((g) => String.fromCodePoint(g.code)).join('');
-  const chars = [...text].map((c) => have.get(c.codePointAt(0))).filter(Boolean);
-  const scale = 2;
-  const cv = $('cf-preview');
-  cv.width = Math.max(1, chars.reduce((a, g) => a + g.dx, 0)) * scale;
-  cv.height = entry.font.height * scale;
-  const ctx = cv.getContext('2d');
-  ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = '#11191d';
-  ctx.fillRect(0, 0, cv.width, cv.height);
-  ctx.fillStyle = '#7fe3a0';
-  const baseline = entry.font.height - entry.font.descent;
-  let pen = 0;
-  for (const g of chars) {
-    const top = baseline - g.y - g.h;
-    for (let py = 0; py < g.h; py++) {
-      for (let px = 0; px < g.w; px++) {
-        if (g.bits[py * g.w + px]) ctx.fillRect((pen + g.x + px) * scale, (top + py) * scale, scale, scale);
-      }
-    }
-    pen += g.dx;
-  }
+  drawGlyphs($('cf-preview'), entry.glyphs, entry.font, text, 1);
   $('cf-preview-wrap').hidden = false;
 }
 
@@ -245,10 +235,33 @@ export function initCustomFonts() {
   $('cf-tab-google').addEventListener('click', () => { setTab('google'); dlg.recipe.source.family = $('cf-family').value; });
   $('cf-tab-local').addEventListener('click', () => setTab('local'));
 
-  $('cf-family').addEventListener('change', () => { dlg.recipe.source.family = $('cf-family').value; });
-  $('cf-weight').addEventListener('change', () => { dlg.recipe.source.weight = Number($('cf-weight').value); });
-  $('cf-size').addEventListener('input', () => { dlg.recipe.size = Number($('cf-size').value) || 16; updateCount(); });
-  $('cf-threshold').addEventListener('input', () => { dlg.recipe.threshold = Number($('cf-threshold').value) || 128; });
+  $('cf-family').addEventListener('change', () => { dlg.recipe.source.family = $('cf-family').value; live.refresh(0); });
+  $('cf-weight').addEventListener('change', () => { dlg.recipe.source.weight = Number($('cf-weight').value); live.refresh(0); });
+  $('cf-size').addEventListener('input', () => { dlg.recipe.size = Number($('cf-size').value) || 32; updateCount(); live.refresh(); });
+  $('cf-threshold').addEventListener('input', () => { dlg.recipe.threshold = Number($('cf-threshold').value) || 128; live.refresh(); });
+
+  // Live preview beside the controls: only the sample string is rasterized, so
+  // it stays instant no matter how large the character set is.
+  live = createLivePreview({
+    canvas: $('cf-live'),
+    statusEl: $('cf-live-status'),
+    t,
+    // A debounced refresh can land after the dialog closed; an empty sample
+    // makes the preview clear itself instead of throwing on a null dialog.
+    settings: () => (!dlg ? { sample: '' } : {
+      kind: dlg.recipe.source.kind,
+      family: dlg.recipe.source.family,
+      weight: dlg.recipe.source.weight,
+      italic: !!dlg.recipe.source.italic,
+      size: dlg.recipe.size,
+      threshold: dlg.recipe.threshold,
+      localBuffer: dlg.pendingFile || null,
+      sample: $('cf-live-sample').value,
+      scale: Number($('cf-live-zoom').value),
+    }),
+  });
+  $('cf-live-sample').addEventListener('input', () => live.refresh());
+  $('cf-live-zoom').addEventListener('change', () => live.refresh(0));
   $('cf-custom').addEventListener('input', () => { dlg.recipe.customText = $('cf-custom').value; updateCount(); });
   $('cf-ranges').addEventListener('input', () => { dlg.recipe.customRanges = $('cf-ranges').value; updateCount(); });
 
@@ -258,6 +271,7 @@ export function initCustomFonts() {
     dlg.pendingFile = await file.arrayBuffer();
     dlg.recipe.source.family = file.name.replace(/\.[^.]+$/, '');
     $('cf-filename').textContent = file.name;
+    live.refresh(0);
   });
 
   $('cf-charmap-details').addEventListener('toggle', renderCharmapPanel);

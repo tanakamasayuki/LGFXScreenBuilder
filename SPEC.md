@@ -466,7 +466,17 @@ did not. (Comparing against the default font instead would drop plain shapes lik
 **Size means line height.** The size field is the **line height in pixels**, matching how
 LovyanGFX names its own fonts (`lgfxJapanGothic_16` is 16 pixels tall) and how anyone
 fitting rows onto a panel is counting. A CSS `font-size` of 16px would instead yield a
-~19px line box for most families.
+~19px line box for most families. The default is **32px**: at 1bpp, CJK below roughly 24px
+loses the strokes that tell one kanji from another, so the starting point is a size that
+actually reads. The default typeface is **Noto Sans JP** for the same reason — the harder
+case (CJK) should be the one that works out of the box.
+
+**A live preview sits with those two controls.** Typeface and size are exactly the settings
+numbers cannot convey, and a preview parked below the Generate button is too far away to
+adjust against. So the preview lives next to them and follows every change, rasterizing
+**only the sample string** — a handful of glyphs regardless of how large the character set
+is — through the same rasterizer as the real run. It is not an approximation: those are the
+output pixels, at 1:1 by default.
 
 **Character sets.** Presets are additive and unioned with free-form extra characters and
 `U+xxxx-U+yyyy` ranges. The bulk lists (ASCII+Latin-1, Japanese mini/full, CJK, SC/TC/KR)

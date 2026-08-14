@@ -71,6 +71,37 @@ console.log('page load:');
 check(pageErrors.length === 0, `no uncaught errors${pageErrors.length ? ': ' + pageErrors.join('; ') : ''}`);
 check(await page.locator('#fg-presets .fchip').count() >= 10, 'preset chips rendered');
 
+// Defaults: a CJK-capable face at a line height that stays legible at 1bpp.
+check(await page.locator('#fg-fontlist .fg-font.on .fg-font-name').innerText() === 'Noto Sans JP',
+  'the default typeface is Noto Sans JP');
+check(await page.inputValue('#fg-size') === '32', 'the default line height is 32px');
+check(await page.inputValue('#fg-live-zoom') === '1', 'the preview zoom defaults to 1x');
+
+// The live preview sits with the typeface/size controls and must actually
+// paint, without anyone pressing Generate.
+console.log('live preview:');
+// Wait for the canvas to be sized to the requested line height. A generic
+// "bigger than nothing" check would pass on the 300x150 default a canvas has
+// before anything is drawn, and measure an empty surface.
+const t0 = Date.now();
+await page.waitForFunction(() => document.querySelector('#fg-live').height === 32, null, { timeout: 90000 });
+console.log(`  (typeface loaded and previewed in ${((Date.now() - t0) / 1000).toFixed(1)}s)`);
+const liveInk = await page.evaluate(() => {
+  const cv = document.querySelector('#fg-live');
+  const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+  let n = 0;
+  for (let i = 0; i < d.length; i += 4) if (d[i + 1] > 200) n++;
+  return { n, h: cv.height, status: document.querySelector('#fg-live-status').textContent };
+});
+check(liveInk.n > 100, `the live preview drew glyphs (${liveInk.n} px)`);
+check(liveInk.h === 32, `it honours the 32px line height (canvas ${liveInk.h}px at 1x)`);
+check(/32/.test(liveInk.status), `it reports the metrics (${liveInk.status.trim()})`);
+
+// Changing the size must move the preview without a Generate run.
+await page.fill('#fg-size', '16');
+await page.waitForFunction(() => document.querySelector('#fg-live').height === 16, null, { timeout: 60000 });
+check(true, 'changing the line height updates the live preview');
+
 // The local-file licence warning must be present — it is the whole reason
 // local files are allowed at all.
 await page.click('#fg-tab-local');

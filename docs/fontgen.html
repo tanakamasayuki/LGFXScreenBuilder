@@ -91,6 +91,23 @@
         pixel is either on or off; the threshold decides how much anti-aliased coverage counts
         as "on", and lowering it makes the font heavier.
       </p>
+
+      <!-- Live preview, next to the controls it previews. Typeface and size are
+           the settings numbers cannot convey, and a preview below the Generate
+           button is too far away to adjust against. -->
+      <div class="fg-row">
+        <label class="grow"><span data-i18n="pv.sample">Preview text</span>
+          <input type="text" id="fg-live-sample">
+        </label>
+        <label><span data-i18n="fg.zoom">Zoom</span>
+          <select id="fg-live-zoom">
+            <option value="1" selected>1×</option><option value="2">2×</option>
+            <option value="3">3×</option><option value="4">4×</option>
+          </select>
+        </label>
+      </div>
+      <div class="fg-preview-wrap"><canvas id="fg-live"></canvas></div>
+      <p class="sub fg-status" id="fg-live-status"></p>
     </section>
 
     <!-- ---------------- 3. characters ---------------- -->
@@ -147,7 +164,7 @@
           </label>
           <label><span data-i18n="fg.zoom">Zoom</span>
             <select id="fg-zoom">
-              <option value="1">1×</option><option value="2" selected>2×</option>
+              <option value="1" selected>1×</option><option value="2">2×</option>
               <option value="3">3×</option><option value="4">4×</option>
             </select>
           </label>
