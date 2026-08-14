@@ -87,6 +87,35 @@ python -m http.server 8000 --directory docs
   small and carry no redistributable copy of a typeface. Local font files are
   allowed with a warning: most commercial and OS-bundled typefaces forbid exactly
   this kind of embedding, and every generated header records its attribution.
+- **Characters outside the format's range are excluded from the curated sets.**
+  u8g2 addresses glyphs with a **uint16** encoding, so a character above U+FFFF
+  (4 bytes in UTF-8) can never be generated no matter which typeface is used.
+  Across every curated set exactly two characters fall outside it, and they are
+  absent **by design, not by omission**:
+
+  | Character | Codepoint | Comes from | Missing from |
+  | --- | --- | --- | --- |
+  | 𠮟 | U+20B9F | 常用漢字 (a 2010 addition) | all four Japanese han levels |
+  | 𮕩 | U+2E569 | 교육용 기초 한자 | both Korean han levels |
+
+  So the first Japanese level is offered as 2,139 characters rather than the
+  2,140 Unihan lists, and the first Korean level as 1,799 rather than 1,800 —
+  the only two places where a curated set does not match its standard exactly,
+  and this is why. Everything else in every curated set
+  is inside the BMP. Characters you type in yourself, or give as a
+  `U+xxxx-U+yyyy` range, are still checked at generation time and reported by
+  name — there the character is yours and the warning is something you can act
+  on, which is why the curated sets stay quiet and custom input does not.
+
+  The cutoff is U+FFFF, **not** "3 bytes in UTF-8" — every kanji, kana and hangul
+  syllable is 3 bytes and encodes fine. It matters mostly for **emoji**, which
+  fall on both sides of it: the pictographs in the BMP work (they are in
+  `symMisc` / `symShapes` already — ⌚ ⏰ ☀ ☁ ☂ ☃ ☎ ⚠ ⚡ ★ ♥ ♪ ✓ ▲ ◆ ①), while the
+  main emoji blocks from U+1F300 up (😀 🔥 🚀 …) are 4 bytes and cannot be
+  generated at all. Note also that the output is 1bpp: a BMP pictograph comes out
+  as a monochrome silhouette, so it needs a typeface with an outline for it —
+  Noto Sans Symbols 2, which heads the fallback chain, is the usual source. A
+  colour emoji font is not: thresholded to one bit it collapses to a blob.
 
 - **Export** mode (SPEC §10): file list (`<Project>.h`, `<Project>_example.ino`)
   with code preview, target-framework choice (M5Unified / M5GFX / LovyanGFX),

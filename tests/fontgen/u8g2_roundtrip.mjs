@@ -21,7 +21,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import { encodeU8g2 } from '../../docs/src/fontgen/u8g2enc.js';
+import { encodeU8g2, costOf, planFor } from '../../docs/src/fontgen/u8g2enc.js';
 
 let failures = 0;
 const fail = (msg) => { console.error('FAIL: ' + msg); failures++; };
@@ -260,6 +260,75 @@ roundtrip('wide', Array.from({ length: 40 }, (_, i) => {
   const g = randomGlyph(0x4e00 + i, 200, 200);
   return { ...g, dx: 60, x: 0, y: -20 };
 }), { height: 200, descent: 20 });
+
+// The run-length widths are chosen for FEWEST DROPPED GLYPHS first and smallest
+// output second. Size alone is the wrong objective: a glyph is reached through a
+// one-byte jump, so an entry over 255 bytes has to be dropped, and the widths
+// decide how long entries get. Optimising bytes alone therefore trades whole
+// characters away for a few hundred bytes — with a real Japanese set it dropped
+// 繊 and 酬 at a 32px character height, and 49 everyday kanji (機 職 織 臓 …) at
+// 36px.
+//
+// Rather than hand-build a set that creates the conflict — the first attempt at
+// one did not, and passed identically against the old objective — this asserts
+// the property itself against all 64 candidates: whatever the encoder picked
+// must drop no more glyphs than any other choice would, and among the choices
+// that drop that many it must be the smallest.
+// Kanji-like glyph: thin strokes over a large box. Seeded so a failure is
+// reproducible rather than "it fails about a third of the time".
+let strokeSeed = 1;
+function strokeGlyph(code, size, strokes) {
+  const rnd = () => (strokeSeed = (strokeSeed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  const bits = new Uint8Array(size * size);
+  for (let s = 0; s < strokes; s++) {
+    const horiz = rnd() < 0.5;
+    const pos = Math.floor(rnd() * size);
+    const from = Math.floor(rnd() * size);
+    const to = from + Math.floor(rnd() * (size - from));
+    for (let k = from; k <= to; k++) {
+      const y = horiz ? pos : k;
+      const x = horiz ? k : pos;
+      if (y < size && x < size) bits[y * size + x] = 1;
+    }
+  }
+  return { code, w: size, h: size, x: 0, y: -Math.floor(size / 6), dx: size, bits };
+}
+
+console.log('run-length widths are chosen for coverage, not just size:');
+strokeSeed = 1;
+for (const [label, glyphs, font] of [
+  ['sparse', Array.from({ length: 200 }, (_, i) => randomGlyph(0x3000 + i, 16, 16)), { height: 16, descent: 3 }],
+  ['big', Array.from({ length: 60 }, (_, i) => randomGlyph(0x4e00 + i, 64, 64)), { height: 64, descent: 10 }],
+  // This one actually creates the conflict, and it took a search to find: the
+  // obvious hand-built cases (speckle vs solid block) all had the same answer
+  // under both objectives, so they proved nothing. Kanji-like glyphs are what
+  // does it — thin strokes over a large box, so the entries land just under the
+  // 255-byte ceiling and the width choice tips them over. Here the size-optimal
+  // choice (b0=5, b1=2) drops 4 glyphs that b0=3, b1=1 keeps.
+  ['stroke density', [
+    ...Array.from({ length: 60 }, (_, i) => strokeGlyph(0x30 + i, 22, 4)),
+    ...Array.from({ length: 200 }, (_, i) => strokeGlyph(0x4e00 + i, 44, 30)),
+  ], { height: 44, descent: 7 }],
+]) {
+  const res = encodeU8g2(glyphs, font);
+  const plan = planFor(glyphs);
+  let bestLost = Infinity;
+  let bestTotal = Infinity;
+  for (let b0 = 1; b0 <= 8; b0++) {
+    for (let b1 = 1; b1 <= 8; b1++) {
+      const c = costOf(plan.runsPerGlyph, plan.glyphs, plan.fixedBits, b0, b1);
+      if (c.lost < bestLost || (c.lost === bestLost && c.total < bestTotal)) { bestLost = c.lost; bestTotal = c.total; }
+    }
+  }
+  const got = costOf(plan.runsPerGlyph, plan.glyphs, plan.fixedBits, res.bitsPer.b0, res.bitsPer.b1);
+  if (got.lost === bestLost && got.total === bestTotal && res.skipped.length === bestLost) {
+    console.log(`  ok   ${label}: bits0=${res.bitsPer.b0} bits1=${res.bitsPer.b1} drops ${got.lost}, ` +
+      `the fewest any of the 64 choices can (then smallest at ${Math.ceil(got.total / 8)} payload bytes)`);
+  } else {
+    fail(`${label}: chose bits0=${res.bitsPer.b0} bits1=${res.bitsPer.b1} dropping ${got.lost} glyph(s) ` +
+      `(${res.skipped.length} actually skipped), but another choice drops only ${bestLost}`);
+  }
+}
 
 // A glyph the format genuinely cannot hold must be refused with something the
 // user can act on, not a bare "too large".

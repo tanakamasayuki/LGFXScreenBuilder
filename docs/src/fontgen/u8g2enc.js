@@ -125,20 +125,65 @@ function writePairs(bw, pairs, b0, b1) {
   }
 }
 
-// Pick the (bits_per_0, bits_per_1) pair that makes the whole font smallest.
-// Runs are computed once per glyph and only the bit accounting is re-done, so
-// the search is cheap even for a ten-thousand-glyph CJK set.
-function chooseRunBits(runsPerGlyph) {
+// Pick the (bits_per_0, bits_per_1) pair to encode the font with.
+//
+// The obvious objective is "smallest font", but it is the wrong one on its own.
+// A glyph's entry is reached through a one-byte jump, so an entry over 255 bytes
+// cannot be addressed and has to be dropped — and the run-length widths decide
+// how long the entries are. Optimising bytes alone therefore trades away whole
+// characters to save a few hundred bytes, and the characters it drops are the
+// densest ones, which for a Japanese set means everyday kanji: 繊 and 酬 at a
+// 32px character height, and 49 of them (機 職 織 臓 …) at 36px.
+//
+// So the choice is lexicographic: fewest unencodable glyphs first, smallest
+// total second. Runs are computed once per glyph and only the bit accounting is
+// re-done, so all 64 combinations stay cheap even for a ten-thousand-glyph set.
+//
+// Exported so a test can assert the lexicographic property against the full 64
+// candidates rather than against a hand-built example that may not create the
+// conflict at all — the first attempt at one did not.
+export function chooseRunBits(runsPerGlyph, glyphs, fixedBitsPerGlyph) {
   let best = null;
   for (let b0 = 1; b0 <= MAX_UNSIGNED_BITS; b0++) {
     for (let b1 = 1; b1 <= MAX_UNSIGNED_BITS; b1++) {
-      let total = 0;
-      for (const runs of runsPerGlyph) total += pairBits(pairsFor(runs, b0, b1), b0, b1);
-      if (!best || total < best.total) best = { b0, b1, total };
+      const c = costOf(runsPerGlyph, glyphs, fixedBitsPerGlyph, b0, b1);
+      if (!best || c.lost < best.lost || (c.lost === best.lost && c.total < best.total)) best = { b0, b1, ...c };
     }
   }
   return best;
 }
+
+// What one (b0, b1) candidate would cost: payload bits over the whole font, and
+// how many glyphs it would push past the 255-byte jump-byte ceiling.
+export function costOf(runsPerGlyph, glyphs, fixedBitsPerGlyph, b0, b1) {
+  let total = 0;
+  let lost = 0;
+  for (let i = 0; i < runsPerGlyph.length; i++) {
+    const g = glyphs[i];
+    const bits = g.w && g.h ? pairBits(pairsFor(runsPerGlyph[i], b0, b1), b0, b1) : 0;
+    total += bits;
+    if (entryBytes(g, fixedBitsPerGlyph + bits) > 255) lost++;
+  }
+  return { total, lost };
+}
+
+// The per-glyph run list and the fixed metric-field width, so a test can drive
+// costOf/chooseRunBits with exactly what the encoder uses.
+export function planFor(glyphs) {
+  const usable = glyphs.filter((g) => g.code >= 0x20 && g.code <= 0xffff).sort((a, b) => a.code - b.code);
+  const bpx = signedBits(Math.min(0, ...usable.map((g) => g.x)), Math.max(0, ...usable.map((g) => g.x)));
+  const bpy = signedBits(Math.min(0, ...usable.map((g) => g.y)), Math.max(0, ...usable.map((g) => g.y)));
+  const bpd = signedBits(Math.min(0, ...usable.map((g) => g.dx)), Math.max(0, ...usable.map((g) => g.dx)));
+  return {
+    glyphs: usable,
+    runsPerGlyph: usable.map((g) => runsOf(g.bits)),
+    fixedBits: unsignedBits(Math.max(1, ...usable.map((g) => g.w)))
+      + unsignedBits(Math.max(1, ...usable.map((g) => g.h))) + bpx + bpy + bpd,
+  };
+}
+
+// Payload bytes plus the 2- or 3-byte per-glyph header the jump byte covers.
+const entryBytes = (g, payloadBits) => Math.ceil(payloadBits / 8) + (g.code <= 255 ? 2 : 3);
 
 const u16be = (v) => [(v >> 8) & 0xff, v & 0xff];
 
@@ -191,7 +236,7 @@ export function encodeU8g2(glyphs, font) {
   limitFor('dx', bpd);
 
   const runsPerGlyph = usable.map((g) => runsOf(g.bits));
-  const { b0, b1 } = chooseRunBits(runsPerGlyph);
+  const { b0, b1 } = chooseRunBits(runsPerGlyph, usable, bpw + bph + bpx + bpy + bpd);
 
   // Per-glyph payload (metrics + bitmap), byte-aligned.
   const skipped = [];
@@ -207,7 +252,7 @@ export function encodeU8g2(glyphs, font) {
     const payload = bw.flush();
     // The jump byte covers the whole entry (header + payload) and is a u8, so
     // an entry over 255 bytes cannot be addressed. Report rather than corrupt.
-    const entry = payload.length + (g.code <= 255 ? 2 : 3);
+    const entry = entryBytes(g, payload.length * 8);
     if (entry > 255) { skipped.push({ code: g.code, bytes: entry }); return; }
     encoded.push({ code: g.code, payload, entry });
   });

@@ -286,7 +286,15 @@ function showResult() {
       sample: r.missing.slice(0, 20).map((c) => String.fromCodePoint(c)).join(''),
     }));
   }
-  if (r.skipped.length) notes.push(t('fg.skipped', { n: r.skipped.length }));
+  // Named, not just counted: "3 glyphs were skipped" only invites the question,
+  // and the answer decides what to do about it — these are the densest glyphs in
+  // the set, so a slightly smaller character height usually brings them back.
+  if (r.skipped.length) {
+    notes.push(t('fg.skipped', {
+      n: r.skipped.length,
+      sample: r.skipped.slice(0, 20).map((s) => String.fromCodePoint(s.code)).join(''),
+    }));
+  }
   $('fg-res-notes').innerHTML = notes.map((n) => `<div class="fg-note">${n}</div>`).join('');
 
   const text = $('fg-sample').value.trim() || sampleText(r.glyphs);

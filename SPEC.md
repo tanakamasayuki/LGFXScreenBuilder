@@ -585,6 +585,19 @@ for a face whose em dwarfs its letters is absurd: Micro 5 at a 32px character he
 U+3000 an advance of 71px next to 34px kana, and that alone pushed the font past the
 format's advance limit.
 
+**Run-length widths are chosen for coverage first, size second.** A glyph's entry is reached
+through a one-byte jump, so an entry over 255 bytes cannot be addressed and has to be
+dropped — and the two run-length field widths decide how long entries get. Choosing them to
+minimise total size alone therefore trades whole characters away for a fraction of a percent
+of flash, and the characters it drops are the densest, which for a Japanese set means
+everyday kanji: 繊 and 酬 at a 32px character height, and 49 of them (機 職 織 臓 綱 …) at
+36px. The search is now lexicographic — fewest unencodable glyphs, then smallest output — so
+the same 2,493-character set encodes complete at 32px for 1.3% more flash, and loses 7 rather
+than 49 characters at 36px. Where nothing would be dropped either way the size objective
+still decides, so ordinary fonts are byte-identical. Any glyph that still cannot be encoded
+is named in the result, not just counted, because the answer decides what to do about it: a
+slightly smaller character height usually brings it back.
+
 **The format has hard limits, and they are reported as such.** u8g2 stores a glyph's width
 and height in unsigned fields (up to 8 bits, so 255) but its bearings and advance in signed
 ones — and LovyanGFX's decoder casts those through `int_fast8_t`, which caps them at 7 bits,

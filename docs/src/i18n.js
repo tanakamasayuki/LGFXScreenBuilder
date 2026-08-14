@@ -177,7 +177,7 @@ export const MESSAGES = {
     'fg.errNoGlyphs': 'This typeface has none of the selected characters.',
     'fg.originLocal': 'local file supplied by the user',
     'fg.missing': '{n} character(s) are missing from this typeface and were skipped: {sample}',
-    'fg.skipped': '{n} glyph(s) were too large to address in this format and were skipped.',
+    'fg.skipped': '{n} glyph(s) were too dense to address in this format and were skipped: {sample} — a slightly smaller character height usually fixes it.',
     'fg.copied': 'Copied.',
 
     // --- generated custom fonts (§8.7.7) ---
@@ -463,7 +463,7 @@ export const MESSAGES = {
     'fg.errNoGlyphs': 'この書体には選択した文字が 1 つも含まれていません。',
     'fg.originLocal': 'ユーザー提供のローカルファイル',
     'fg.missing': 'この書体に無い {n} 文字をスキップしました: {sample}',
-    'fg.skipped': 'この形式で扱えない大きさのグリフ {n} 個をスキップしました。',
+    'fg.skipped': 'この形式で参照できないほど密なグリフ {n} 個をスキップしました: {sample} — 文字の高さを少し下げると通ることが多いです。',
     'fg.copied': 'コピーしました。',
 
     // --- generated custom fonts (§8.7.7) ---
@@ -749,7 +749,7 @@ export const MESSAGES = {
     'fg.errNoGlyphs': '该字体不包含任何已选字符。',
     'fg.originLocal': '用户提供的本地文件',
     'fg.missing': '该字体缺少 {n} 个字符，已跳过：{sample}',
-    'fg.skipped': '有 {n} 个字形过大、此格式无法寻址，已跳过。',
+    'fg.skipped': '有 {n} 个字形过于密集、此格式无法寻址，已跳过：{sample} — 略微减小字符高度通常即可解决。',
     'fg.copied': '已复制。',
 
     // --- generated custom fonts (§8.7.7) ---
@@ -1035,7 +1035,7 @@ export const MESSAGES = {
     'fg.errNoGlyphs': '該字型不含任何已選字元。',
     'fg.originLocal': '使用者提供的本機檔案',
     'fg.missing': '該字型缺少 {n} 個字元，已略過：{sample}',
-    'fg.skipped': '有 {n} 個字形過大、此格式無法定址，已略過。',
+    'fg.skipped': '有 {n} 個字形過於密集、此格式無法定址，已略過：{sample} — 略微降低字元高度通常即可解決。',
     'fg.copied': '已複製。',
 
     // --- generated custom fonts (§8.7.7) ---
@@ -1321,7 +1321,7 @@ export const MESSAGES = {
     'fg.errNoGlyphs': '이 서체에는 선택한 문자가 하나도 없습니다.',
     'fg.originLocal': '사용자가 제공한 로컬 파일',
     'fg.missing': '이 서체에 없는 {n}자를 건너뛰었습니다: {sample}',
-    'fg.skipped': '이 형식으로 주소 지정할 수 없을 만큼 큰 글리프 {n}개를 건너뛰었습니다.',
+    'fg.skipped': '이 형식으로 주소 지정할 수 없을 만큼 조밀한 글리프 {n}개를 건너뛰었습니다: {sample} — 문자 높이를 조금 줄이면 대개 해결됩니다.',
     'fg.copied': '복사했습니다.',
 
     // --- generated custom fonts (§8.7.7) ---
@@ -1607,7 +1607,7 @@ export const MESSAGES = {
     'fg.errNoGlyphs': 'Esta tipografía no tiene ninguno de los caracteres seleccionados.',
     'fg.originLocal': 'archivo local aportado por el usuario',
     'fg.missing': 'Faltan {n} carácter(es) en esta tipografía y se omitieron: {sample}',
-    'fg.skipped': 'Se omitieron {n} glifo(s) demasiado grandes para este formato.',
+    'fg.skipped': 'Se omitieron {n} glifo(s) demasiado densos para direccionarlos en este formato: {sample}: reducir un poco la altura de carácter suele bastar.',
     'fg.copied': 'Copiado.',
 
     // --- generated custom fonts (§8.7.7) ---
@@ -1893,7 +1893,7 @@ export const MESSAGES = {
     'fg.errNoGlyphs': 'Cette police ne contient aucun des caractères sélectionnés.',
     'fg.originLocal': 'fichier local fourni par l’utilisateur',
     'fg.missing': '{n} caractère(s) absents de cette police ont été ignorés : {sample}',
-    'fg.skipped': '{n} glyphe(s) trop grands pour ce format ont été ignorés.',
+    'fg.skipped': '{n} glyphe(s) trop denses pour être adressés dans ce format ont été ignorés : {sample} — réduire légèrement la hauteur de caractère suffit généralement.',
     'fg.copied': 'Copié.',
 
     // --- generated custom fonts (§8.7.7) ---
@@ -2179,7 +2179,7 @@ export const MESSAGES = {
     'fg.errNoGlyphs': 'Diese Schriftart enthält keines der ausgewählten Zeichen.',
     'fg.originLocal': 'vom Benutzer bereitgestellte lokale Datei',
     'fg.missing': '{n} Zeichen fehlen in dieser Schriftart und wurden übersprungen: {sample}',
-    'fg.skipped': '{n} Glyphe(n) sind für dieses Format zu groß und wurden übersprungen.',
+    'fg.skipped': '{n} Glyphe(n) sind zu dicht, um in diesem Format adressiert zu werden, und wurden übersprungen: {sample} — eine etwas geringere Zeichenhöhe behebt das meist.',
     'fg.copied': 'Kopiert.',
 
     // --- generated custom fonts (§8.7.7) ---
