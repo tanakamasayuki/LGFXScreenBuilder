@@ -267,6 +267,9 @@ struct MyScreenTuned : MyScreen::Screen {
 };
 ```
 
+A working version is in [examples/MemoryTuningM5Unified](../examples/MemoryTuningM5Unified/),
+which cycles budgets and prints the resulting tile count.
+
 ---
 
 ## 6. The memory/speed trade-off table

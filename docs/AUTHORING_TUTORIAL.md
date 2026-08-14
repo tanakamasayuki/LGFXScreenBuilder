@@ -296,7 +296,7 @@ layouts from the header alone, without the `.lgfxsb.json`.
 | Wrong layout on the device | `Profile::Auto` needs an exact size match — is there a profile for that size? |
 | Flicker on the device | check `screen.isBuffered()`; is `<LGFXVirtualCanvas.h>` included **before** the generated header? |
 | Parts vanish in a transparent scene | their color matches the color key (default `#002400`) in RGB565 |
-| An old `.h` broke on a new runtime | **re-export** from the `.lgfxsb.json` — that is the guaranteed recovery path |
+| An old `.h` broke on a new runtime | **re-export** from the `.lgfxsb.json` — the guaranteed recovery path ([COMPATIBILITY.md](COMPATIBILITY.md)) |
 
 ## Where to go next
 

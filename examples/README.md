@@ -16,6 +16,7 @@ codegen. What differs is the **sketch** — each one isolates a single idea.
 | 2 | [ProfilesM5Unified](ProfilesM5Unified/) | M5Unified | **One binary, several devices.** `Profile::Auto` plus button-A cycling through forced profiles. |
 | 3 | [OverlayM5Unified](OverlayM5Unified/) | M5Unified | **Dynamic drawing**: a live battery bar composited into the same buffer as the static parts. |
 | 4 | [DialogM5Unified](DialogM5Unified/) | M5Unified | **Transparent scene**: a dialog pushed over the running screen without repainting it. |
+| 5 | [MemoryTuningM5Unified](MemoryTuningM5Unified/) | M5Unified | **RAM vs. splits**: derive from `Screen` to reach the tile budget, and watch the tile count move. |
 | — | [ExportedSample](ExportedSample/) | M5Unified | The **verbatim Export output** (header *and* sketch). A scene tour; press A for the next screen. |
 
 `ExportedSample` is what the authoring tool actually hands you, so it is a

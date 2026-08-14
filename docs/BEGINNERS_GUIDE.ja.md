@@ -267,6 +267,9 @@ struct MyScreenTuned : MyScreen::Screen {
 };
 ```
 
+動くものは [examples/MemoryTuningM5Unified](../examples/MemoryTuningM5Unified/) にあります
+（予算を切り替えて分割数の変化を Serial に出す）。
+
 ---
 
 ## 6. メモリと速度のトレードオフ表

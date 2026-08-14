@@ -118,6 +118,7 @@ project's scenes and profiles.
 | [OverlayM5Unified](examples/OverlayM5Unified/) | M5Unified | a dynamic overlay (live battery bar) over static parts |
 | [DialogM5Unified](examples/DialogM5Unified/) | M5Unified | a transparent scene: a dialog over a screen that is never redrawn |
 | [ProfilesM5Unified](examples/ProfilesM5Unified/) | M5Unified | one binary, several devices: `Profile::Auto` plus forced profiles |
+| [MemoryTuningM5Unified](examples/MemoryTuningM5Unified/) | M5Unified | tuning the tile memory budget by deriving from the generated `Screen` |
 
 Every example regenerates its `MyScreen.h` from a stored project via
 `tools/gen-fixtures.mjs`, so they always match the current codegen.
@@ -130,6 +131,8 @@ Every example regenerates its `MyScreen.h` from a stored project via
 - [docs/BEGINNERS_GUIDE.md](docs/BEGINNERS_GUIDE.md) — **beginner's guide**: how drawing works,
   flicker and double buffering, DMA, the memory/speed trade-off, LovyanGFX and library quirks, strengths and limits
 - [SPEC.md](SPEC.md) — full specification (Japanese: [SPEC.ja.md](SPEC.ja.md))
+- [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) — version FAQ: what carries a version, and how to
+  recover when an old header and a new runtime disagree
 - [docs/AI_LAYOUT_IO.md](docs/AI_LAYOUT_IO.md) — the layout-JSON contract handed to an AI
 - [docs/README.md](docs/README.md) — the authoring tool itself (developer notes)
 

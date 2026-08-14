@@ -16,6 +16,7 @@
 | 2 | [ProfilesM5Unified](ProfilesM5Unified/) | M5Unified | **1 バイナリで複数機種。** `Profile::Auto` と、ボタン A でのプロファイル強制切替。 |
 | 3 | [OverlayM5Unified](OverlayM5Unified/) | M5Unified | **動的描画**。静的パーツと同じバッファに電池バーを合成する。 |
 | 4 | [DialogM5Unified](DialogM5Unified/) | M5Unified | **透過シーン**。動作中の画面を描き直さずにダイアログを重ねる。 |
+| 5 | [MemoryTuningM5Unified](MemoryTuningM5Unified/) | M5Unified | **RAM と分割数**。`Screen` を継承してタイル予算に触り、分割数が動くのを見る。 |
 | — | [ExportedSample](ExportedSample/) | M5Unified | **Export 出力そのまま**（ヘッダ＋スケッチ）。シーンツアー、A ボタンで送り。 |
 
 `ExportedSample` はオーサリングツールが実際に吐くものなので、学習用というより
