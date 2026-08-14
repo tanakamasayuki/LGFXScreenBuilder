@@ -117,12 +117,16 @@ project's scenes and profiles.
 | [ExportedSample](examples/ExportedSample/) | M5Unified | verbatim Export output — a scene tour (button A advances) |
 | [OverlayM5Unified](examples/OverlayM5Unified/) | M5Unified | a dynamic overlay (live battery bar) over static parts |
 | [DialogM5Unified](examples/DialogM5Unified/) | M5Unified | a transparent scene: a dialog over a screen that is never redrawn |
+| [ProfilesM5Unified](examples/ProfilesM5Unified/) | M5Unified | one binary, several devices: `Profile::Auto` plus forced profiles |
 
 Every example regenerates its `MyScreen.h` from a stored project via
 `tools/gen-fixtures.mjs`, so they always match the current codegen.
+[examples/README.md](examples/README.md) suggests a reading order.
 
 ## Documentation
 
+- [docs/AUTHORING_TUTORIAL.md](docs/AUTHORING_TUTORIAL.md) — **start here**: designing your first
+  screen in the browser, from New to Export to running it on hardware
 - [docs/BEGINNERS_GUIDE.md](docs/BEGINNERS_GUIDE.md) — **beginner's guide**: how drawing works,
   flicker and double buffering, DMA, the memory/speed trade-off, LovyanGFX and library quirks, strengths and limits
 - [SPEC.md](SPEC.md) — full specification (Japanese: [SPEC.ja.md](SPEC.ja.md))

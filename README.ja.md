@@ -115,12 +115,16 @@ screen.setOverlay(mainOverlay);       // 1 シーン向けの任意の動的描�
 | [ExportedSample](examples/ExportedSample/) | M5Unified | Export 出力そのまま — シーンツアー（A ボタンで送り） |
 | [OverlayM5Unified](examples/OverlayM5Unified/) | M5Unified | 静的パーツ上の動的オーバーレイ（電池バー） |
 | [DialogM5Unified](examples/DialogM5Unified/) | M5Unified | 透過シーン: 下を描き直さずに重ねるダイアログ |
+| [ProfilesM5Unified](examples/ProfilesM5Unified/) | M5Unified | 1 バイナリで複数機種: `Profile::Auto` とプロファイル強制切替 |
 
 各 example の `MyScreen.h` は、保存済みプロジェクトから `tools/gen-fixtures.mjs` で
-再生成されるため、常に現行の codegen と一致します。
+再生成されるため、常に現行の codegen と一致します。読む順番は
+[examples/README.ja.md](examples/README.ja.md) にあります。
 
 ## ドキュメント
 
+- [docs/AUTHORING_TUTORIAL.ja.md](docs/AUTHORING_TUTORIAL.ja.md) — **まずここから**: ブラウザで
+  最初の画面を作る手順（新規 → 配置 → フォント → Export → 実機）
 - [docs/BEGINNERS_GUIDE.ja.md](docs/BEGINNERS_GUIDE.ja.md) — **初心者向けガイド**: 描画のしくみ、
   ちらつきとダブルバッファ、DMA、メモリ／速度のトレードオフ、LovyanGFX と本ライブラリのクセ、利点と限界
 - [SPEC.ja.md](SPEC.ja.md) — 全仕様（English: [SPEC.md](SPEC.md)）

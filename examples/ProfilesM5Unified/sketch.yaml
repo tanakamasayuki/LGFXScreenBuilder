@@ -1,0 +1,46 @@
+profiles:
+  esp32:
+    fqbn: esp32:esp32:esp32:DebugLevel=debug
+    platforms:
+      - platform: esp32:esp32 (3.3.11)
+        platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    libraries:
+      - dir: ../../
+      - M5Unified (0.2.19)
+      - M5GFX (0.2.26)
+      - LGFXVirtualCanvas (1.4.0)
+
+  display_core:
+    fqbn: lang-ship:host:display:m5gfx_board=board_M5StackCore2
+    platforms:
+      - platform: lang-ship:host (1.4.7)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - M5Unified (0.2.19)
+      - M5GFX (0.2.26)
+      - LGFXVirtualCanvas (1.4.0)
+
+  display_stickplus2:
+    fqbn: lang-ship:host:display:m5gfx_board=board_M5StickCPlus2
+    platforms:
+      - platform: lang-ship:host (1.4.7)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - M5Unified (0.2.19)
+      - M5GFX (0.2.26)
+      - LGFXVirtualCanvas (1.4.0)
+
+  display_cardputer:
+    fqbn: lang-ship:host:display:m5gfx_board=board_M5Cardputer
+    platforms:
+      - platform: lang-ship:host (1.4.7)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - dir: ../../
+      - M5Unified (0.2.19)
+      - M5GFX (0.2.26)
+      - LGFXVirtualCanvas (1.4.0)
+
+default_profile: esp32

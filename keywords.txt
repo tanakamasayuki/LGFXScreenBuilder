@@ -1,0 +1,47 @@
+#######################################
+# Syntax Coloring Map For LGFXScreenBuilder
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+lgfxsb	KEYWORD1
+Screen	KEYWORD1
+Scene	KEYWORD1
+Profile	KEYWORD1
+Canvas	KEYWORD1
+RendererT	KEYWORD1
+Renderer	KEYWORD1
+Project	KEYWORD1
+ProfileDesc	KEYWORD1
+SceneDesc	KEYWORD1
+PartDesc	KEYWORD1
+PartLayout	KEYWORD1
+AssetDesc	KEYWORD1
+PartType	KEYWORD1
+Datum	KEYWORD1
+Value	KEYWORD1
+SceneId	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+show	KEYWORD2
+setProfile	KEYWORD2
+setOverlay	KEYWORD2
+isBuffered	KEYWORD2
+supportsTransparentScenes	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+Auto	LITERAL1
+Rect	LITERAL1
+Line	LITERAL1
+Circle	LITERAL1
+Text	LITERAL1
+Image	LITERAL1
