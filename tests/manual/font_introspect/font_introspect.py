@@ -10,7 +10,7 @@ bumping the pinned font library:
 
 Pipeline:
   1. The `generated` fixture runs gen.generate(): it ensures the pinned LovyanGFX
-     is downloaded (building tools/fontgen on a clean machine), parses
+     is downloaded (building tools/fontcatalog on a clean machine), parses
      lgfx_fonts.hpp, and writes fonts_table.h — before the dut fixture builds.
   2. The harness builds + runs on the lang-ship host, writing per-font metrics
      (output/metrics.jsonl) and native-size sample PNGs (output/samples/*.png).

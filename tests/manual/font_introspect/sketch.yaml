@@ -1,7 +1,7 @@
 # Font introspection harness (SPEC §8.7.2, phase 1b). LovyanGFX is the single
 # representative catalog (its font set equals M5GFX's at the pinned versions),
 # so we introspect once here. The LovyanGFX version MUST match the pin in
-# tools/fontgen/sketch.yaml — gen.py reads that pin and resolves the matching
+# tools/fontcatalog/sketch.yaml — gen.py reads that pin and resolves the matching
 # copy under ~/.arduino15/internal, failing loudly if it is not downloaded.
 profiles:
   host:

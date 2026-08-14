@@ -375,7 +375,9 @@ If matching the actual-device display becomes necessary in the future, a scheme 
 
 #### 8.7.1 Font policy (presets first)
 
-The tool handles the **preset fonts built into LovyanGFX / M5GFX**. The runtime does not output any font payload; it merely references a font with `setFont(&fonts::<Name>)`. **Custom fonts** that generate glyph data for only the used characters from a PC font (TTF/OTF) are not handled in the current specification. If custom fonts are added, the intended scheme — like image assets — is to extract the used characters into data and use the same glyphs in the browser and on the device (consistent with the future direction at the end of this section).
+The tool handles the **preset fonts built into LovyanGFX / M5GFX** first. For a preset, the runtime outputs no font payload; it merely references the font with `setFont(&fonts::<Name>)`, which is why a preset costs flash only where it is actually used (§8.7.4).
+
+Beyond the presets, the tool can **generate an embedded font** from a web font or a user-supplied typeface, carrying only the characters the project needs (§8.7.7). That output *does* put glyph data in the header, and is the mechanism the rest of this section anticipated for matching the device exactly.
 
 #### 8.7.2 Font catalog (how it is generated)
 
@@ -432,6 +434,77 @@ rarely updated). This tool only **links** to it.
 - **Version skew tolerance**: if this tool later updates LovyanGFX while the site lags,
   names are stable enough to still match; an absent name falls back to the index / a 404.
 - The catalog site's own spec lives in the LGFXFontCatalog repo (`SPEC.ja.md` / `SPEC.md`).
+
+#### 8.7.7 Generated embedded fonts
+
+The presets cover a lot, but not "this typeface, this size, these characters". So the
+tool can **generate a font**: rasterize a chosen typeface at a chosen size for a chosen
+character set, and emit it as data the sketch carries. Because only the requested
+characters are included, a Japanese UI that needs 300 characters costs 300 characters of
+flash rather than a full CJK font.
+
+**Output format — u8g2.** Of the three embeddable formats LovyanGFX can draw
+(`lgfx::U8g2font`, `lgfx::GFXfont` with `EncodeRange`, and VLW via `loadFont(const
+uint8_t*)`), the generator emits **u8g2**: it is 1bpp so a CJK set stays affordable, it
+is `constexpr` and lives in flash with no RAM cost and no runtime loading, and it is what
+LovyanGFX's own `fonts::lgfxJapanGothic_*` / `fonts::efont*` already are — so nothing new
+runs on the device. The encoder (`docs/src/fontgen/u8g2enc.js`) is written against
+LovyanGFX's decoder in `src/lgfx/v1/lgfx_fonts.cpp`, and `tests/fontgen/u8g2_roundtrip.mjs`
+holds a mirror of that decoder, checks it against a real bundled font, and round-trips the
+encoder through it. Glyphs are addressed with a uint16 encoding, so codepoints above
+U+FFFF cannot be represented and are reported as dropped rather than silently lost.
+
+**Rasterizing — the browser's own text engine.** Glyphs are drawn through `FontFace` +
+a 2D canvas rather than a bundled font parser. That accepts anything the browser accepts
+(TTF, OTF/CFF, WOFF/WOFF2, variable fonts), adds no dependency to a tool that has no build
+step, and makes the preview and the emitted glyphs come out of the same rasterizer.
+Whether a glyph really came from the chosen typeface is decided by drawing it twice behind
+two different generic fallbacks: identical means the font supplied it, different means it
+did not. (Comparing against the default font instead would drop plain shapes like `I` and
+`l`, which look the same in nearly every face.)
+
+**Size means line height.** The size field is the **line height in pixels**, matching how
+LovyanGFX names its own fonts (`lgfxJapanGothic_16` is 16 pixels tall) and how anyone
+fitting rows onto a panel is counting. A CSS `font-size` of 16px would instead yield a
+~19px line box for most families.
+
+**Character sets.** Presets are additive and unioned with free-form extra characters and
+`U+xxxx-U+yyyy` ranges. The bulk lists (ASCII+Latin-1, Japanese mini/full, CJK, SC/TC/KR)
+are imported by `tools/gen-charsets.mjs` from the enable-headers of the **efont Arduino
+library** — the codepoint *lists* only; the /efont/ Unicode font data itself is a separate
+work by its own authors and is not used here. Curated sets fill what those lists miss,
+chiefly **units & symbols**: the Japanese-mini list has `°` but not `℃` (U+2103), which is
+exactly what a thermometer UI needs.
+
+**Two ways to use it, one pipeline.**
+
+- **Standalone page** (`docs/fontgen.html`): typeface → size → characters → download `.h`.
+  It holds no project state and is useful on its own to anyone using LovyanGFX or M5GFX
+  without this editor.
+- **In the editor** (Fonts mode): the same dialog, but the result is adopted onto the
+  project. A generated font behaves like any other adopted font — per-profile enable,
+  selectable on Text, subject to the same flash policy (§8.7.4) — and codegen emits its
+  byte array plus `static const lgfx::U8g2font kFont_<name>(...)`, referenced from the
+  layout table. A font enabled on no exported profile is not emitted at all.
+
+**The project stores the recipe, not the bytes.** `project.fonts` holds
+`{ name, custom: recipe }` where the recipe is the typeface, size, threshold and character
+selection. Glyph data is rebuilt on export (`docs/src/fontgen/build.js`) and never
+serialized. This keeps project files small, keeps a shared project from carrying a
+redistributable copy of a typeface, and means editing a recipe cannot leave stale bytes
+behind. The cost is that a reopened project must rebuild: Google fonts are re-fetched
+automatically, while a typeface supplied as a local file has to be supplied again, which
+the UI asks for rather than exporting a header with a font quietly missing.
+
+**Licensing is part of the output.** Generating an embedded font converts a typeface's
+glyphs into data shipped inside firmware, which is redistribution. The curated web-font
+list is therefore limited to **SIL Open Font License 1.1 and Apache-2.0** families, both of
+which permit it. Local files are allowed — many perfectly licensed fonts are not on that
+list — but the UI warns prominently that most commercial and OS-bundled typefaces forbid
+exactly this, and the generated header records the source as a local file with an unknown
+licence. Every generated header carries an attribution block naming the typeface, author,
+licence and origin, because OFL and Apache both require the notice to travel with derived
+font data and the emitted array *is* derived font data.
 
 ### 8.8 Dynamic Drawing and Animation
 

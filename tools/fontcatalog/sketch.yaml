@@ -1,0 +1,25 @@
+# Source-of-truth for the font-catalog library versions (SPEC §8.7.2).
+# tests/manual/font_introspect/gen.py reads the pinned versions here and parses
+# the matching copy under ~/.arduino15/internal/<Name>_<version>_<hash>
+# (resolved by exact version, never "whatever happens to be there"). The same
+# sketch is the host introspection harness (metrics / coverage / size / sample
+# PNGs, phase 1b).
+#
+# After bumping a version, build once so the exact copy is downloaded:
+#   arduino-cli compile --profile host tools/fontcatalog
+#
+# That build DOWNLOADS the pinned libraries and then fails at link: pinning both
+# LovyanGFX and M5GFX puts two copies of lgfx::v1 in one binary. That is expected
+# here — the point is the download, not an executable.
+profiles:
+  host:
+    fqbn: lang-ship:host:host:mode=lgfx
+    platforms:
+      - platform: lang-ship:host (1.4.7)
+        platform_index_url: https://tanakamasayuki.github.io/lang-ship-arduino-core/package_lang-ship_index.json
+    libraries:
+      - LovyanGFX (1.2.26)
+      - M5GFX (0.2.26)
+      - dir: ../../
+
+default_profile: host

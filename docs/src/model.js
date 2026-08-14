@@ -243,9 +243,17 @@ export function newProject({ name, targetLibrary, profileId, w, h, rotation, sce
 }
 
 // --- font adoption (§8.7.3/§8.7.4) ---------------------------------------
-// project.fonts = adopted preset fonts [{ name }] (name = catalog/`fonts::` symbol).
+// project.fonts holds two kinds of entry, both keyed by `name`:
+//   { name }                 a preset font, referenced as `fonts::<name>`
+//   { name, custom: recipe } a generated font (§8.7.7), emitted into the header
+// A custom entry stores only the RECIPE (typeface / size / characters); the
+// glyph bytes are rebuilt at export time and never enter the project file.
 // profile.fonts = names enabled for that profile (per-profile usage flag, §8.7.4).
 export const isFontAdopted = (project, name) => (project.fonts || []).some((f) => f.name === name);
+export const fontEntry = (project, name) => (project.fonts || []).find((f) => f.name === name) || null;
+export const isCustomFont = (project, name) => !!fontEntry(project, name)?.custom;
+export const customFontNames = (project) =>
+  (project.fonts || []).filter((f) => f.custom).map((f) => f.name);
 export const profileFonts = (project, profileId) => {
   const adopted = new Set((project.fonts || []).map((f) => f.name));
   const p = profileById(project, profileId);
@@ -256,6 +264,17 @@ export const profileFonts = (project, profileId) => {
 export function adoptFont(project, name) {
   if (!project.fonts) project.fonts = [];
   if (!project.fonts.some((f) => f.name === name)) project.fonts.push({ name });
+  for (const p of project.profiles) { if (!p.fonts) p.fonts = []; if (!p.fonts.includes(name)) p.fonts.push(name); }
+  return name;
+}
+
+// Adopt (or update) a generated custom font. `recipe` is the font-generator
+// input, not glyph data — see docs/src/fontgen/build.js.
+export function adoptCustomFont(project, name, recipe) {
+  if (!project.fonts) project.fonts = [];
+  const existing = project.fonts.find((f) => f.name === name);
+  if (existing) existing.custom = recipe;
+  else project.fonts.push({ name, custom: recipe });
   for (const p of project.profiles) { if (!p.fonts) p.fonts = []; if (!p.fonts.includes(name)) p.fonts.push(name); }
   return name;
 }

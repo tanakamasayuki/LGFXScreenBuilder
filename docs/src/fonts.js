@@ -102,8 +102,11 @@ export const fontByName = (name) => FONT_CATALOG.find((f) => f.name === name) ||
 // is `${FONT_SITE_BASE}/fonts/<name>.html` — name only, latest fixed (SPEC §8.7 link
 // contract). Set to '' to hide the "detail" links everywhere.
 export const FONT_SITE_BASE = 'https://tanakamasayuki.github.io/LGFXFontCatalog';
+// Only catalog presets have a page there — a generated custom font (§8.7.7)
+// would link to a 404, so it gets no link.
 export const fontDetailUrl = (name) =>
-  FONT_SITE_BASE && name ? `${FONT_SITE_BASE}/fonts/${encodeURIComponent(name)}.html` : null;
+  FONT_SITE_BASE && name && fontByName(name)
+    ? `${FONT_SITE_BASE}/fonts/${encodeURIComponent(name)}.html` : null;
 
 // LovyanGFX font name -> a CSS font stack for bitmap/special preset faces where
 // the catalog family is the same as the symbol. These are still approximations.

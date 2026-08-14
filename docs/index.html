@@ -10,6 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Micro+5&family=Orbitron&family=Pixelify+Sans&family=Roboto:wght@100;400;700&family=Satisfy&family=Share+Tech+Mono&family=Silkscreen&family=Tiny5&family=VT323&family=Yellowtail&display=swap">
   <link rel="stylesheet" href="./styles.css">
+  <!-- fg-* classes, shared with the standalone generator (fontgen.html): the
+       custom-font dialog reuses its licence warning and pixel preview. -->
+  <link rel="stylesheet" href="./fontgen.css">
 </head>
 <body>
   <header class="topbar">
@@ -173,6 +176,9 @@
         <div class="bar">
           <strong id="export-curfile" style="font-size:13px"></strong>
           <span id="export-bound" class="sub" style="margin-left:10px"></span>
+          <!-- Generated fonts (§8.7.7) are rebuilt from their recipe when the
+               Export view opens; this reports that and any failure. -->
+          <span id="export-fontstatus" class="sub" style="margin-left:10px"></span>
           <span class="grow"></span>
           <button class="mini" id="export-save" data-i18n="export.save">Save</button>
           <button class="mini" id="export-saveas" data-i18n="export.saveAs">Save As</button>
@@ -264,6 +270,17 @@
           <div id="font-adopted"></div>
           <p class="sub" data-i18n="fonts.note"></p>
         </div>
+        <!-- Generated fonts (§8.7.7). The project stores only the recipe; the
+             glyph bytes are rebuilt before export. -->
+        <div class="section">
+          <div class="sechead">
+            <h2 data-i18n="cf.title">Generated fonts</h2>
+            <div class="secacts"><button class="mini" id="cf-add" data-i18n="cf.add">+ Generate…</button></div>
+          </div>
+          <div id="cf-list"></div>
+          <p class="sub" data-i18n="cf.note"></p>
+          <p class="sub"><a href="./fontgen.html" target="_blank" rel="noopener" data-i18n="cf.standalone">Standalone generator ↗</a></p>
+        </div>
       </aside>
     </div>
   </div><!-- /view-fonts -->
@@ -309,6 +326,65 @@
       <div class="dialog-actions">
         <button class="mini" id="paste-cancel" data-i18n="paste.cancel">Cancel</button>
         <button class="mini" id="paste-import" data-i18n="paste.import">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom font generator (§8.7.7). Same pipeline as fontgen.html; here the
+       result is stored as a recipe on the project instead of downloaded. -->
+  <div id="cf-overlay" class="overlay" hidden>
+    <div class="dialog cf-dialog">
+      <h2 data-i18n="cf.dlgTitle">Generate an embedded font</h2>
+
+      <div class="two">
+        <div class="field"><label data-i18n="cf.name">Font name (C identifier)</label><input id="cf-name" value="MyFont"></div>
+        <div class="field"><label data-i18n="fg.size">Line height (px)</label><input id="cf-size" type="number" min="6" max="120" value="16"></div>
+      </div>
+
+      <div class="fchips" style="margin-bottom:8px">
+        <button type="button" class="fchip on" id="cf-tab-google" data-i18n="fg.tabGoogle">Google Fonts</button>
+        <button type="button" class="fchip" id="cf-tab-local" data-i18n="fg.tabLocal">Local file</button>
+      </div>
+
+      <div id="cf-src-google">
+        <div class="field"><label data-i18n="cf.family">Typeface</label><select id="cf-family"></select></div>
+        <p class="sub" data-i18n="fg.googleNote"></p>
+      </div>
+      <div id="cf-src-local" hidden>
+        <div class="fg-warn">
+          <strong data-i18n="fg.localWarnTitle">Check the licence before you use this.</strong>
+          <p data-i18n="fg.localWarnBody"></p>
+        </div>
+        <input type="file" id="cf-file" accept=".ttf,.otf,.woff,.woff2">
+        <div class="sub" id="cf-filename"></div>
+      </div>
+
+      <div class="two">
+        <div class="field"><label data-i18n="fg.weight">Weight</label>
+          <select id="cf-weight">
+            <option value="100">100</option><option value="300">300</option>
+            <option value="400" selected>400</option><option value="500">500</option>
+            <option value="700">700</option><option value="900">900</option>
+          </select>
+        </div>
+        <div class="field"><label data-i18n="fg.threshold">Ink threshold</label><input id="cf-threshold" type="number" min="1" max="255" value="128"></div>
+      </div>
+
+      <div class="field"><label data-i18n="fg.stepCharset">Characters</label><div id="cf-presets"></div></div>
+      <div class="two">
+        <div class="field"><label data-i18n="fg.custom">Extra characters</label><input id="cf-custom" type="text"></div>
+        <div class="field"><label data-i18n="fg.ranges">Extra ranges</label><input id="cf-ranges" type="text" placeholder="U+2190-U+21FF"></div>
+      </div>
+      <p class="sub"><strong id="cf-charcount"></strong> <span id="cf-estimate"></span></p>
+
+      <div class="fg-preview-wrap" id="cf-preview-wrap" hidden><canvas id="cf-preview"></canvas></div>
+      <p class="sub np-err" id="cf-err"></p>
+      <p class="sub" id="cf-status"></p>
+
+      <div class="dialog-actions">
+        <button class="mini" id="cf-cancel" data-i18n="newproj.cancel">Cancel</button>
+        <button class="mini" id="cf-preview-btn" data-i18n="cf.preview">Preview</button>
+        <button class="mini" id="cf-ok" data-i18n="cf.addToProject">Add to project</button>
       </div>
     </div>
   </div>

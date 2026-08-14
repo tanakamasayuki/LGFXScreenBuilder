@@ -50,6 +50,34 @@ jobs:
       - name: Check format-compat goldens
         run: node tools/check-compat.mjs
 
+      # SPEC §8.7.7: the generated-font encoder must stay readable by LovyanGFX.
+      # This decodes a real bundled font with a mirror of LovyanGFX's decoder and
+      # round-trips the encoder through it. Needs no browser and no Arduino.
+      - name: Check u8g2 font encoder round trip
+        run: node tests/fontgen/u8g2_roundtrip.mjs
+
+      # SPEC §8.7.7: the character-set lists are imported from an upstream
+      # repository, so a stale committed copy must fail rather than drift.
+      - name: Check imported character-set data is current
+        run: node tools/gen-charsets.mjs --check
+
+      # The rasterizer runs on FontFace + canvas, so the generator and the
+      # editor's custom-font flow can only be exercised in a real browser.
+      - name: Install Chromium for the font-generator tests
+        run: |
+          npm install --no-save --prefix "$RUNNER_TEMP/pw" playwright@1.62.1
+          npx --yes playwright@1.62.1 install --with-deps chromium
+
+      - name: Check the standalone font generator
+        run: node tests/fontgen/page_smoke.mjs
+        env:
+          PLAYWRIGHT_MODULE: ${{ runner.temp }}/pw/node_modules/playwright/index.mjs
+
+      - name: Check the editor's generated-font flow
+        run: node tests/fontgen/editor_integration.mjs
+        env:
+          PLAYWRIGHT_MODULE: ${{ runner.temp }}/pw/node_modules/playwright/index.mjs
+
       - name: Install SDL2 (headless LovyanGFX / M5GFX backend)
         run: |
           sudo apt-get update

@@ -12,6 +12,7 @@ import { sampleProject } from './model.js';
 import { detectLanguage, setLang, getLang, applyStatic, t } from './i18n.js';
 import { serialize, openProject, saveText, autosave, loadAutosave, clearAllHandles, ACCEPT } from './persist.js';
 import { flash } from './toast.js';
+import { ensureFontData, fontDataMap } from './fontgen/build.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -89,8 +90,15 @@ onClick('btn-export-h', async () => {
   const name = `${store.project.name || 'project'}.h`;
   // Use the project's persisted output settings (buffered / embed AI layouts).
   const opts = { buffered: store.project.buffered !== false, embedAiLayouts: store.project.embedAiLayouts === true };
-  try { saveFeedback(await saveText('header', name, generateHeader(store.project, opts), ACCEPT.header, 'text/x-c'), name); }
-  catch (e) { flash(t('save.failed', { msg: e.message })); }
+  try {
+    // Generated fonts live in the project as recipes only (§8.7.7), so their
+    // bytes have to exist before the header can carry them. Report a font that
+    // could not be rebuilt instead of exporting a header that quietly lacks it.
+    const { missing } = await ensureFontData(store.project);
+    if (missing.length) flash(t('cf.rebuildFailed', { list: missing.map((m) => m.name).join(', ') }));
+    opts.fontData = fontDataMap(store.project);
+    saveFeedback(await saveText('header', name, generateHeader(store.project, opts), ACCEPT.header, 'text/x-c'), name);
+  } catch (e) { flash(t('save.failed', { msg: e.message })); }
 });
 
 // Toast the outcome of an in-place save (§9.3) uniformly across save actions.

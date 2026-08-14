@@ -70,6 +70,20 @@ python -m http.server 8000 --directory docs
   (`.lgfxsb.json`) plus localStorage autosave + restore-on-start. **New** opens a
   dialog (`src/newproject.js`, §9.1) to set project name, target library, the first
   profile (device/size/rotation), and the first scene.
+- **Font generator** (SPEC §8.7.7): when no preset fits, generate one. Pick a
+  typeface (curated OFL-1.1 / Apache-2.0 web fonts, or your own file), a line
+  height, and a character set, and get a `lgfx::U8g2font` header carrying only
+  those glyphs. Presets cover ASCII/Latin-1, Japanese (mini/full), CJK and
+  SC/TC/KR, plus curated **units & symbols** (`° ℃ ℉ ± × ÷ …`) and **clock/date**
+  sets, and any extra characters or `U+xxxx-U+yyyy` ranges you add. Two entry
+  points, one pipeline (`src/fontgen/`): [`fontgen.html`](fontgen.html) is
+  standalone — no project, just download the `.h` — while Fonts mode adopts the
+  font onto the project and emits it into the exported header. The project stores
+  only the **recipe**; glyph bytes are rebuilt at export, so project files stay
+  small and carry no redistributable copy of a typeface. Local font files are
+  allowed with a warning: most commercial and OS-bundled typefaces forbid exactly
+  this kind of embedding, and every generated header records its attribution.
+
 - **Export** mode (SPEC §10): file list (`<Project>.h`, `<Project>_example.ino`)
   with code preview, target-framework choice (M5Unified / M5GFX / LovyanGFX),
   per-profile output subset (the enum/tables are restricted to the selected

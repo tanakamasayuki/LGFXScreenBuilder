@@ -5,7 +5,7 @@
 // Output shape matches examples/Basic/MyScreen.h. Generated-code comments are
 // English-only per SPEC §10/§13.
 import {
-  sceneById, placement, DATUMS, profileFonts,
+  sceneById, placement, DATUMS, profileFonts, isCustomFont,
   isTransparentScene, hasTransparentScene, transparentColorOf,
 } from './model.js';
 import { buildAiLayout, AI_LAYOUT_DOC_URL } from './ailayout.js';
@@ -20,6 +20,20 @@ const DATUM_ENUM = {
   ML: 'MidLeft', MC: 'MidCenter', MR: 'MidRight',
   BL: 'BottomLeft', BC: 'BottomCenter', BR: 'BottomRight',
 };
+// Attribution for a generated font's glyph data. OFL-1.1 and Apache-2.0 both
+// require the notice to travel with derived font data, and the emitted array
+// IS derived font data — so it goes into the header, not just the UI.
+function fontNotice(fd) {
+  const src = fd.source || {};
+  const out = [`Rasterized from: ${src.family || '(unknown typeface)'}`];
+  if (src.by) out.push(`Author: ${src.by}`);
+  out.push(src.license
+    ? `License: ${src.license.name || src.license.id}${src.license.url ? ` — ${src.license.url}` : ''}`
+    : 'License: UNKNOWN (local file) — confirm that embedding and redistribution are permitted.');
+  if (src.origin) out.push(`Source: ${src.origin}`);
+  return out.join('\n');
+}
+
 const hex = (css) => '0x' + (css || '#000000').replace('#', '').padStart(6, '0').toLowerCase();
 const cstr = (s) => '"' + String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
 
@@ -52,8 +66,12 @@ function structBody(scene, indent, defProfile) {
   return out;
 }
 
-// opts (all optional): { profiles: [ids to include] }. When a subset is given,
-// the enum and all descriptor tables are restricted to it (§10).
+// opts (all optional):
+//   profiles  [ids to include] — when given, the enum and all descriptor tables
+//             are restricted to it (§10)
+//   fontData  Map name -> { data, stats, source, charset } for generated custom
+//             fonts (§8.7.7). Built by docs/src/fontgen/build.js; absent under
+//             Node round-trip tests, where projects have no custom fonts.
 export function generateHeader(project, opts = {}) {
   const name = project.name;
   const { flat, sceneRange } = flatten(project);
@@ -87,6 +105,37 @@ export function generateHeader(project, opts = {}) {
 
   // detail: parts / scenes / layouts / profiles
   s += `namespace detail {\n\n`;
+
+  // Generated custom fonts (§8.7.7): the glyph bytes live in this header, so
+  // the sketch needs no font files and no runtime loading. Only fonts enabled
+  // on an exported profile are emitted — the same flash policy that keeps
+  // preset fonts from linking where they are not used (§8.7.4).
+  const fontData = opts.fontData || new Map();
+  const usedCustom = [...new Set(profiles.flatMap((pr) => profileFonts(project, pr.id)))]
+    .filter((n) => isCustomFont(project, n))
+    .sort();
+  const emittedFonts = new Set();
+  for (const n of usedCustom) {
+    const fd = fontData.get(n);
+    if (!fd) {
+      // Silently dropping a font would produce a header that compiles and then
+      // draws in the wrong face, so say so where the user will see it.
+      s += `// WARNING: custom font "${n}" was not generated (its recipe could not be rebuilt).\n`;
+      s += `//          Text using it falls back to the default font.\n\n`;
+      continue;
+    }
+    s += `// --- ${n}: ${fd.stats.glyphCount} glyphs, ${fd.stats.height}px, ${fd.data.length} bytes\n`;
+    s += `// ${fontNotice(fd).split('\n').join('\n// ')}\n`;
+    s += `static const uint8_t kFontData_${n}[${fd.data.length}] = {\n`;
+    for (let i = 0; i < fd.data.length; i += 16) {
+      s += '  ' + Array.from(fd.data.slice(i, i + 16), (b) => '0x' + b.toString(16).padStart(2, '0')).join(', ') +
+        (i + 16 < fd.data.length ? ',' : '') + '\n';
+    }
+    s += `};\n`;
+    s += `static const lgfx::U8g2font kFont_${n}(kFontData_${n});\n\n`;
+    emittedFonts.add(n);
+  }
+
   s += `static const lgfxsb::PartDesc kParts[] = {\n`;
   const assetIndexOf = (id) => (project.assets || []).findIndex((a) => a.id === id);
   flat.forEach((f) => {
@@ -130,7 +179,11 @@ export function generateHeader(project, opts = {}) {
       const color = (f.part.type === 'Image') ? '0' : hex(e.color);
       const fill = ((f.part.type === 'Rect' || f.part.type === 'Circle') && e.fill === false) ? 'false' : 'true';
       const vis = (e.visible === false) ? 'false' : 'true';
-      const font = (isText && e.font && enabled.has(e.font)) ? `&lgfx::v1::fonts::${e.font}` : 'nullptr';
+      // A custom font resolves to the array emitted above; a preset resolves to
+      // the library symbol. Either way it must be enabled on this profile.
+      const font = !(isText && e.font && enabled.has(e.font)) ? 'nullptr'
+        : isCustomFont(project, e.font) ? (emittedFonts.has(e.font) ? `&kFont_${e.font}` : 'nullptr')
+        : `&lgfx::v1::fonts::${e.font}`;
       const text = isText ? cstr(e.text || '') : 'nullptr';
       s += `  {${x}, ${y}, ${w}, ${h}, ${x2}, ${y2}, ${r}, ${datum}, ${fmtFloat(size)}, ${color}, ${fill}, ${vis}, ${font}, ${text}},  // ${f.sceneId}.${f.part.id}\n`;
     });

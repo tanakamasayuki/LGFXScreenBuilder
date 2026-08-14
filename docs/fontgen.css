@@ -1,0 +1,72 @@
+/* Styles for the standalone font generator (fontgen.html).
+   Kept out of styles.css so the editor's stylesheet stays about the editor;
+   the shared tokens (--panel, --line, --accent, …) come from styles.css. */
+
+.fg-body { background: var(--bg); }
+.fg-link { color: var(--accent); font-size: 13px; text-decoration: none; }
+.fg-link:hover { text-decoration: underline; }
+
+.fg-main { max-width: 940px; margin: 0 auto; padding: 16px 14px 60px; display: grid; gap: 14px; }
+
+.fg-card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+.fg-card > h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--text); font-weight: 650; }
+.fg-step { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; }
+
+.fg-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.fg-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-top: 10px; }
+.fg-row label { display: grid; gap: 3px; font-size: 12px; color: var(--muted); }
+.fg-row label.fg-inline { display: flex; align-items: center; gap: 5px; }
+.fg-row input[type=text], .fg-row input[type=number], .fg-row select, .fg-row textarea {
+  min-height: 30px; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px;
+  background: var(--panel); color: var(--text);
+}
+.fg-row input[type=number] { width: 96px; }
+.fg-row textarea { resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* --- font picker ------------------------------------------------------- */
+#fg-fontsearch { width: 100%; min-height: 30px; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; margin-bottom: 8px; }
+.fg-fontlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; max-height: 300px; overflow-y: auto; }
+.fg-font { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; padding: 6px 9px; min-height: 40px; }
+.fg-font.on { border-color: var(--accent); background: var(--accent-soft); }
+.fg-font-name { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fg-badges { display: flex; align-items: center; gap: 6px; flex: none; }
+.fg-badges .badge { font-size: 10px; border: 1px solid var(--line2); border-radius: 8px; padding: 0 6px; color: var(--muted); }
+.fg-badges .sub { font-size: 10px; }
+
+/* --- local-file licence warning ---------------------------------------- */
+.fg-warn { border: 1px solid #d9a441; border-left-width: 4px; border-radius: 8px; background: #fdf6e6; padding: 10px 12px; margin-bottom: 10px; }
+.fg-warn strong { display: block; margin-bottom: 4px; color: #8a5a00; font-size: 13px; }
+.fg-warn p { margin: 0; font-size: 12px; line-height: 1.55; color: #5c4a25; }
+.fg-warn-text { color: #a2560a; font-size: 12px; }
+.fg-file { display: block; margin-bottom: 6px; }
+
+/* --- charset ------------------------------------------------------------ */
+.fg-group { margin-bottom: 8px; }
+.fg-group-title { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 4px; }
+.fg-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.fg-n { opacity: .6; font-size: 11px; margin-left: 3px; }
+.fg-summary { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+
+/* --- results ------------------------------------------------------------ */
+.fg-primary { border-color: var(--accent); background: var(--accent); color: #fff; font-weight: 650; }
+.fg-primary:hover:not(:disabled) { background: #0a918b; border-color: #0a918b; }
+.fg-status { font-size: 12px; color: var(--muted); }
+.fg-status.err { color: #b3261e; }
+
+.fg-stats { display: flex; flex-wrap: wrap; gap: 22px; margin: 12px 0; }
+.fg-stats div { display: grid; gap: 1px; }
+.fg-stats strong { font-size: 18px; }
+.fg-note { font-size: 12px; color: #a2560a; margin-bottom: 4px; }
+
+/* The preview is an emulated panel, so it keeps the editor's screen colour and
+   never smooths — the point is to see the actual pixels. */
+.fg-preview-wrap { background: var(--screen); border: 1px solid #000; border-radius: 6px; padding: 10px; overflow-x: auto; }
+#fg-preview { --fg-preview-bg: #11191d; display: block; image-rendering: pixelated; }
+
+.fg-code {
+  margin: 10px 0 0; padding: 10px; max-height: 260px; overflow: auto;
+  background: var(--soft); border: 1px solid var(--line); border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.45;
+  white-space: pre;
+}
+.fg-howto .fg-code { max-height: none; }

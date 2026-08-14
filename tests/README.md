@@ -19,6 +19,13 @@ box is byte-identical to the frame underneath (a plain opaque render would have 
 it), and — in the buffered build — that the color key never reached the panel. That test pulls
 `LGFXVirtualCanvas` from the Arduino library index (pinned in its `sketch.yaml`).
 
+`build_fontgen/` covers **generated embedded fonts** (SPEC §8.7.7): it builds a
+font header produced by `docs/fontgen.html` and checks on real LovyanGFX that the
+line height is the one that was requested, that ASCII, `℃` and plain bar shapes
+(`Il1`) all actually draw, and that the frame is non-blank. The off-device halves
+of that coverage live in `fontgen/` (node + headless browser); see
+`build_fontgen/README.md`.
+
 As the runtime and generator mature, add snapshot and pixel-diff tests here, following the same pattern used by `LGFXVirtualCanvas`.
 
 `manual/` holds generators that are **not** part of the default suite — they
@@ -26,7 +33,7 @@ produce committed artifacts and need a host build, so they are excluded from the
 directory scan (their files have no `test_` prefix) and run only by explicit path.
 
 `manual/font_introspect/` regenerates the preset-font catalog: `gen.py` resolves
-the pinned LovyanGFX (from `../tools/fontgen/sketch.yaml`), emits a C++ table of
+the pinned LovyanGFX (from `../tools/fontcatalog/sketch.yaml`), emits a C++ table of
 every preset font, and the harness introspects each one on the host (metrics +
 ASCII/CJK coverage + fixed-pitch flag + a native-size sample + exact flash size).
 It packs the samples into one atlas and writes the browser-consumable catalog

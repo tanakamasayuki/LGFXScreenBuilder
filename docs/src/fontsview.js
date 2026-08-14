@@ -6,6 +6,7 @@ import { store, mutate } from './store.js';
 import { adoptFont, removeFont, toggleProfileFont, profileFonts, isFontAdopted } from './model.js';
 import { filterCatalog, facets, HEIGHT_BUCKETS, CONTENT_TYPES, approxCss, approxWeight, sampleFor, describe, loadMetrics, sampleImage, flashFor, fmtBytes, monoFor, heightOf, fontDetailUrl } from './fonts.js';
 import { t } from './i18n.js';
+import { renderCustomFonts, initCustomFonts } from './fontgen/customview.js';
 
 const $ = (id) => document.getElementById(id);
 // Style defaults to 'regular': bold/italic variants roughly double the list and
@@ -103,7 +104,9 @@ function renderGrid() {
 function renderAdopted() {
   const el = $('font-adopted');
   el.innerHTML = '';
-  const fonts = store.project.fonts || [];
+  // Generated fonts have their own section below (they are not catalog presets
+  // and carry a recipe instead of a library symbol).
+  const fonts = (store.project.fonts || []).filter((f) => !f.custom);
   $('font-adopted-title').textContent = `${t('fonts.adopted')} · ${t('fonts.adoptedCount', { n: fonts.length })}`;
   if (!fonts.length) { el.innerHTML = `<p class="sub">${t('fonts.none')}</p>`; return; }
 
@@ -146,9 +149,11 @@ function renderAdopted() {
 export function renderFonts() {
   renderGrid();
   renderAdopted();
+  renderCustomFonts();
 }
 
 export function initFonts() {
+  initCustomFonts();
   fillFilterControls();
   $('font-q').addEventListener('input', () => { filters.query = $('font-q').value; renderGrid(); });
   // One delegated handler for every chip group: set the facet (toggle off if the
