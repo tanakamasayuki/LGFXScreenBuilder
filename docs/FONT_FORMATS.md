@@ -42,6 +42,7 @@ Every column is a limit LovyanGFX actually enforces, not what the file format co
 | Lives in | flash, `constexpr` | flash, `constexpr` | flash + RAM index | flash + RAM tables |
 | RAM cost | **0** | 0 | 9 bytes × glyphs ⁵ | tables per font |
 | How it is used | `setFont(&f)` | `setFont(&f)` | `loadFont(data)` | `loadFont(data, ft_ttf)` |
+| Glyph lookup | block jump table | **linear range scan** ⁷ | linear over `gUnicode` | cmap subtables |
 | `setFont()` cost | reads the header | **scans every glyph** ⁶ | n/a | n/a |
 
 ¹ The per-glyph fields are unsigned and the decoder reads them at up to 8 bits, but that
@@ -64,8 +65,18 @@ drops (see SPEC §8.7.7), which removed it as a practical problem at ordinary si
 ⁵ `gBitmap` (4) + `gUnicode` (2) + `gWidth` + `gxAdvance` + `gdX`, allocated in PSRAM if
 present and on the heap otherwise. For 2,493 glyphs that is **22 KB of RAM**, permanently.
 
-⁶ `GFXfont::getDefaultMetric` walks all glyphs to find the extreme bearings, so every
-`setFont()` on a 2,500-glyph CJK font is a full scan. u8g2 reads seven header bytes.
+⁶ `GFXfont::getDefaultMetric` walks all glyphs to find the extreme bearings, so a
+`setFont()` that actually changes font on a 2,500-glyph CJK font is a full scan. u8g2 reads
+seven header bytes. (`setFont` early-returns when the pointer is unchanged, so this is paid
+per *switch*, not per call.)
+
+⁷ This is GFXfont's worst property for CJK and the least obvious. Its glyph table is indexed
+by offset within an `EncodeRange`, so it needs one range per **contiguous run** of
+codepoints — and 常用漢字 is scattered, giving **1,774 ranges** for the default selection.
+`GFXfont::getGlyph` walks that list linearly for *every character drawn*. Measured over the
+same 2,493 characters: **757 comparisons per character on average, against 52 for u8g2**,
+whose jump table skips 64 glyphs at a time. The range table also costs 10.4 KB of the
+flash figure below.
 
 ## Size, measured
 
@@ -86,10 +97,22 @@ every pixel is a byte.
 
 ## So would switching help?
 
-**GFXfont** — the one case with a genuine argument. It removes the 63px advance ceiling and
-the 255-byte-per-glyph ceiling, so it can go to sizes u8g2 refuses, and below ~20px it is
-also slightly smaller. Against that: 20% larger at 32px, and a full glyph scan on every
-`setFont()`. Worth adding as an option for large display fonts; not worth switching to.
+**GFXfont** — it removes the 63px advance ceiling and the 255-byte-per-glyph ceiling, so it
+reaches sizes u8g2 refuses, and below ~20px it is slightly smaller. But the cost depends
+entirely on the character set, and for CJK it is worse than the size table suggests:
+
+* **Glyph lookup is a linear scan over the ranges** — 757 comparisons per character against
+  u8g2's 52, because a scattered set like 常用漢字 needs 1,774 `EncodeRange` entries. This
+  is per character *drawn*, so it is a per-frame cost, not a startup cost.
+* **No compression** — 20% larger at 32px, and the gap widens with size.
+* **`setFont()` walks every glyph** to derive the metrics u8g2 stores in its header.
+* **It lifts none of the limits that matter most.** BMP-only is unchanged, and the line box
+  is still about 127 because `getDefaultMetric` accumulates in `int_fast8_t`.
+
+So it is a good fit for a **large Latin display font** — few glyphs, one or two contiguous
+ranges, and the 63px ceiling is exactly what such a font hits. It is a poor fit for CJK,
+which is what most people generate here. Worth adding as an option for the first case; not
+worth switching to.
 
 **VLW** — the only way to get antialiasing today, and antialiasing is a real quality jump
 for CJK at small sizes. The cost is severe: 6–9× the flash and 22 KB of RAM that never comes
