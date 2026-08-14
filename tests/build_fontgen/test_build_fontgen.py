@@ -26,8 +26,9 @@ def test_build_fontgen(dut):
     ink_ascii = int(dut.expect(r"INK_ASCII (\d+)", timeout=5).group(1))
     assert ink_ascii > 50, f"ASCII text drew almost nothing ({ink_ascii} px)"
 
-    # U+2103 is why the "units" preset exists - Roboto has it and it must survive
-    # the whole pipeline (rasterize -> u8g2 encode -> LovyanGFX decode).
+    # U+2103 is why the "units" set exists. Roboto has no glyph for it, so it is
+    # filled in from Noto Sans JP - this checks that a fallback-sourced glyph
+    # survives the whole pipeline (rasterize -> u8g2 encode -> LovyanGFX decode).
     ink_celsius = int(dut.expect(r"INK_CELSIUS (\d+)", timeout=5).group(1))
     assert ink_celsius > 5, f"U+2103 did not draw ({ink_celsius} px)"
 
@@ -35,6 +36,16 @@ def test_build_fontgen(dut):
     # faces, and an earlier detection scheme dropped them from the font.
     ink_bar = int(dut.expect(r"INK_BAR (\d+)", timeout=5).group(1))
     assert ink_bar > 10, f"'Il1' did not draw ({ink_bar} px)"
+
+    # LovyanGFX draws a hollow rectangle for a glyph the font lacks, so ink alone
+    # proves nothing: an earlier version of this test passed while ℃ was absent
+    # and only the placeholder was being measured. A real glyph must differ from
+    # the placeholder.
+    ink_absent = int(dut.expect(r"INK_ABSENT (\d+)", timeout=5).group(1))
+    assert ink_absent > 0, "expected LovyanGFX's placeholder box to draw something"
+    assert ink_celsius != ink_absent, (
+        f"℃ drew exactly the placeholder ({ink_celsius} px) - it is not in the font"
+    )
 
     dut.expect("PNG saved=1", timeout=10)
     dut.expect("TEST done", timeout=5)

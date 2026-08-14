@@ -17,10 +17,20 @@
 //     used, with its author and licence, because the generated font is then a
 //     derived work of all of them and OFL requires the notice to travel.
 import { loadGoogleFont, findFont, FALLBACK_CHAIN } from './googlefonts.js';
-import { loadFont, unloadFont, rasterizeSet, lineBoxOf } from './rasterize.js';
+import { loadFont, unloadFont, rasterizeSet, lineBoxOf, hasGlyphs } from './rasterize.js';
 
 // 'auto' walks the curated chain; a family name pins one font; null disables it.
 export const FALLBACK_AUTO = 'auto';
+
+// Identifies a primary rasterization, so accepting a fallback offer can reuse
+// the pass already done instead of redoing the whole set. Cheap FNV-1a over the
+// codepoints plus the settings that change how a glyph is drawn.
+function primaryKey(source, size, threshold, style, codepoints) {
+  let h = 0x811c9dc5;
+  for (const c of codepoints) { h ^= c; h = Math.imul(h, 0x01000193); }
+  return [source.kind, source.family, size, threshold, style.weight, style.italic,
+    codepoints.length, h >>> 0].join('|');
+}
 
 // Load a typeface for a set of codepoints; returns { family, faces, meta }.
 async function acquire(source, codepoints, style) {
@@ -56,6 +66,9 @@ async function acquire(source, codepoints, style) {
  *   style      - { weight, italic }
  *   threshold  - 1bpp alpha cutoff
  *   onProgress - ({ done, total, family }) during rasterizing
+ *   primed     - a previous run's `primed`, to skip re-rasterizing the primary
+ *   chain      - families to try, overriding the automatic order (the offer
+ *                already knows which ones help)
  *
  * @returns {Promise<{glyphs, missing, font, sources}>}
  *   sources[0] is always the primary; later entries are fills, each with the
@@ -63,24 +76,39 @@ async function acquire(source, codepoints, style) {
  */
 export async function composeFont({
   source, fallback = null, size, codepoints, style = {}, threshold = 128, onProgress,
+  primed = null, chain: plan = null,
 } = {}) {
   const open = [];
+  const key = primaryKey(source, size, threshold, style, codepoints);
   try {
-    const primary = await acquire(source, codepoints, style);
-    open.push(...primary.faces);
-    const first = await rasterizeSet({
-      family: primary.family, size, codepoints, style, threshold,
-      onProgress: (p) => onProgress?.({ ...p, family: source.family }),
-    });
+    // Accepting a fallback offer changes nothing about the primary, so its
+    // glyphs are reused rather than rasterized a second time. For a few
+    // thousand kanji that is the difference between one pass and two.
+    let first = primed && primed.key === key ? primed.result : null;
+    if (!first) {
+      const primary = await acquire(source, codepoints, style);
+      open.push(...primary.faces);
+      first = await rasterizeSet({
+        family: primary.family, size, codepoints, style, threshold,
+        onProgress: (p) => onProgress?.({ ...p, family: source.family }),
+      });
+      first = { ...first, meta: primary.meta };
+    }
 
     const glyphs = [...first.glyphs];
     let missing = first.missing;
-    const sources = [{ ...primary.meta, count: first.glyphs.length, chars: null }];
+    const sources = [{ ...first.meta, count: first.glyphs.length, chars: null }];
 
     if (missing.length && fallback) {
       // 'auto' tries the curated chain; anything else pins one family. The
       // primary is never its own fallback.
-      const chain = (fallback === FALLBACK_AUTO ? FALLBACK_CHAIN : [fallback])
+      //
+      // `plan` short-circuits the survey: the offer already established which
+      // families actually supply the gap, and no family covers all of it (Noto
+      // Sans has Ω but not ←, Symbols 2 has ▲ but not ℃), so walking the whole
+      // chain would download two or three fonts that contribute nothing.
+      const chain = (plan && plan.length ? plan
+        : fallback === FALLBACK_AUTO ? FALLBACK_CHAIN : [fallback])
         .filter((f) => f !== source.family);
 
       for (const family of chain) {
@@ -113,7 +141,11 @@ export async function composeFont({
     glyphs.sort((a, b) => a.code - b.code);
     // The line box has to be re-measured over the merged set: a filled-in glyph
     // can sit higher or lower than anything the primary contributed.
-    return { glyphs, missing, font: { ...first.font, ...lineBoxOf(glyphs) }, sources };
+    return {
+      glyphs, missing, font: { ...first.font, ...lineBoxOf(glyphs) }, sources,
+      // Hand the primary pass back so a follow-up run can skip it.
+      primed: { key, result: first },
+    };
   } finally {
     for (const f of open) unloadFont(f);
   }
@@ -136,11 +168,13 @@ export async function probeFallback(missing, style = {}, exclude = null) {
     try {
       const fb = await acquire({ kind: 'google', family }, left, style);
       faces = fb.faces;
-      // A tiny size: this only asks "does a glyph exist", not what it looks like.
-      const got = await rasterizeSet({ family: fb.family, size: 16, codepoints: left, style });
-      if (got.glyphs.length) {
-        out.push({ family, chars: got.glyphs.map((g) => String.fromCodePoint(g.code)).join('') });
-        left = got.missing;
+      // Existence only — no measuring, no scaling. The offer just needs to know
+      // which typeface could supply the gap; the real pass happens if accepted.
+      const found = hasGlyphs(fb.family, style, left);
+      if (found.length) {
+        out.push({ family, chars: found.map((c) => String.fromCodePoint(c)).join('') });
+        const got = new Set(found);
+        left = left.filter((c) => !got.has(c));
       }
     } catch {
       /* not a usable fallback */

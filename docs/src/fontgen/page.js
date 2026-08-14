@@ -38,6 +38,10 @@ const state = {
   customRanges: '',
   // null until the user accepts the offer: fallback never happens unasked.
   fallback: null,           // null | 'auto' | family name
+  // The last primary rasterization, so accepting the offer does not redo it.
+  primed: null,
+  // Families the offer found could help, so applying does not retry the rest.
+  fallbackPlan: null,
   result: null,             // { header, data, glyphs, missing, stats, charset }
 };
 
@@ -172,16 +176,19 @@ async function generate() {
       : { kind: 'local', family: state.localFile?.name, buffer: state.localFile?.buffer };
     if (state.tab === 'local' && !source.buffer) { status(t('fg.errNoFile'), 'err'); return; }
 
-    const { glyphs, missing, font, sources } = await composeFont({
+    const { glyphs, missing, font, sources, primed } = await composeFont({
       source,
       fallback: state.fallback,
       size: state.size,
       codepoints: cps,
       style: { weight: state.weight, italic: state.italic },
       threshold: state.threshold,
+      primed: state.primed,
+      chain: state.fallbackPlan,
       onProgress: ({ done, total, family }) => status(
         t('fg.statusRaster', { done: done.toLocaleString(), total: total.toLocaleString() }) + ` (${family})`),
     });
+    state.primed = primed;
     if (!glyphs.length) throw new Error(t('fg.errNoGlyphs'));
 
     status(t('fg.statusEncode'));
@@ -222,6 +229,7 @@ async function offerFallback(missing) {
     return;
   }
   $('fg-fallback-apply').hidden = false;
+  state.fallbackPlan = found.map((f) => f.family);
   const covered = found.reduce((a, f) => a + [...f.chars].length, 0);
   $('fg-fallback-text').innerHTML =
     `<div>${t('fb.offer', { n: covered, of: missing.length })}</div>` +
@@ -372,7 +380,10 @@ export function initFontgen() {
   // Accepting the offer stores the choice and re-runs, so what you see next is
   // the font you will actually get.
   $('fg-fallback-apply').onclick = () => {
-    state.fallback = $('fg-fallback-pick').value || FALLBACK_AUTO;
+    const pick = $('fg-fallback-pick').value || FALLBACK_AUTO;
+    // Pinning one family means exactly that; only 'auto' uses the survey.
+    if (pick !== FALLBACK_AUTO) state.fallbackPlan = null;
+    state.fallback = pick;
     $('fg-fallback-offer').hidden = true;
     generate();
   };

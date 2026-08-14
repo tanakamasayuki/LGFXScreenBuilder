@@ -11,13 +11,26 @@
 // distance from the baseline to the bitmap's BOTTOM row, `dx` the advance.
 
 // Whether a glyph actually came from the chosen font is decided by drawing it
-// twice with two different fallbacks behind it. If the font supplies the glyph
-// both renders are identical; if it does not, one falls back to serif and the
-// other to monospace and they diverge.
+// with the font in the stack and again with the font REMOVED, behind the same
+// generic fallback. If the two match, the fallback drew it and the font has no
+// such glyph; if they differ, the font supplied it.
 //
-// The tempting alternative — compare against the browser's default font and
-// call a match "missing" — is wrong: plain shapes like `I` and `l` render
-// identically in most faces, so it drops characters the font really has.
+// Two simpler tests were tried first and both ship wrong output:
+//
+//   * Compare the font behind serif against the font behind monospace. That
+//     only works while the two generics resolve to different physical fonts.
+//     On a machine with a single CJK font both render 漢 identically and every
+//     Latin face is credited with the whole of CJK; on a machine with no font
+//     for a character at all, both render the same .notdef box and a tofu gets
+//     embedded as if it were a glyph. Which of those happens depends on the
+//     machine, so it passes locally and fails on a CI runner.
+//   * Compare against the browser's default font and call a match "missing".
+//     That drops characters the font really has: `I` and `l` are the same plain
+//     bar in most faces.
+//
+// Both generics are used, and the character counts as present if EITHER pair
+// differs — a glyph that happens to be pixel-identical to serif's is unlikely
+// to also be pixel-identical to monospace's.
 const FALLBACKS = ['serif', 'monospace'];
 
 /**
@@ -54,8 +67,15 @@ function makeSurface(size) {
 
 // `fallback` null means "this family alone" — used for measuring, so the line
 // box always describes the chosen font and never a fallback that stood in.
+// The family is quoted; the generic fallback must NOT be, or the browser treats
+// it as the name of a font nobody has and silently uses the default instead —
+// which makes it useless as a comparison baseline.
 const cssFont = (size, family, { weight = 400, italic = false } = {}, fallback = null) =>
   `${italic ? 'italic ' : ''}${weight} ${size}px "${family}"${fallback ? `, ${fallback}` : ''}`;
+
+// The generic alone, with no chosen family in front of it.
+const cssGeneric = (size, generic, { weight = 400, italic = false } = {}) =>
+  `${italic ? 'italic ' : ''}${weight} ${size}px ${generic}`;
 
 // The size is pinned to the ink height of a REFERENCE CHARACTER, picked from
 // the set being generated. Candidates are tried in this order and the first one
@@ -140,29 +160,51 @@ export function measureFont(family, size, style = {}, codepoints = [], { probeCh
   return { cssPx: best.cssPx, probe: String.fromCodePoint(probe.cp), probeHeight: best.got };
 }
 
+// Same thresholded shape and advance?
+function sameInk(a, b, threshold) {
+  if (Math.round(a.adv) !== Math.round(b.adv)) return false;
+  for (let i = 3; i < a.px.length; i += 4) {
+    if ((a.px[i] >= threshold) !== (b.px[i] >= threshold)) return false;
+  }
+  return true;
+}
+
+const hasInk = (r, threshold) => {
+  for (let i = 3; i < r.px.length; i += 4) if (r.px[i] >= threshold) return true;
+  return false;
+};
+
 // Rasterize one codepoint. Returns null when the font has no glyph for it.
 function rasterizeOne(surf, code, size, family, style, threshold) {
   const ch = String.fromCodePoint(code);
   const { ctx, w, h, originX, originY } = surf;
 
-  const draw = (fallback) => {
+  // `withFont` false drops the family from the stack, leaving the generic to
+  // draw whatever it would have drawn anyway.
+  const draw = (fallback, withFont) => {
     ctx.clearRect(0, 0, w, h);
-    ctx.font = cssFont(size, family, style, fallback);
+    ctx.font = withFont ? cssFont(size, family, style, fallback) : cssGeneric(size, fallback, style);
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = '#fff';
     ctx.fillText(ch, originX, originY);
     return { px: ctx.getImageData(0, 0, w, h).data, adv: ctx.measureText(ch).width };
   };
 
-  const a = draw(FALLBACKS[0]);
-  const b = draw(FALLBACKS[1]);
-  if (Math.round(a.adv) !== Math.round(b.adv)) return null;
-  for (let i = 3; i < a.px.length; i += 4) {
-    if ((a.px[i] >= threshold) !== (b.px[i] >= threshold)) return null;
+  const a = draw(FALLBACKS[0], true);
+
+  // Whitespace draws nothing in every font, so no comparison can tell whether
+  // this font supplied it. Accept it as a blank glyph that advances the pen.
+  if (hasInk(a, threshold)) {
+    // Present as soon as one pair differs; the second pair is only needed when
+    // the first was inconclusive, so a glyph the font HAS usually costs two
+    // renders rather than four.
+    let fromFont = !sameInk(a, draw(FALLBACKS[0], false), threshold);
+    if (!fromFont) {
+      fromFont = !sameInk(draw(FALLBACKS[1], true), draw(FALLBACKS[1], false), threshold);
+    }
+    if (!fromFont) return null;
   }
 
-  // Whitespace legitimately draws nothing: keep it as a zero-size glyph that
-  // still advances the pen.
   let minX = w, minY = h, maxX = -1, maxY = -1;
   for (let py = 0; py < h; py++) {
     for (let px = 0; px < w; px++) {
@@ -233,6 +275,22 @@ export async function rasterizeSet({
   }
 
   return { glyphs, missing, font: { ...sizing, ...lineBoxOf(glyphs) } };
+}
+
+/**
+ * Which of `codepoints` this family actually draws.
+ *
+ * Deliberately skips measureFont: answering "does a glyph exist" needs no
+ * scale, and measuring costs dozens of renders per family. Used to survey
+ * fallback candidates, where the question is only which typeface could supply
+ * the gap.
+ */
+export function hasGlyphs(family, style, codepoints, px = 32) {
+  const surf = makeSurface(px);
+  return codepoints.filter((cp) => {
+    const g = rasterizeOne(surf, cp, px, family, style, 128);
+    return !!g && (g.h > 0 || g.w === 0);
+  });
 }
 
 /**

@@ -206,6 +206,7 @@ async function offerFallback(missing) {
     return;
   }
   $('cf-fallback-apply').hidden = false;
+  dlg.fallbackPlan = found.map((f) => f.family);
   const covered = found.reduce((a, f) => a + [...f.chars].length, 0);
   $('cf-fallback-text').innerHTML =
     `<div>${t('fb.offer', { n: covered, of: missing.length })}</div>` +
@@ -330,7 +331,9 @@ export function initCustomFonts() {
   $('cf-charmap-details').addEventListener('toggle', renderCharmapPanel);
   $('cf-charmap-scope').addEventListener('change', renderCharmapPanel);
   $('cf-fallback-apply').addEventListener('click', () => {
-    dlg.recipe.fallback = $('cf-fallback-pick').value || FALLBACK_AUTO;
+    const pick = $('cf-fallback-pick').value || FALLBACK_AUTO;
+    if (pick !== FALLBACK_AUTO) dlg.fallbackPlan = null;
+    dlg.recipe.fallback = pick;
     $('cf-fallback-offer').hidden = true;
     buildNow();
   });

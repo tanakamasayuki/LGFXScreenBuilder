@@ -23,6 +23,10 @@ const cache = new Map();
 // an edit does not ask for the same file again. Cleared on reload with the rest.
 const localFiles = new Map(); // name -> ArrayBuffer
 
+// The last primary rasterization per font, so accepting a fallback offer (which
+// changes nothing about the primary) does not rasterize the whole set again.
+const primedPasses = new Map(); // name -> { key, result }
+
 // Identifies a recipe, so an edit invalidates the cached bytes but a no-op
 // re-render does not.
 export const recipeKey = (r) => JSON.stringify([
@@ -40,7 +44,7 @@ export const cachedFont = (name) => cache.get(name) || null;
 export const isCached = (name, recipe) => cache.get(name)?.key === recipeKey(recipe);
 export const rememberLocalFile = (name, buffer) => localFiles.set(name, buffer);
 export const hasLocalFile = (name) => localFiles.has(name);
-export function forgetFont(name) { cache.delete(name); localFiles.delete(name); }
+export function forgetFont(name) { cache.delete(name); localFiles.delete(name); primedPasses.delete(name); }
 
 /**
  * Build one custom font from its recipe. Resolves to the cache entry, and
@@ -60,15 +64,17 @@ export async function buildFont(name, recipe, { onProgress } = {}) {
     throw new Error(`"${name}": the local font file is not available in this session`);
   }
 
-  const { glyphs, missing, font, sources } = await composeFont({
+  const { glyphs, missing, font, sources, primed } = await composeFont({
     source: { kind: recipe.source.kind, family: recipe.source.family, buffer },
     fallback: recipe.fallback || null,
     size: recipe.size,
     codepoints: cps,
     style,
     threshold: recipe.threshold,
+    primed: primedPasses.get(name) || null,
     onProgress,
   });
+  primedPasses.set(name, primed);
   if (!glyphs.length) throw new Error(`"${name}": the typeface has none of the selected characters`);
 
   const enc = encodeU8g2(glyphs, font);

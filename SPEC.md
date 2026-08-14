@@ -458,10 +458,28 @@ U+FFFF cannot be represented and are reported as dropped rather than silently lo
 a 2D canvas rather than a bundled font parser. That accepts anything the browser accepts
 (TTF, OTF/CFF, WOFF/WOFF2, variable fonts), adds no dependency to a tool that has no build
 step, and makes the preview and the emitted glyphs come out of the same rasterizer.
-Whether a glyph really came from the chosen typeface is decided by drawing it twice behind
-two different generic fallbacks: identical means the font supplied it, different means it
-did not. (Comparing against the default font instead would drop plain shapes like `I` and
-`l`, which look the same in nearly every face.)
+
+Whether a glyph really came from the chosen typeface is decided by drawing it **with the
+font in the stack and again with the font removed**, behind the same generic fallback. If
+the two match, the fallback drew it and the font has no such glyph. Both generics are used
+and the character counts as present if either pair differs, since a glyph that happens to
+be pixel-identical to serif's is unlikely to also be pixel-identical to monospace's.
+
+Two simpler tests were tried first and both ship wrong output. Comparing *the font behind
+serif* against *the font behind monospace* only works while the two generics resolve to
+different physical fonts: on a machine with one CJK font both draw 漢 identically and a
+Latin face is credited with the whole of CJK, and on a machine with no font for a character
+at all both draw the same `.notdef` box, so a tofu is embedded as if it were a glyph. Which
+of those happens depends on the machine's installed fonts — it passed locally and failed on
+a CI runner. Comparing against the browser's default font and calling a match "missing"
+fails the other way: it drops characters the font really has, because `I` and `l` are the
+same plain bar in most faces. The consequence is not cosmetic — under the weaker test a
+Roboto font was credited with 41 CJK unit symbols it does not have, and shipped their tofu.
+
+For the same reason, "ink appeared on the panel" is not evidence a glyph exists:
+LovyanGFX draws a hollow rectangle for a character the font lacks
+(`IFont::drawCharDummy`), so the device test compares against that placeholder rather than
+merely counting pixels.
 
 **Size means character height.** The size field is the ink height of a **reference
 character**, not a line box and not a CSS `font-size`. Line boxes vary wildly between
@@ -544,10 +562,20 @@ is there because it exists precisely for the ranges text faces skip (measured ag
 Google's own subsets it covers ← ▲ ℃ ≠ ② ☃ Ω, none of which Noto Sans has). A specific
 family can be pinned instead.
 
-One limit remains inherent rather than fixable, and is therefore named, not hidden: a
-character above U+FFFF. 常用漢字 contains one, 𠮟 (U+20B9F), which a uint16 glyph encoding
-cannot address. It is listed by the character itself, because "1 character was dropped" only
-invites the question.
+Characters above U+FFFF are excluded from the curated sets at generation time rather than
+reported at selection time. A uint16 glyph encoding can never address them, so carrying one
+would mean telling every project that selects 常用漢字 about 𠮟 (U+20B9F) it can do nothing
+about. The BMP check survives for custom text and ranges, where the user typed the character
+and can act on the warning — and there it names the character, because "1 character was
+dropped" only invites the question.
+
+Two costs the fallback pass deliberately does not pay twice: accepting the offer reuses the
+primary rasterization instead of redoing it (for a few thousand kanji that is the difference
+between one pass and two), and it walks only the families the survey found could help.
+`unicode-range` is no help in that survey — Google's subsets declare coverage the fonts do
+not have, claiming all of ‰ ℃ ℉ ← ▲ ② ☃ Ω for three families that between them draw quite
+different subsets of it — so the survey rasterizes, but without measuring, since "does a
+glyph exist" needs no scale.
 
 A count ("4,217 characters") does not tell anyone whether a set covers what their screen
 needs, so both entry points carry a **charset inspector**: the resolved codepoints listed as

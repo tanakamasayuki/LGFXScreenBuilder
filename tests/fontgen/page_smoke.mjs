@@ -195,10 +195,11 @@ const defaults = await page.evaluate(async () => {
 });
 check(defaults.missing.length === 0,
   `Noto Sans JP draws every non-kanji character of the default set (${defaults.checked} checked${defaults.missing.length ? ', missing: ' + defaults.missing.join('') : ''})`);
-// 𠮟 is in 常用漢字 and sits outside the BMP, which a uint16 glyph encoding
-// cannot address. That one is unavoidable — it just has to be named.
-check(defaults.dropped.length === 1 && defaults.dropped[0] === 'U+20B9F',
-  `only the one non-BMP jōyō character is dropped (${defaults.dropped.join(', ') || 'none'})`);
+// Nothing in the default selection is unrepresentable: 𠮟 (U+20B9F) is
+// nominally part of 常用漢字, but a uint16 glyph encoding can never address it,
+// so it is excluded from the curated sets rather than reported on every load.
+check(defaults.dropped.length === 0,
+  `nothing in the default selection is unrepresentable (${defaults.dropped.join(', ') || 'none dropped'})`);
 
 // Characters that will not be in the generated font must be visible, not
 // silently closed up — a gap you cannot see is a gap you ship. Two reasons,

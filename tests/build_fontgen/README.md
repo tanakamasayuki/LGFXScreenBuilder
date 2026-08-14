@@ -18,8 +18,10 @@ the generator recorded, and with the characters that were asked for present.
 `TestPanelFont.h` is a generated artifact, not hand-written:
 
 - typeface **Roboto** (Apache-2.0, Google Fonts)
-- **16px character height** (which yields a 26px line box)
+- **16px character height** (26px line box)
 - sets **ASCII + Latin-1 + units & measurement**
+- **fallback on**: Roboto has no ℃, so 41 characters come from Noto Sans JP
+  (OFL-1.1) — which makes this a multi-source font, like a real project's
 
 Regenerate it from <https://tanakamasayuki.github.io/LGFXScreenBuilder/fontgen.html>
 (or a local `docs/fontgen.html`) with those settings and the font name
