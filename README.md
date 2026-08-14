@@ -123,6 +123,8 @@ Every example regenerates its `MyScreen.h` from a stored project via
 
 ## Documentation
 
+- [docs/BEGINNERS_GUIDE.md](docs/BEGINNERS_GUIDE.md) — **beginner's guide**: how drawing works,
+  flicker and double buffering, DMA, the memory/speed trade-off, LovyanGFX and library quirks, strengths and limits
 - [SPEC.md](SPEC.md) — full specification (Japanese: [SPEC.ja.md](SPEC.ja.md))
 - [docs/AI_LAYOUT_IO.md](docs/AI_LAYOUT_IO.md) — the layout-JSON contract handed to an AI
 - [docs/README.md](docs/README.md) — the authoring tool itself (developer notes)

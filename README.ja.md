@@ -121,6 +121,8 @@ screen.setOverlay(mainOverlay);       // 1 シーン向けの任意の動的描�
 
 ## ドキュメント
 
+- [docs/BEGINNERS_GUIDE.ja.md](docs/BEGINNERS_GUIDE.ja.md) — **初心者向けガイド**: 描画のしくみ、
+  ちらつきとダブルバッファ、DMA、メモリ／速度のトレードオフ、LovyanGFX と本ライブラリのクセ、利点と限界
 - [SPEC.ja.md](SPEC.ja.md) — 全仕様（English: [SPEC.md](SPEC.md)）
 - [docs/AI_LAYOUT_IO.ja.md](docs/AI_LAYOUT_IO.ja.md) — AI に渡すレイアウト JSON 契約（正本は英語版）
 - [docs/README.ja.md](docs/README.ja.md) — オーサリングツール本体（開発者向けメモ）
