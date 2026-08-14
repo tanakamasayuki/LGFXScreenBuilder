@@ -566,6 +566,15 @@ A fallback is a decision about **one** typeface's gaps, so changing the typeface
 style drops it rather than carrying it onto a font whose gaps are different; and once it is
 on it stays visible and changeable, because a setting that can only be turned on is a trap.
 
+**Whitespace is capped, not judged.** A space draws nothing, so no comparison can say which
+font supplied it — a full-width space is one em in every CJK font, so even its advance
+matches whatever the browser would have fallen back to. It is therefore accepted rather
+than presence-tested, and its advance is capped afterwards at the widest inked glyph in the
+same pass. Without that cap the advance comes from the fallback at *this* font's em, which
+for a face whose em dwarfs its letters is absurd: Micro 5 at a 32px character height gave
+U+3000 an advance of 71px next to 34px kana, and that alone pushed the font past the
+format's advance limit.
+
 **The format has hard limits, and they are reported as such.** u8g2 stores a glyph's width
 and height in unsigned fields (up to 8 bits, so 255) but its bearings and advance in signed
 ones — and LovyanGFX's decoder casts those through `int_fast8_t`, which caps them at 7 bits,

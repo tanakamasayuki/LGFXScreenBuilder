@@ -33,6 +33,11 @@
 // to also be pixel-identical to monospace's.
 const FALLBACKS = ['serif', 'monospace'];
 
+// Unicode's space characters. They draw nothing, so the shape comparison cannot
+// judge them and only the advance can — see rasterizeOne.
+const SPACES = new Set([0x20, 0xa0, 0x1680, 0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005,
+  0x2006, 0x2007, 0x2008, 0x2009, 0x200a, 0x202f, 0x205f, 0x3000]);
+
 /**
  * Load a font into the document so canvas can draw with it.
  * @param {ArrayBuffer|string} src  font binary, or a URL to fetch
@@ -131,15 +136,19 @@ function pickProbe(family, style, codepoints) {
  * in the font. rasterizeSet() measures it from the glyphs it actually produced,
  * which is both tight and guaranteed not to clip.
  */
-export function measureFont(family, size, style = {}, codepoints = [], { probeChar = null } = {}) {
+export function measureFont(family, size, style = {}, codepoints = [], { probeChar = null, sameEmAs = 0 } = {}) {
   // A fallback font must be measured on the SAME reference character as the
   // font it is filling in for, or its glyphs come out a different size and the
-  // seam is obvious. If it does not have that character, it falls back to
-  // picking its own.
+  // seam is obvious.
   const forced = probeChar ? { cp: probeChar.codePointAt(0) } : null;
-  if (forced) {
-    const h = probeInk(makeSurface(REF_PX), forced.cp, REF_PX, family, style);
-    if (h) forced.refHeight = h; else forced.refHeight = 0;
+  if (forced) forced.refHeight = probeInk(makeSurface(REF_PX), forced.cp, REF_PX, family, style);
+  if (probeChar && !forced.refHeight && sameEmAs) {
+    // The reference character is not available here. Picking a different one
+    // from whatever is left would scale this font by an arbitrary glyph — a
+    // bracket among the leftovers once made a fallback's kana a quarter too
+    // small. Matching the em of the font being filled in for is at least
+    // principled, and for two fonts drawn on the same em it is exact.
+    return { cssPx: sameEmAs, probe: null, probeHeight: 0 };
   }
   const probe = forced && forced.refHeight ? forced : pickProbe(family, style, codepoints);
   // A font that draws none of the requested characters has no scale to derive;
@@ -192,17 +201,26 @@ function rasterizeOne(surf, code, size, family, style, threshold) {
 
   const a = draw(FALLBACKS[0], true);
 
-  // Whitespace draws nothing in every font, so no comparison can tell whether
-  // this font supplied it. Accept it as a blank glyph that advances the pen.
+  // Present as soon as one pair differs; the second pair is only needed when the
+  // first was inconclusive, so a glyph the font HAS usually costs two renders
+  // rather than four.
+  //
+  // Whitespace draws nothing, so shapes cannot decide it — but the ADVANCE can,
+  // and it has to: a space taken from a fallback carries that fallback's em,
+  // which at the primary's scale can be twice the width of any real glyph in
+  // the font. (Micro 5 has no ideographic space; letting the fallback's through
+  // gave U+3000 an advance of 71px next to 34px kana.)
+  // Whitespace draws nothing, so no comparison can say which font supplied it:
+  // a full-width space is one em in every CJK font, so even the advance matches
+  // whatever the fallback would have drawn. It is accepted rather than judged,
+  // and rasterizeSet caps its advance afterwards — see there.
   if (hasInk(a, threshold)) {
-    // Present as soon as one pair differs; the second pair is only needed when
-    // the first was inconclusive, so a glyph the font HAS usually costs two
-    // renders rather than four.
-    let fromFont = !sameInk(a, draw(FALLBACKS[0], false), threshold);
-    if (!fromFont) {
-      fromFont = !sameInk(draw(FALLBACKS[1], true), draw(FALLBACKS[1], false), threshold);
-    }
-    if (!fromFont) return null;
+    const differs = (fallback) => {
+      const mine = fallback === FALLBACKS[0] ? a : draw(fallback, true);
+      const theirs = draw(fallback, false);
+      return !sameInk(mine, theirs, threshold);
+    };
+    if (!differs(FALLBACKS[0]) && !differs(FALLBACKS[1])) return null;
   }
 
   let minX = w, minY = h, maxX = -1, maxY = -1;
@@ -249,14 +267,15 @@ function rasterizeOne(surf, code, size, family, style, threshold) {
  *   onProgress - ({done, total}) called between chunks
  *   probeChar  - measure on this reference character (fallback fonts pass the
  *                primary's, so their glyphs come out the same size)
+ *   sameEmAs   - CSS px to use when probeChar is unavailable here
  * @returns {Promise<{glyphs: Array, missing: Array, font: Object}>}
  *   font is { height, ascent, descent, cssPx, probe } — the line box measured
  *   from the glyphs that were actually produced.
  */
 export async function rasterizeSet({
-  family, size, codepoints, style = {}, threshold = 128, onProgress, probeChar = null,
+  family, size, codepoints, style = {}, threshold = 128, onProgress, probeChar = null, sameEmAs = 0,
 } = {}) {
-  const sizing = measureFont(family, size, style, codepoints, { probeChar });
+  const sizing = measureFont(family, size, style, codepoints, { probeChar, sameEmAs });
   // Glyphs are drawn at the CSS size that yields the requested character height.
   const surf = makeSurface(sizing.cssPx);
   const glyphs = [];
@@ -273,6 +292,15 @@ export async function rasterizeSet({
       await new Promise((r) => setTimeout(r, 0));
     }
   }
+
+  // A space is never wider than the widest character. Whitespace cannot be
+  // presence-tested, so when the font has no glyph for it the advance comes
+  // from whatever the browser fell back to — at THIS font's em, which for a
+  // face whose em dwarfs its letters is absurd: Micro 5 at a 32px character
+  // height gave U+3000 an advance of 71px next to 34px kana. Capping it keeps
+  // the text proportionate without pretending to know who supplied it.
+  const widest = glyphs.reduce((a, g) => (g.h && g.dx > a ? g.dx : a), 0);
+  if (widest) for (const g of glyphs) { if (!g.h && g.dx > widest) g.dx = widest; }
 
   return { glyphs, missing, font: { ...sizing, ...lineBoxOf(glyphs) } };
 }

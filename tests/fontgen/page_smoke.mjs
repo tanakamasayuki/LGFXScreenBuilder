@@ -456,6 +456,46 @@ const stickiness = await page.evaluate(async () => {
 });
 check(stickiness.offerHidden, 'changing typeface clears the fallback decision');
 
+// Filled-in glyphs must sit at the primary's scale, and whitespace is the case
+// that gets this wrong: it draws nothing, so only its advance can say which
+// font supplied it. Left unchecked, Micro 5 (whose em is more than twice its
+// cap height) took the ideographic space from a fallback at ITS em and U+3000
+// came out 71px wide next to 34px kana.
+console.log('fills are scaled to the primary, whitespace included:');
+const scaled = await page.evaluate(async () => {
+  const { resolveCharset, splitBmp } = await import('./src/fontgen/charsets.js');
+  const { composeFont } = await import('./src/fontgen/compose.js');
+  const { encodeU8g2 } = await import('./src/fontgen/u8g2enc.js');
+  const cps = splitBmp(resolveCharset({ sets: ['ascii', 'hiragana', 'jaPunct'], customText: '気温' })).bmp;
+  const c = await composeFont({ source: { kind: 'google', family: 'Micro 5' }, fallback: 'auto', size: 32, codepoints: cps });
+  const by = new Map(c.glyphs.map((g) => [g.code, g]));
+  let encoded = null;
+  try { encoded = encodeU8g2(c.glyphs, c.font).glyphCount; } catch (e) { encoded = e.message; }
+  return {
+    space: by.get(0x3000)?.dx, kana: by.get(0x3042)?.dx, kanji: by.get(0x6c17)?.dx,
+    widest: c.glyphs.reduce((a, g) => (g.h && g.dx > a ? g.dx : a), 0),
+    skipped: c.skippedFallbacks || [], encoded,
+  };
+});
+check(scaled.space != null, `the ideographic space is in the font (dx=${scaled.space})`);
+check(scaled.space <= Math.max(scaled.kana, scaled.kanji, scaled.widest),
+  `whitespace is no wider than the widest character (space ${scaled.space}, kana ${scaled.kana}, kanji ${scaled.kanji}, widest ${scaled.widest})`);
+check(scaled.skipped.length === 0,
+  `no fallback family failed silently${scaled.skipped.length ? ': ' + JSON.stringify(scaled.skipped) : ''}`);
+check(typeof scaled.encoded === 'number', `and the result encodes (${scaled.encoded} glyphs)`);
+
+// Korean has to be reachable through the chain too — it sits at the end of it.
+console.log('the chain reaches Korean:');
+const korean = await page.evaluate(async () => {
+  const { resolveCharset, splitBmp } = await import('./src/fontgen/charsets.js');
+  const { composeFont } = await import('./src/fontgen/compose.js');
+  const cps = splitBmp(resolveCharset({ sets: ['ascii', 'hangulKs'] })).bmp.slice(0, 120);
+  const c = await composeFont({ source: { kind: 'google', family: 'Roboto' }, fallback: 'auto', size: 24, codepoints: cps });
+  return { sources: c.sources.map((x) => `${x.family}:${x.count}`), missing: c.missing.length };
+});
+check(korean.missing === 0 && korean.sources.some((x) => x.startsWith('Noto Sans KR')),
+  `hangul is filled in (${korean.sources.join(', ')}, ${korean.missing} still missing)`);
+
 check(pageErrors.length === 0, `still no uncaught errors${pageErrors.length ? ': ' + pageErrors.join('; ') : ''}`);
 
 await browser.close();

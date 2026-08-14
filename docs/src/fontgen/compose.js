@@ -96,6 +96,7 @@ export async function composeFont({
     }
 
     const glyphs = [...first.glyphs];
+    const skipped = [];
     let missing = first.missing;
     const sources = [{ ...first.meta, count: first.glyphs.length, chars: null }];
 
@@ -114,13 +115,21 @@ export async function composeFont({
       for (const family of chain) {
         if (!missing.length) break;
         try {
-          const fb = await acquire({ kind: 'google', family }, missing, style);
+          // Ask for the reference character too: subsets are fetched by
+          // intersection, so requesting only the missing characters can leave
+          // the probe's subset unloaded — and then the font gets scaled by
+          // whatever else happened to be in the set.
+          const probeCp = first.font.probe ? first.font.probe.codePointAt(0) : null;
+          const want = probeCp ? [...new Set([...missing, probeCp])].sort((x, y) => x - y) : missing;
+          const fb = await acquire({ kind: 'google', family }, want, style);
           open.push(...fb.faces);
           const got = await rasterizeSet({
             family: fb.family, size, codepoints: missing, style, threshold,
             // Match the primary's reference character so the filled-in glyphs
-            // are the same height as the rest of the font.
+            // are the same height as the rest of the font; if this family has
+            // no such character, match its em instead.
             probeChar: first.font.probe,
+            sameEmAs: first.font.cssPx,
             onProgress: (p) => onProgress?.({ ...p, family }),
           });
           if (!got.glyphs.length) continue;
@@ -131,9 +140,11 @@ export async function composeFont({
             chars: got.glyphs.map((g) => String.fromCodePoint(g.code)).join(''),
           });
           missing = got.missing;
-        } catch {
-          // A family that will not load is simply not a usable fallback; the
-          // characters stay missing and are reported as such.
+        } catch (e) {
+          // A family that will not load is simply not a usable fallback and the
+          // characters stay missing — but swallowing the reason hides real bugs,
+          // so it is kept and surfaced with the result.
+          skipped.push({ family, reason: e.message });
         }
       }
     }
@@ -141,8 +152,9 @@ export async function composeFont({
     glyphs.sort((a, b) => a.code - b.code);
     // The line box has to be re-measured over the merged set: a filled-in glyph
     // can sit higher or lower than anything the primary contributed.
+    if (skipped.length) console.warn('[lgfxsb] fallback skipped:', skipped);
     return {
-      glyphs, missing, font: { ...first.font, ...lineBoxOf(glyphs) }, sources,
+      glyphs, missing, font: { ...first.font, ...lineBoxOf(glyphs) }, sources, skippedFallbacks: skipped,
       // Hand the primary pass back so a follow-up run can skip it.
       primed: { key, result: first },
     };
