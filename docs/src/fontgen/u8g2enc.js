@@ -235,6 +235,23 @@ export function encodeU8g2(glyphs, font) {
   limitFor('y', bpy);
   limitFor('dx', bpd);
 
+  // Header bytes 9 and 10 are a SEPARATE, tighter limit than the per-glyph
+  // fields above: LovyanGFX reads max_char_width / max_char_height as `int8_t`
+  // (lgfx_fonts.hpp), and getDefaultMetric assigns max_char_height straight to
+  // metrics->height. A line box over 127 would therefore come back negative and
+  // lay the text out upside down rather than merely clip. The 63px advance
+  // ceiling puts this out of reach in practice, which is exactly why it would
+  // have gone unnoticed if it ever came into reach.
+  const headerLimit = (label, value) => {
+    if (value <= 127) return;
+    const asked = font.probeHeight || height;
+    throw new Error(
+      `u8g2: ${label} is ${value}px, but this format stores it in a signed byte (max 127). ` +
+      `Try a character height of ${Math.max(1, Math.floor(asked * 127 / value))}px or less.`);
+  };
+  headerLimit('the line height', height);
+  headerLimit('the widest glyph', maxW);
+
   const runsPerGlyph = usable.map((g) => runsOf(g.bits));
   const { b0, b1 } = chooseRunBits(runsPerGlyph, usable, bpw + bph + bpx + bpy + bpd);
 

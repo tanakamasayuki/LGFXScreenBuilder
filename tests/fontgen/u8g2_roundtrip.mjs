@@ -252,14 +252,17 @@ roundtrip('mixed', [
 // 255-byte jump-byte ceiling that encodeU8g2 reports as `skipped`.
 roundtrip('large', Array.from({ length: 120 }, (_, i) => randomGlyph(0x30 + i, 40, 40)), { height: 40, descent: 8 });
 
-// Width and height are UNSIGNED fields, which LovyanGFX's decoder reads exactly
-// at 8 bits, so they may exceed 127. The advance is SIGNED and stops at 7 bits,
-// so it is held inside that range here — a font that needs more is rejected
-// with an explicit error, checked separately below.
+// Big glyphs, at the largest size the format really supports. The per-glyph
+// width and height fields are unsigned and the decoder reads them at up to 8
+// bits, but that capacity is not reachable: the HEADER stores max_char_width and
+// max_char_height as `int8_t`, and getDefaultMetric assigns max_char_height
+// straight to metrics->height, so anything over 127 comes back negative. 127 is
+// therefore the true ceiling for both, and the advance stops earlier still, at
+// the signed 7-bit 63.
 roundtrip('wide', Array.from({ length: 40 }, (_, i) => {
-  const g = randomGlyph(0x4e00 + i, 200, 200);
+  const g = randomGlyph(0x4e00 + i, 120, 120);
   return { ...g, dx: 60, x: 0, y: -20 };
-}), { height: 200, descent: 20 });
+}), { height: 127, descent: 20 });
 
 // The run-length widths are chosen for FEWEST DROPPED GLYPHS first and smallest
 // output second. Size alone is the wrong objective: a glyph is reached through a
@@ -342,6 +345,24 @@ try {
   const advises = /character height of \d+px or less/.test(e.message);
   if (named && advises) console.log(`  ok   the error names the character, the limit and a size that works\n       ${e.message}`);
   else fail(`unhelpful limit error: ${e.message}`);
+}
+
+// The header's own fields are a second, tighter limit than the per-glyph ones,
+// and the failure they cause is worse than clipping: getDefaultMetric assigns
+// max_char_height (an int8_t) straight to metrics->height, so a line box over
+// 127 comes back negative and the text lays out inverted. Nothing in the encoder
+// would have noticed — the 63px advance ceiling normally stops a font getting
+// this tall first, which is precisely why an unguarded case would ship broken.
+try {
+  encodeU8g2([{ code: 0x41, w: 100, h: 100, x: 0, y: -20, dx: 60, bits: new Uint8Array(10000) }],
+    { height: 200, descent: 20, probeHeight: 160 });
+  fail('a line height beyond the header int8 was accepted');
+} catch (e) {
+  if (/line height is 200px/.test(e.message) && /max 127/.test(e.message) && /character height of \d+px or less/.test(e.message)) {
+    console.log(`  ok   an over-tall line box is refused, not silently inverted\n       ${e.message}`);
+  } else {
+    fail(`unhelpful header limit error: ${e.message}`);
+  }
 }
 
 // Degenerate glyphs: a zero-size glyph (space) and an all-ink block.

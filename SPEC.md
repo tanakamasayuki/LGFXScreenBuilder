@@ -602,6 +602,12 @@ still decides, so ordinary fonts are byte-identical. Any glyph that still cannot
 is named in the result, not just counted, because the answer decides what to do about it: a
 slightly smaller character height usually brings it back.
 
+Whether another output format would lift any of this is answered, with the field widths read
+out of LovyanGFX's own sources and sizes measured on the same glyph set, in
+[docs/FONT_FORMATS.md](docs/FONT_FORMATS.md). The short version: the U+FFFF ceiling is
+LovyanGFX's text API (`IFont::drawChar` takes a `uint16_t`), so no format lifts it; the 63px
+advance and the 255-byte-per-glyph ceilings are u8g2's alone and GFXfont has neither.
+
 **The format has hard limits, and they are reported as such.** u8g2 stores a glyph's width
 and height in unsigned fields (up to 8 bits, so 255) but its bearings and advance in signed
 ones — and LovyanGFX's decoder casts those through `int_fast8_t`, which caps them at 7 bits,

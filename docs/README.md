@@ -88,8 +88,9 @@ python -m http.server 8000 --directory docs
   allowed with a warning: most commercial and OS-bundled typefaces forbid exactly
   this kind of embedding, and every generated header records its attribution.
 - **Characters outside the format's range are excluded from the curated sets.**
-  u8g2 addresses glyphs with a **uint16** encoding, so a character above U+FFFF
-  (4 bytes in UTF-8) can never be generated no matter which typeface is used.
+  LovyanGFX addresses glyphs with a **uint16** codepoint throughout its text API,
+  so a character above U+FFFF (4 bytes in UTF-8) can never be generated — nor
+  drawn — no matter which typeface or font format is used.
   Across every curated set exactly two characters fall outside it, and they are
   absent **by design, not by omission**:
 
@@ -107,7 +108,9 @@ python -m http.server 8000 --directory docs
   name — there the character is yours and the warning is something you can act
   on, which is why the curated sets stay quiet and custom input does not.
 
-  The cutoff is U+FFFF, **not** "3 bytes in UTF-8" — every kanji, kana and hangul
+  The cutoff is U+FFFF and it is LovyanGFX's, not this format's — see
+  [FONT_FORMATS.md](FONT_FORMATS.md) for what every font type it supports can and
+  cannot do. The cutoff is **not** "3 bytes in UTF-8" — every kanji, kana and hangul
   syllable is 3 bytes and encodes fine. It matters mostly for **emoji**, which
   fall on both sides of it: the pictographs in the BMP work (they are in
   `symMisc` / `symShapes` already — ⌚ ⏰ ☀ ☁ ☂ ☃ ☎ ⚠ ⚡ ★ ♥ ♪ ✓ ▲ ◆ ①), while the
