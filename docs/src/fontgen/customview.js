@@ -39,7 +39,10 @@ function syncSample() {
 
 const blankRecipe = () => ({
   source: { kind: 'google', family: 'Noto Sans JP', weight: 400, italic: false },
-  size: 32,
+  // Character height. 24 for the same reason as the standalone page (page.js):
+  // above it, flash keeps climbing while legibility has already flattened — and
+  // an embedded font costs flash on every profile it is enabled for.
+  size: 24,
   threshold: 128,
   // Flat list of set ids (see charsets.js); the picker groups them into axes.
   sets: ['ascii', 'hiragana', 'katakana', 'jaPunct', 'hanJa1', 'symUnits'],

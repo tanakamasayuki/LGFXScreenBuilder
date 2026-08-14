@@ -74,10 +74,11 @@ check(await page.locator('#fg-presets .cs-check').count() >= 10, 'additive sets 
 check(await page.locator('#fg-presets .cs-tier').count() >= 5, 'per-language han tiers render as ladders');
 check(await page.locator('#fg-presets .cs-templates .fchip').count() >= 5, 'templates are offered');
 
-// Defaults: a CJK-capable face at a line height that stays legible at 1bpp.
+// Defaults: a CJK-capable face at the character height where legibility has
+// already flattened but flash has not — 24px, not 32 (SPEC §8.7.7).
 check(await page.locator('#fg-fontlist .fg-font.on .fg-font-name').innerText() === 'Noto Sans JP',
   'the default typeface is Noto Sans JP');
-check(await page.inputValue('#fg-size') === '32', 'the default character height is 32px');
+check(await page.inputValue('#fg-size') === '24', 'the default character height is 24px');
 check(await page.inputValue('#fg-live-zoom') === '1', 'the preview zoom defaults to 1x');
 
 // The live preview sits with the typeface/size controls and must actually
@@ -90,7 +91,7 @@ const rendered = (px) => new RegExp(`(characters|文字) ${px}px`);
 const t0 = Date.now();
 await page.waitForFunction(
   (re) => new RegExp(re).test(document.querySelector('#fg-live-status').textContent),
-  rendered(32).source, { timeout: 90000 });
+  rendered(24).source, { timeout: 90000 });
 console.log(`  (typeface loaded and previewed in ${((Date.now() - t0) / 1000).toFixed(1)}s)`);
 const liveInk = await page.evaluate(() => {
   const cv = document.querySelector('#fg-live');
@@ -102,8 +103,8 @@ const liveInk = await page.evaluate(() => {
 check(liveInk.n > 100, `the live preview drew glyphs (${liveInk.n} px)`);
 // The size is the CHARACTER height; the line box is derived and must be at
 // least as tall, never shorter (which would clip).
-check(liveInk.h >= 32, `the line box covers the 32px characters (canvas ${liveInk.h}px at 1x)`);
-check(rendered(32).test(liveInk.status), `it reports both heights (${liveInk.status.trim()})`);
+check(liveInk.h >= 24, `the line box covers the 24px characters (canvas ${liveInk.h}px at 1x)`);
+check(rendered(24).test(liveInk.status), `it reports both heights (${liveInk.status.trim()})`);
 
 // Changing the size must move the preview without a Generate run.
 await page.fill('#fg-size', '16');
@@ -111,10 +112,10 @@ await page.waitForFunction(
   (re) => new RegExp(re).test(document.querySelector('#fg-live-status').textContent),
   rendered(16).source, { timeout: 60000 });
 check(true, 'changing the character height updates the live preview');
-await page.fill('#fg-size', '32');
+await page.fill('#fg-size', '24');
 await page.waitForFunction(
   (re) => new RegExp(re).test(document.querySelector('#fg-live-status').textContent),
-  rendered(32).source, { timeout: 60000 });
+  rendered(24).source, { timeout: 60000 });
 
 // The point of sizing by character height: the same number must produce the
 // same visible text size in different typefaces. Line boxes vary a lot between

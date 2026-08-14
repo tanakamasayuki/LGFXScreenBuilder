@@ -27,9 +27,15 @@ const state = {
   weight: 400,
   italic: false,
   localFile: null,          // { name, buffer }
-  // Line height. 32 by default: 1bpp CJK below ~24px loses the strokes that
-  // tell kanji apart, so the honest starting point is a size that reads.
-  size: 32,
+  // Character height (not the line box — see rasterize.js). 24 by default,
+  // which is where the two curves cross for the default Japanese selection:
+  // stroke separation in dense kanji climbs steeply up to about 20px and then
+  // flattens (16 -> 24 gains 11%, 24 -> 32 only a further 4%), while flash keeps
+  // climbing linearly (24px 175 KB, 32px 253 KB for the same 2,493 characters).
+  // Paying 45% more flash for 4% more legibility is the wrong default; 24 is
+  // also the size these panels are actually driven at — 10 lines on a 320x240
+  // rather than 7.
+  size: 24,
   threshold: 128,
   name: 'MyFont',
   // Flat list of set ids (see charsets.js); the picker groups them into axes.

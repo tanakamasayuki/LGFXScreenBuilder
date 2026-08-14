@@ -57,9 +57,10 @@ await page.waitForSelector('#cf-add');
 await page.click('#cf-add');
 await page.waitForSelector('#cf-overlay:not([hidden])');
 
-// Defaults: a CJK-capable face at a line height that stays legible at 1bpp.
+// Defaults: a CJK-capable face at the character height where legibility has
+// already flattened but flash has not — 24px, not 32 (SPEC §8.7.7).
 check(await page.inputValue('#cf-family') === 'Noto Sans JP', 'the dialog defaults to Noto Sans JP');
-check(await page.inputValue('#cf-size') === '32', 'the dialog defaults to a 32px character height');
+check(await page.inputValue('#cf-size') === '24', 'the dialog defaults to a 24px character height');
 
 // The dialog carries the live preview too, beside the controls it previews.
 // The canvas height is the DERIVED line box, so the settled state is detected
@@ -68,7 +69,7 @@ const rendered = (px) => new RegExp(`(characters|文字) ${px}px`);
 const settled = (px) => page.waitForFunction(
   (re) => new RegExp(re).test(document.querySelector('#cf-live-status').textContent),
   rendered(px).source, { timeout: 90000 });
-await settled(32);
+await settled(24);
 const dlgInk = await page.evaluate(() => {
   const cv = document.querySelector('#cf-live');
   const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
