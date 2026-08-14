@@ -25,6 +25,25 @@
     <section class="fg-card">
       <h2><span class="fg-step">1</span> <span data-i18n="fg.stepSource">Typeface</span></h2>
 
+      <!-- Generating is not always the right answer: the preset fonts that ship
+           with LovyanGFX / M5GFX cost no flash at all. What they cannot do is
+           let you choose the character set, which is the reason this page
+           exists — so the catalog is linked before the work starts, not after. -->
+      <div class="fg-info">
+        <strong data-i18n="fg.catalogTitle">Is generating what you need?</strong>
+        <p data-i18n="fg.catalogBody">
+          LovyanGFX and M5GFX already ship with fonts, and using one costs nothing:
+          setFont(&amp;fonts::lgfxJapanGothic_16) and no glyph data goes into your sketch at
+          all. What a preset cannot do is let you choose the character set — a preset
+          Japanese font carries its whole repertoire whether you draw ten characters or ten
+          thousand. Generate here when you want a size or a typeface the presets do not
+          have, or when you want to pay flash for only the characters you actually use.
+        </p>
+        <p><a class="fg-link" href="https://tanakamasayuki.github.io/LGFXFontCatalog/"
+              target="_blank" rel="noopener"
+              data-i18n="fg.catalogLink">Browse the preinstalled fonts — LGFXFontCatalog ↗</a></p>
+      </div>
+
       <div class="fg-tabs">
         <button type="button" class="fchip on" id="fg-tab-google" data-i18n="fg.tabGoogle">Google Fonts</button>
         <button type="button" class="fchip" id="fg-tab-local" data-i18n="fg.tabLocal">Local file</button>

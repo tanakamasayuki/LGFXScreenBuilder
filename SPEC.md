@@ -507,6 +507,13 @@ ink above and below the baseline), not from the family's declared metrics. It is
 exactly tall enough for this font's contents: no clipping, and no rows of padding paid for
 in flash because the family reserves room for characters this font does not carry.
 
+Generating is not always the right answer, and the standalone page says so before the work
+starts: the fonts that ship with LovyanGFX / M5GFX cost no flash at all, and the
+[preinstalled catalog](https://tanakamasayuki.github.io/LGFXFontCatalog/) is linked from the
+typeface step. What a preset cannot do is let the character set be chosen — a preset
+Japanese font carries its whole repertoire whether ten characters are drawn or ten thousand
+— and that, rather than the glyph shapes, is the reason this exists.
+
 The default is **24px**, which is where two curves cross. Legibility rises steeply and then
 flattens: measured as stroke separation in the densest 常用漢字 (繊 織 臓 鬱 …), 16px → 24px
 gains 11% and 24px → 32px only a further 4%, with the collapse setting in below 20px. Flash

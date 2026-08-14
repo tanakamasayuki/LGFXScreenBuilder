@@ -38,6 +38,13 @@
 .fg-warn strong { display: block; margin-bottom: 4px; color: #8a5a00; font-size: 13px; }
 .fg-warn p { margin: 0; font-size: 12px; line-height: 1.55; color: #5c4a25; }
 .fg-warn-text { color: #a2560a; font-size: 12px; }
+
+/* Neutral counterpart to .fg-warn: this is orientation, not a caution, and it
+   must not read as one — the preset catalog is often the right answer. */
+.fg-info { border: 1px solid #9fb8d4; border-left-width: 4px; border-radius: 8px; background: #f2f7fc; padding: 10px 12px; margin-bottom: 12px; }
+.fg-info strong { display: block; margin-bottom: 4px; color: #23507e; font-size: 13px; }
+.fg-info p { margin: 0 0 6px; font-size: 12px; line-height: 1.55; color: #3d4d5e; }
+.fg-info p:last-child { margin-bottom: 0; }
 .fg-file { display: block; margin-bottom: 6px; }
 
 /* --- charset ------------------------------------------------------------ */

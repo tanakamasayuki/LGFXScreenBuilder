@@ -73,6 +73,14 @@ check(pageErrors.length === 0, `no uncaught errors${pageErrors.length ? ': ' + p
 check(await page.locator('#fg-presets .cs-check').count() >= 10, 'additive sets render as checkboxes');
 check(await page.locator('#fg-presets .cs-tier').count() >= 5, 'per-language han tiers render as ladders');
 check(await page.locator('#fg-presets .cs-templates .fchip').count() >= 5, 'templates are offered');
+// Generating is not always the right answer, and the page has to say so: the
+// preset fonts that ship with LovyanGFX cost no flash at all, and the reason to
+// generate is the character set, not the glyphs. The catalog link is how someone
+// who does not need this page finds that out before using it.
+const catalog = page.locator('a[href="https://tanakamasayuki.github.io/LGFXFontCatalog/"]');
+check(await catalog.count() === 1, 'the preinstalled font catalog is linked');
+check((await page.locator('.fg-info').innerText()).length > 150,
+  'and the link is framed by when a preset is the better choice');
 
 // Defaults: a CJK-capable face at the character height where legibility has
 // already flattened but flash has not — 24px, not 32 (SPEC §8.7.7).
