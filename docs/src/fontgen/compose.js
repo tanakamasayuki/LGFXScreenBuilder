@@ -104,13 +104,21 @@ export async function composeFont({
       // 'auto' tries the curated chain; anything else pins one family. The
       // primary is never its own fallback.
       //
-      // `plan` short-circuits the survey: the offer already established which
-      // families actually supply the gap, and no family covers all of it (Noto
-      // Sans has Ω but not ←, Symbols 2 has ▲ but not ℃), so walking the whole
-      // chain would download two or three fonts that contribute nothing.
-      const chain = (plan && plan.length ? plan
-        : fallback === FALLBACK_AUTO ? FALLBACK_CHAIN : [fallback])
-        .filter((f) => f !== source.family);
+      // `plan` reorders that chain rather than replacing it. The offer already
+      // established which families actually supply the gap, and no family covers
+      // all of it (Noto Sans has Ω but not ←, Symbols 2 has ▲ but not ℃), so
+      // trying those first means the loop below usually finishes before the
+      // others are ever fetched — the saving the plan exists for.
+      //
+      // Replacing the chain outright was wrong, because a plan is a snapshot of
+      // ONE gap and the gap moves: with the fallback already on, changing the
+      // character set to Korean left the plan at [Noto Sans, Noto Sans JP] and
+      // 2,350 hangul were reported missing while Noto Sans KR, three lines down
+      // the chain, was never asked. A plan may now only make the answer arrive
+      // sooner, never make it smaller.
+      const rest = fallback === FALLBACK_AUTO ? FALLBACK_CHAIN : [fallback];
+      const chain = [...(plan || []), ...rest]
+        .filter((f, i, a) => f !== source.family && a.indexOf(f) === i);
 
       for (const family of chain) {
         if (!missing.length) break;

@@ -485,16 +485,33 @@ check(scaled.skipped.length === 0,
 check(typeof scaled.encoded === 'number', `and the result encodes (${scaled.encoded} glyphs)`);
 
 // Korean has to be reachable through the chain too — it sits at the end of it.
+//
+// The second run passes a STALE plan. A plan is the offer's survey of one
+// particular gap, and the page keeps it across a character-set change: with the
+// fallback already on, switching to the Korean set left the plan at the
+// families that had covered the previous gap, and because the plan replaced the
+// chain outright, Noto Sans KR was never asked and 2,350 hangul were reported
+// as absent. A plan may reorder the chain; it must not truncate it.
 console.log('the chain reaches Korean:');
 const korean = await page.evaluate(async () => {
   const { resolveCharset, splitBmp } = await import('./src/fontgen/charsets.js');
   const { composeFont } = await import('./src/fontgen/compose.js');
   const cps = splitBmp(resolveCharset({ sets: ['ascii', 'hangulKs'] })).bmp.slice(0, 120);
-  const c = await composeFont({ source: { kind: 'google', family: 'Roboto' }, fallback: 'auto', size: 24, codepoints: cps });
-  return { sources: c.sources.map((x) => `${x.family}:${x.count}`), missing: c.missing.length };
+  const src = { kind: 'google', family: 'Roboto' };
+  const c = await composeFont({ source: src, fallback: 'auto', size: 24, codepoints: cps });
+  const stale = await composeFont({
+    source: src, fallback: 'auto', size: 24, codepoints: cps,
+    primed: c.primed, chain: ['Noto Sans Symbols 2', 'Noto Sans'],
+  });
+  return {
+    sources: c.sources.map((x) => `${x.family}:${x.count}`), missing: c.missing.length,
+    staleSources: stale.sources.map((x) => `${x.family}:${x.count}`), staleMissing: stale.missing.length,
+  };
 });
 check(korean.missing === 0 && korean.sources.some((x) => x.startsWith('Noto Sans KR')),
   `hangul is filled in (${korean.sources.join(', ')}, ${korean.missing} still missing)`);
+check(korean.staleMissing === 0 && korean.staleSources.some((x) => x.startsWith('Noto Sans KR')),
+  `a stale plan cannot truncate the chain (${korean.staleSources.join(', ')}, ${korean.staleMissing} still missing)`);
 
 check(pageErrors.length === 0, `still no uncaught errors${pageErrors.length ? ': ' + pageErrors.join('; ') : ''}`);
 

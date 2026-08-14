@@ -591,11 +591,21 @@ dropped" only invites the question.
 
 Two costs the fallback pass deliberately does not pay twice: accepting the offer reuses the
 primary rasterization instead of redoing it (for a few thousand kanji that is the difference
-between one pass and two), and it walks only the families the survey found could help.
-`unicode-range` is no help in that survey — Google's subsets declare coverage the fonts do
-not have, claiming all of ‰ ℃ ℉ ← ▲ ② ☃ Ω for three families that between them draw quite
-different subsets of it — so the survey rasterizes, but without measuring, since "does a
-glyph exist" needs no scale.
+between one pass and two), and it tries the families the survey found could help *first*, so
+the pass normally finishes before the rest of the chain is ever fetched. `unicode-range` is
+no help in that survey — Google's subsets declare coverage the fonts do not have, claiming
+all of ‰ ℃ ℉ ← ▲ ② ☃ Ω for three families that between them draw quite different subsets of
+it — so the survey rasterizes, but without measuring, since "does a glyph exist" needs no
+scale.
+
+**A survey may reorder the chain; it must never truncate it.** The survey describes *one*
+gap, and the gap moves whenever the character set changes — which, unlike a typeface change,
+does not clear the fallback. Letting the survey stand in for the chain therefore lost
+coverage silently: with the fallback already on, switching to the Korean set kept a plan of
+[Noto Sans, Noto Sans JP] and reported 2,350 hangul as absent from the typeface, while Noto
+Sans KR — three entries further down the chain, and holding every one of them — was never
+asked. The plan is now a prefix of the full chain rather than a replacement for it, so a
+stale plan can only cost a little time, never coverage.
 
 A count ("4,217 characters") does not tell anyone whether a set covers what their screen
 needs, so both entry points carry a **charset inspector**: the resolved codepoints listed as
