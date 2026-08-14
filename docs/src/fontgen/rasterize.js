@@ -30,7 +30,9 @@
 //
 // Both generics are used, and the character counts as present if EITHER pair
 // differs — a glyph that happens to be pixel-identical to serif's is unlikely
-// to also be pixel-identical to monospace's.
+// to also be pixel-identical to monospace's. "Unlikely" is not "never", so a
+// character that still looks absent is asked once more at a different size; see
+// drawsItselfElsewhere below.
 const FALLBACKS = ['serif', 'monospace'];
 
 // Unicode's space characters. They draw nothing, so the shape comparison cannot
@@ -183,6 +185,77 @@ const hasInk = (r, threshold) => {
   return false;
 };
 
+// --- second opinion -------------------------------------------------------
+//
+// The comparison above answers "did the fallback draw this?" by whether the two
+// renderings match, and it is wrong whenever they match by coincidence — when
+// the generic resolves to the same typeface design as the one being tested, a
+// glyph can threshold to exactly the same pixels AND the same advance. That is
+// rare but real: Noto Sans KR unquestionably has 굡, yet at a 43.8px em it came
+// out identical to both generics and was reported as absent, while the other
+// 2,349 hangul of the same set were fine. The collision is a property of the
+// SIZE, not of the font — at 32.9, 38.4, 49.3 and 54.8px the same character is
+// correctly found.
+//
+// So a character that looks absent is asked again at a different size. A font
+// that genuinely lacks a glyph matches its fallback at every size; a coincidence
+// does not survive being re-rolled.
+
+// Different enough that a pixel collision cannot follow, close enough that the
+// glyph still fits the surface makeSurface() builds for it.
+const SECOND_OPINION = 1.37;
+
+// A font cannot draw a codepoint none of its loaded faces declares. Google
+// serves each family as ~120 subsets whose `unicode-range` OVER-declares (all
+// three fallback families claim ‰℃℉←▲②☃Ω and draw quite different subsets of
+// it), so this can never prove a glyph is present — but it is exact in the other
+// direction, and that is what makes the retry affordable: a Latin face asked for
+// 2,350 hangul declares none of them and skips the second opinion entirely.
+let declaredCache = { at: -1, byFamily: new Map() };
+function declares(family, code) {
+  if (typeof document === 'undefined') return true;
+  // document.fonts grows as subsets load, so the cache is versioned by its size.
+  if (declaredCache.at !== document.fonts.size) declaredCache = { at: document.fonts.size, byFamily: new Map() };
+  let ranges = declaredCache.byFamily.get(family);
+  if (!ranges) {
+    ranges = [];
+    for (const face of document.fonts) {
+      if (face.family !== family) continue;
+      // "U+0-7f, U+2000-206f" — an absent descriptor means the whole of Unicode,
+      // which is what a locally supplied file gets.
+      for (const part of String(face.unicodeRange || 'U+0-10FFFF').split(',')) {
+        const m = /^\s*U\+([0-9A-Fa-f]+)(?:-([0-9A-Fa-f]+))?\s*$/.exec(part);
+        if (m) ranges.push([parseInt(m[1], 16), m[2] ? parseInt(m[2], 16) : parseInt(m[1], 16)]);
+      }
+    }
+    declaredCache.byFamily.set(family, ranges);
+  }
+  return ranges.some(([lo, hi]) => code >= lo && code <= hi);
+}
+
+// One surface per (size) is enough — the retry size is derived from it.
+let altSurf = { of: -1, surf: null };
+
+function drawsItselfElsewhere(code, size, family, style, threshold) {
+  if (!declares(family, code)) return false;
+  const at = size * SECOND_OPINION;
+  if (altSurf.of !== at) altSurf = { of: at, surf: makeSurface(at) };
+  const { ctx, w, h, originX, originY } = altSurf.surf;
+  const ch = String.fromCodePoint(code);
+  const draw = (fallback, withFont) => {
+    ctx.clearRect(0, 0, w, h);
+    ctx.font = withFont ? cssFont(at, family, style, fallback) : cssGeneric(at, fallback, style);
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(ch, originX, originY);
+    return { px: ctx.getImageData(0, 0, w, h).data, adv: ctx.measureText(ch).width };
+  };
+  for (const fb of FALLBACKS) {
+    if (!sameInk(draw(fb, true), draw(fb, false), threshold)) return true;
+  }
+  return false;
+}
+
 // Rasterize one codepoint. Returns null when the font has no glyph for it.
 function rasterizeOne(surf, code, size, family, style, threshold) {
   const ch = String.fromCodePoint(code);
@@ -205,11 +278,6 @@ function rasterizeOne(surf, code, size, family, style, threshold) {
   // first was inconclusive, so a glyph the font HAS usually costs two renders
   // rather than four.
   //
-  // Whitespace draws nothing, so shapes cannot decide it — but the ADVANCE can,
-  // and it has to: a space taken from a fallback carries that fallback's em,
-  // which at the primary's scale can be twice the width of any real glyph in
-  // the font. (Micro 5 has no ideographic space; letting the fallback's through
-  // gave U+3000 an advance of 71px next to 34px kana.)
   // Whitespace draws nothing, so no comparison can say which font supplied it:
   // a full-width space is one em in every CJK font, so even the advance matches
   // whatever the fallback would have drawn. It is accepted rather than judged,
@@ -220,7 +288,9 @@ function rasterizeOne(surf, code, size, family, style, threshold) {
       const theirs = draw(fallback, false);
       return !sameInk(mine, theirs, threshold);
     };
-    if (!differs(FALLBACKS[0]) && !differs(FALLBACKS[1])) return null;
+    if (!differs(FALLBACKS[0]) && !differs(FALLBACKS[1]) && !drawsItselfElsewhere(code, size, family, style, threshold)) {
+      return null;
+    }
   }
 
   let minX = w, minY = h, maxX = -1, maxY = -1;

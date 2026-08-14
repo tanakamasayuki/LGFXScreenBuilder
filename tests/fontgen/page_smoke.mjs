@@ -513,6 +513,31 @@ check(korean.missing === 0 && korean.sources.some((x) => x.startsWith('Noto Sans
 check(korean.staleMissing === 0 && korean.staleSources.some((x) => x.startsWith('Noto Sans KR')),
   `a stale plan cannot truncate the chain (${korean.staleSources.join(', ')}, ${korean.staleMissing} still missing)`);
 
+// The presence test decides by whether the rendering matches what the generic
+// fallback draws, so it is wrong when they match by coincidence. Noto Sans KR
+// has 굡, but at a 43.8px em it thresholded identically to BOTH generics and was
+// dropped, while the other 2,349 hangul of the same set came through. A genuine
+// absence matches at every size, so a second opinion at another size settles it.
+console.log('a pixel collision is not mistaken for a missing glyph:');
+const collision = await page.evaluate(async () => {
+  const { loadGoogleFont } = await import('./src/fontgen/googlefonts.js');
+  const { rasterizeSet, unloadFont } = await import('./src/fontgen/rasterize.js');
+  const cps = [0xad61, 0xac00];                       // 굡 가
+  const g = await loadGoogleFont('Noto Sans KR', [...cps, 0x48], {});
+  const out = [];
+  for (const size of [24, 28, 32, 36, 40]) {
+    // probeChar 'H' reproduces the fallback pass, where the size is pinned to
+    // the PRIMARY's reference character — which is how 43.8px arises.
+    const r = await rasterizeSet({ family: g.family, size, codepoints: cps, probeChar: 'H' });
+    out.push({ size, px: Math.round(r.font.cssPx * 10) / 10, missing: r.missing.length });
+  }
+  for (const f of g.faces) unloadFont(f);
+  return out;
+});
+console.log('  ' + collision.map((c) => `${c.size}→${c.px}px:${c.missing}`).join('  '));
+check(collision.every((c) => c.missing === 0),
+  `Noto Sans KR keeps 굡 at every size (${collision.filter((c) => c.missing).map((c) => c.px + 'px').join(', ') || 'none dropped'})`);
+
 check(pageErrors.length === 0, `still no uncaught errors${pageErrors.length ? ': ' + pageErrors.join('; ') : ''}`);
 
 await browser.close();

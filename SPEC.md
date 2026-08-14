@@ -465,6 +465,16 @@ the two match, the fallback drew it and the font has no such glyph. Both generic
 and the character counts as present if either pair differs, since a glyph that happens to
 be pixel-identical to serif's is unlikely to also be pixel-identical to monospace's.
 
+"Unlikely" is not "never", so **a character that still looks absent is asked once more at a
+different size**. A font that genuinely lacks a glyph matches its fallback at every size; a
+pixel collision is a property of the size and does not survive being re-rolled. Noto Sans KR
+unquestionably contains 굡, but at a 43.8px em it thresholded to exactly the same pixels and
+advance as both generics and was reported missing, while the other 2,349 hangul of the same
+set came through — and at 32.9, 38.4, 49.3 and 54.8px the same character is found. The retry
+is affordable because it is skipped when none of the family's loaded faces *declares* the
+codepoint: `unicode-range` over-declares and so can never prove a glyph is present, but it is
+exact in the other direction, and a Latin face asked for 2,350 hangul declares none of them.
+
 Two simpler tests were tried first and both ship wrong output. Comparing *the font behind
 serif* against *the font behind monospace* only works while the two generics resolve to
 different physical fonts: on a machine with one CJK font both draw 漢 identically and a
