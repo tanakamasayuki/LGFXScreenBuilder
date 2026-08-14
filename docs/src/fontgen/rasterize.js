@@ -57,55 +57,78 @@ function makeSurface(size) {
 const cssFont = (size, family, { weight = 400, italic = false } = {}, fallback = null) =>
   `${italic ? 'italic ' : ''}${weight} ${size}px "${family}"${fallback ? `, ${fallback}` : ''}`;
 
-// Raw line box of a family at a given CSS px size.
-function boxAt(cssPx, family, style) {
-  const { ctx } = makeSurface(cssPx);
-  ctx.font = cssFont(cssPx, family, style);
-  ctx.textBaseline = 'alphabetic';
-  const m = ctx.measureText('Hgあ漢pqÅ');
-  return {
-    ascent: m.fontBoundingBoxAscent || m.actualBoundingBoxAscent || cssPx * 0.8,
-    descent: m.fontBoundingBoxDescent || m.actualBoundingBoxDescent || cssPx * 0.2,
-  };
+// The size is pinned to the ink height of a REFERENCE CHARACTER, picked from
+// the set being generated. Candidates are tried in this order and the first one
+// the font actually draws wins: an ideograph or a hangul syllable if the set has
+// them (they fill the em square), then a capital, then a digit.
+//
+// Picking from the requested set rather than from a fixed probe matters: asking
+// canvas whether a family "has" 漢 is not answerable — a Latin-only family falls
+// back to a system font, and where no CJK font is installed at all the fallback
+// draws an identical tofu through every fallback chain, so the character looks
+// present. Restricting candidates to characters the user actually asked for
+// sidesteps the question entirely.
+const PROBE_CANDIDATES = [0x6f22, 0x56fd, 0x65e5, 0xac00, 0x48, 0x45, 0x4e, 0x30];
+// Large enough that the probe's ink height is measured with useful precision.
+const REF_PX = 100;
+
+// Ink height of one codepoint at a given CSS px size, or 0 if the font has no
+// glyph for it.
+function probeInk(surf, cp, cssPx, family, style) {
+  const g = rasterizeOne(surf, cp, cssPx, family, style, 128);
+  return g && g.h > 0 ? g.h : 0;
+}
+
+function pickProbe(family, style, codepoints) {
+  const surf = makeSurface(REF_PX);
+  const set = new Set(codepoints);
+  for (const cp of PROBE_CANDIDATES) {
+    if (!set.has(cp)) continue;
+    const h = probeInk(surf, cp, REF_PX, family, style);
+    if (h) return { cp, refHeight: h };
+  }
+  // Nothing canonical is in the set (a digits-only clock, say): take the
+  // tallest of the first handful, which for such a set is representative.
+  let best = null;
+  for (const cp of codepoints.slice(0, 24)) {
+    const h = probeInk(surf, cp, REF_PX, family, style);
+    if (h && (!best || h > best.refHeight)) best = { cp, refHeight: h };
+  }
+  return best;
 }
 
 /**
- * Resolve a requested LINE HEIGHT to the CSS px size that produces it, and
- * return the resulting whole-pixel metrics.
+ * Resolve a requested CHARACTER HEIGHT to the CSS px size that produces it.
  *
- * The size field means line height, not em size, because that is what the
- * embedded-font world counts in: LovyanGFX's own `lgfxJapanGothic_16` is 16
- * pixels tall, and someone fitting three rows onto a 64px panel is budgeting
- * rows, not ems. A CSS `font-size: 16px` would instead give a ~19px line box
- * for most families, silently overflowing that budget.
+ * The size field is the height of the characters themselves, not the line box.
+ * Line boxes vary wildly between families — the same "32" gives visibly
+ * different text in Noto Sans JP and in Roboto, because one reserves far more
+ * room above and below than the other — and what anyone means by 32 is text
+ * that is 32 pixels tall. So the size is pinned to a reference character's ink
+ * height and the line box becomes a derived value.
  *
- * `height` is the line advance and `descent` how far it extends below the
- * baseline; encodeU8g2 derives the baseline from those two.
+ * The line box cannot be computed here: it depends on which characters end up
+ * in the font. rasterizeSet() measures it from the glyphs it actually produced,
+ * which is both tight and guaranteed not to clip.
  */
-export function measureFont(family, height, style = {}) {
-  // One measurement at a large reference size gives the family's box ratio;
-  // the scale from it lands within a pixel, and the search fixes the rest.
-  const REF = 100;
-  const ref = boxAt(REF, family, style);
-  const ratio = (ref.ascent + ref.descent) / REF;
-  let cssPx = Math.max(1, height / (ratio || 1));
+export function measureFont(family, size, style = {}, codepoints = []) {
+  const probe = pickProbe(family, style, codepoints);
+  // A font that draws none of the requested characters has no scale to derive;
+  // fall back to treating the size as an em size so callers still get output
+  // (they will report the empty result themselves).
+  if (!probe) return { cssPx: size, probe: null, probeHeight: 0 };
 
-  // Nudge until the rounded box matches the request, then keep the closest.
+  let cssPx = Math.max(1, REF_PX * size / probe.refHeight);
+  const surf = makeSurface(Math.ceil(cssPx));
   let best = null;
-  for (let i = 0; i < 24; i++) {
-    const b = boxAt(cssPx, family, style);
-    const a = Math.ceil(b.ascent), d = Math.ceil(b.descent);
-    const got = a + d;
-    if (!best || Math.abs(got - height) < Math.abs(best.got - height)) best = { cssPx, a, d, got };
-    if (got === height) break;
-    cssPx += (got > height ? -1 : 1) * Math.max(0.1, Math.abs(got - height) / 4);
+  for (let i = 0; i < 16; i++) {
+    const got = probeInk(surf, probe.cp, cssPx, family, style);
+    if (!best || Math.abs(got - size) < Math.abs(best.got - size)) best = { cssPx, got };
+    if (got === size) break;
+    cssPx += (got > size ? -1 : 1) * Math.max(0.1, Math.abs(got - size) / 4);
     if (cssPx < 1) { cssPx = 1; break; }
   }
-
-  // The line box is what the caller asked for even when no CSS size lands on
-  // it exactly; the slack goes to the ascent so descenders stay intact.
-  const descent = Math.min(best.d, Math.max(0, height - 1));
-  return { cssPx: best.cssPx, ascent: height - descent, descent, height };
+  return { cssPx: best.cssPx, probe: String.fromCodePoint(probe.cp), probeHeight: best.got };
 }
 
 // Rasterize one codepoint. Returns null when the font has no glyph for it.
@@ -168,19 +191,21 @@ function rasterizeOne(surf, code, size, family, style, threshold) {
  *
  * @param {Object} opts
  *   family     - CSS family name from loadFont()
- *   size       - target LINE HEIGHT in pixels (see measureFont)
+ *   size       - target CHARACTER HEIGHT in pixels (see measureFont)
  *   codepoints - sorted array of codepoints
  *   style      - { weight, italic }
  *   threshold  - alpha cutoff for 1bpp (1..255; 128 is a neutral default)
  *   onProgress - ({done, total}) called between chunks
  * @returns {Promise<{glyphs: Array, missing: Array, font: Object}>}
+ *   font is { height, ascent, descent, cssPx, probe } — the line box measured
+ *   from the glyphs that were actually produced.
  */
 export async function rasterizeSet({
   family, size, codepoints, style = {}, threshold = 128, onProgress,
 } = {}) {
-  const font = measureFont(family, size, style);
-  // Glyphs are drawn at the CSS size that yields the requested line height.
-  const surf = makeSurface(font.cssPx);
+  const sizing = measureFont(family, size, style, codepoints);
+  // Glyphs are drawn at the CSS size that yields the requested character height.
+  const surf = makeSurface(sizing.cssPx);
   const glyphs = [];
   const missing = [];
 
@@ -188,12 +213,29 @@ export async function rasterizeSet({
   // the progress bar alive instead of freezing the tab.
   const CHUNK = 200;
   for (let i = 0; i < codepoints.length; i++) {
-    const g = rasterizeOne(surf, codepoints[i], font.cssPx, family, style, threshold);
+    const g = rasterizeOne(surf, codepoints[i], sizing.cssPx, family, style, threshold);
     if (g) glyphs.push(g); else missing.push(codepoints[i]);
     if ((i + 1) % CHUNK === 0 || i === codepoints.length - 1) {
       onProgress?.({ done: i + 1, total: codepoints.length });
       await new Promise((r) => setTimeout(r, 0));
     }
   }
+
+  // The line box comes from the glyphs that were actually produced, not from
+  // the family's declared metrics: it is then exactly tall enough for this
+  // font's contents — no clipping, and no rows of padding paid for in flash
+  // because the family reserves room for characters this font does not carry.
+  // (g.y is the baseline-to-bitmap-bottom distance, positive above baseline.)
+  let ascent = 0;
+  let descent = 0;
+  for (const g of glyphs) {
+    if (!g.h) continue;
+    ascent = Math.max(ascent, g.y + g.h);
+    descent = Math.max(descent, -g.y);
+  }
+  ascent = Math.max(1, Math.ceil(ascent));
+  descent = Math.max(0, Math.ceil(descent));
+
+  const font = { ...sizing, ascent, descent, height: ascent + descent };
   return { glyphs, missing, font };
 }

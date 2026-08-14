@@ -463,13 +463,26 @@ two different generic fallbacks: identical means the font supplied it, different
 did not. (Comparing against the default font instead would drop plain shapes like `I` and
 `l`, which look the same in nearly every face.)
 
-**Size means line height.** The size field is the **line height in pixels**, matching how
-LovyanGFX names its own fonts (`lgfxJapanGothic_16` is 16 pixels tall) and how anyone
-fitting rows onto a panel is counting. A CSS `font-size` of 16px would instead yield a
-~19px line box for most families. The default is **32px**: at 1bpp, CJK below roughly 24px
-loses the strokes that tell one kanji from another, so the starting point is a size that
-actually reads. The default typeface is **Noto Sans JP** for the same reason — the harder
-case (CJK) should be the one that works out of the box.
+**Size means character height.** The size field is the ink height of a **reference
+character**, not a line box and not a CSS `font-size`. Line boxes vary wildly between
+families — the same number gives visibly different text in two typefaces because one
+reserves far more room above and below than the other — and what anyone means by 32 is
+text that is 32 pixels tall. The reference is picked from the set being generated: an
+ideograph or hangul syllable if it contains one (they fill the em square), otherwise a
+capital, otherwise a digit. Picking from the requested set is deliberate — asking canvas
+whether a family "has" 漢 is not answerable, because a Latin-only family falls back to a
+system font, and where no CJK font is installed the fallback draws an identical tofu
+through every fallback chain, so the character looks present.
+
+The **line box is derived from the glyphs that were actually produced** (their furthest
+ink above and below the baseline), not from the family's declared metrics. It is therefore
+exactly tall enough for this font's contents: no clipping, and no rows of padding paid for
+in flash because the family reserves room for characters this font does not carry.
+
+The default is **32px**: at 1bpp, CJK below roughly 24px loses the strokes that tell one
+kanji from another, so the starting point is a size that actually reads. The default
+typeface is **Noto Sans JP** for the same reason — the harder case (CJK) should be the one
+that works out of the box.
 
 **A live preview sits with those two controls.** Typeface and size are exactly the settings
 numbers cannot convey, and a preview parked below the Generate button is too far away to
@@ -507,12 +520,17 @@ symbol categories (units & measurement, mathematics, arrows, shapes, currency, e
 misc) are literal lists in the generator — reviewable character by character in its diff.
 `℃` (U+2103) lives in **units & measurement**, which is what a thermometer UI reaches for.
 
-A count ("4,217 characters") does not tell anyone whether a preset covers what their screen
+A count ("4,217 characters") does not tell anyone whether a set covers what their screen
 needs, so both entry points carry a **charset inspector**: the resolved codepoints listed as
 real characters, grouped by Unicode block, findable with the browser's own Ctrl+F, and
-scopeable to one preset at a time. After a run the same view becomes the coverage report —
+scopeable to one set at a time. After a run the same view becomes the coverage report —
 characters the chosen typeface turned out not to have are struck through **in place**, so
-"did my ℃ make it" is one glance rather than a separate list to cross-reference. The
+"did my ℃ make it" is one glance rather than a separate list to cross-reference.
+
+The **preview marks what will not make it** rather than closing the gap: a character the
+typeface has no glyph for is drawn as a red crossed box, one outside the selected character
+set as an amber one. Skipping them was the earlier behaviour and the worst option — the
+line still reads as a sentence, so nothing tells you a character went missing. The
 generated header is likewise shown in full, and says so; only a set large enough to strain
 the browser is cut, and then it says that in words instead of trailing off in an ellipsis
 that reads like the end of the file.

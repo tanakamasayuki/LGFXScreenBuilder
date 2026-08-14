@@ -10,15 +10,16 @@ The rest of the font-generator test coverage runs off-device:
   and the editor's recipe-and-rebuild flow.
 
 This one closes the loop: the emitted header has to compile, link, and actually
-draw on real LovyanGFX — at the line height that was asked for, with `℃` present.
+draw on real LovyanGFX — with the line box LovyanGFX reads back matching the one
+the generator recorded, and with the characters that were asked for present.
 
 ## The committed font
 
 `TestPanelFont.h` is a generated artifact, not hand-written:
 
 - typeface **Roboto** (Apache-2.0, Google Fonts)
-- **16px line height**
-- presets **ASCII + units + clock**
+- **16px character height** (which yields a 26px line box)
+- sets **ASCII + Latin-1 + units & measurement**
 
 Regenerate it from <https://tanakamasayuki.github.io/LGFXScreenBuilder/fontgen.html>
 (or a local `docs/fontgen.html`) with those settings and the font name

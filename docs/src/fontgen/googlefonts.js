@@ -106,9 +106,16 @@ const intersects = (ranges, cps) =>
  * The FontFace objects keep their unicode-range, so canvas resolves each
  * codepoint to the right subset on its own.
  *
- * @returns {Promise<{family: string, faces: FontFace[], subsets: number, of: number}>}
+ * `into` continues an earlier load: pass back `{ family, loaded }` from a
+ * previous result and only the subsets not already present are fetched, added
+ * under the same family. Without it, a caller that widens its codepoint set
+ * (the live preview does, every time the sample changes) would keep the old
+ * partial font and report the new characters as missing from the typeface —
+ * which is wrong, and indistinguishable from a real gap.
+ *
+ * @returns {Promise<{family, faces, loaded: Set<string>, subsets: number, of: number}>}
  */
-export async function loadGoogleFont(family, codepoints, { weight = 400, italic = false } = {}) {
+export async function loadGoogleFont(family, codepoints, { weight = 400, italic = false, into = null } = {}) {
   const res = await fetch(cssUrlFor(family, weight, italic));
   if (!res.ok) throw new Error(`Google Fonts CSS: HTTP ${res.status}`);
   const all = parseCss(await res.text());
@@ -118,13 +125,17 @@ export async function loadGoogleFont(family, codepoints, { weight = 400, italic 
 
   // A private family name keeps repeated loads (and the page's own webfont
   // links) from colliding with this one.
-  const local = `LGFXSBGF_${(loadGoogleFont._n = (loadGoogleFont._n || 0) + 1)}`;
-  const faces = await Promise.all(wanted.map(async (f) => {
+  const local = into?.family || `LGFXSBGF_${(loadGoogleFont._n = (loadGoogleFont._n || 0) + 1)}`;
+  const loaded = into?.loaded || new Set();
+  const fresh = wanted.filter((f) => !loaded.has(f.url));
+
+  const faces = await Promise.all(fresh.map(async (f) => {
     const desc = f.ranges ? { unicodeRange: f.ranges.map(([lo, hi]) => `U+${lo.toString(16)}-${hi.toString(16)}`).join(', ') } : {};
     const face = new FontFace(local, `url(${f.url})`, desc);
     await face.load();
     document.fonts.add(face);
+    loaded.add(f.url);
     return face;
   }));
-  return { family: local, faces, subsets: wanted.length, of: all.length };
+  return { family: local, faces, loaded, subsets: wanted.length, of: all.length };
 }

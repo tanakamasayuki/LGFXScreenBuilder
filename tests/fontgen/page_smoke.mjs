@@ -77,17 +77,20 @@ check(await page.locator('#fg-presets .cs-templates .fchip').count() >= 5, 'temp
 // Defaults: a CJK-capable face at a line height that stays legible at 1bpp.
 check(await page.locator('#fg-fontlist .fg-font.on .fg-font-name').innerText() === 'Noto Sans JP',
   'the default typeface is Noto Sans JP');
-check(await page.inputValue('#fg-size') === '32', 'the default line height is 32px');
+check(await page.inputValue('#fg-size') === '32', 'the default character height is 32px');
 check(await page.inputValue('#fg-live-zoom') === '1', 'the preview zoom defaults to 1x');
 
 // The live preview sits with the typeface/size controls and must actually
 // paint, without anyone pressing Generate.
 console.log('live preview:');
-// Wait for the canvas to be sized to the requested line height. A generic
-// "bigger than nothing" check would pass on the 300x150 default a canvas has
+// Wait for the status line to report a finished render. A generic "canvas is
+// bigger than nothing" check would pass on the 300x150 default a canvas has
 // before anything is drawn, and measure an empty surface.
+const rendered = (px) => new RegExp(`(characters|文字) ${px}px`);
 const t0 = Date.now();
-await page.waitForFunction(() => document.querySelector('#fg-live').height === 32, null, { timeout: 90000 });
+await page.waitForFunction(
+  (re) => new RegExp(re).test(document.querySelector('#fg-live-status').textContent),
+  rendered(32).source, { timeout: 90000 });
 console.log(`  (typeface loaded and previewed in ${((Date.now() - t0) / 1000).toFixed(1)}s)`);
 const liveInk = await page.evaluate(() => {
   const cv = document.querySelector('#fg-live');
@@ -97,13 +100,44 @@ const liveInk = await page.evaluate(() => {
   return { n, h: cv.height, status: document.querySelector('#fg-live-status').textContent };
 });
 check(liveInk.n > 100, `the live preview drew glyphs (${liveInk.n} px)`);
-check(liveInk.h === 32, `it honours the 32px line height (canvas ${liveInk.h}px at 1x)`);
-check(/32/.test(liveInk.status), `it reports the metrics (${liveInk.status.trim()})`);
+// The size is the CHARACTER height; the line box is derived and must be at
+// least as tall, never shorter (which would clip).
+check(liveInk.h >= 32, `the line box covers the 32px characters (canvas ${liveInk.h}px at 1x)`);
+check(rendered(32).test(liveInk.status), `it reports both heights (${liveInk.status.trim()})`);
 
 // Changing the size must move the preview without a Generate run.
 await page.fill('#fg-size', '16');
-await page.waitForFunction(() => document.querySelector('#fg-live').height === 16, null, { timeout: 60000 });
-check(true, 'changing the line height updates the live preview');
+await page.waitForFunction(
+  (re) => new RegExp(re).test(document.querySelector('#fg-live-status').textContent),
+  rendered(16).source, { timeout: 60000 });
+check(true, 'changing the character height updates the live preview');
+await page.fill('#fg-size', '32');
+await page.waitForFunction(
+  (re) => new RegExp(re).test(document.querySelector('#fg-live-status').textContent),
+  rendered(32).source, { timeout: 60000 });
+
+// The point of sizing by character height: the same number must produce the
+// same visible text size in different typefaces. Line boxes vary a lot between
+// families, so sizing by the line box did not.
+console.log('size is consistent across typefaces:');
+const heights = await page.evaluate(async () => {
+  const { loadGoogleFont } = await import('./src/fontgen/googlefonts.js');
+  const { rasterizeSet, unloadFont } = await import('./src/fontgen/rasterize.js');
+  const probe = { latin: 'H'.codePointAt(0), cjk: '漢'.codePointAt(0) };
+  const out = [];
+  for (const [family, kind] of [['Roboto', 'latin'], ['Inter', 'latin'], ['Noto Sans JP', 'cjk'], ['BIZ UDGothic', 'cjk']]) {
+    const cp = probe[kind];
+    const g = await loadGoogleFont(family, [cp], {});
+    const { glyphs, font } = await rasterizeSet({ family: g.family, size: 32, codepoints: [cp] });
+    for (const f of g.faces) unloadFont(f);
+    out.push({ family, ink: glyphs[0] ? glyphs[0].h : 0, line: font.height });
+  }
+  return out;
+});
+for (const h of heights) console.log(`  ${h.family.padEnd(14)} character ${h.ink}px, line ${h.line}px`);
+const inks = heights.map((h) => h.ink);
+check(inks.every((v) => Math.abs(v - 32) <= 1),
+  `every typeface renders its reference character at 32px (${inks.join(', ')})`);
 
 // Applying a template must switch the preview string too, or every template
 // previews the same characters and the difference is invisible.
@@ -136,6 +170,53 @@ check(!/not in the selected|選択中の文字種に含まれません/.test(koS
 const tplNames = await page.locator('#fg-presets .cs-templates .fchip').allInnerTexts();
 check(tplNames.length >= 10, `templates cover more than Japanese (${tplNames.length}: ${tplNames.join(', ')})`);
 
+// Characters that will not be in the generated font must be visible, not
+// silently closed up — a gap you cannot see is a gap you ship. Two reasons,
+// two colours: red = the typeface has no such glyph, amber = outside the
+// selected character set.
+console.log('characters that will not make it are shown, not skipped:');
+const marks = await page.evaluate(async () => {
+  const el = document.querySelector('#fg-live-sample');
+  el.value = 'A\u2603B';            // U+2603 SNOWMAN: outside the selection here
+  el.dispatchEvent(new Event('input'));
+  await new Promise((r) => setTimeout(r, 1800));
+  const cv = document.querySelector('#fg-live');
+  const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+  let amber = 0, green = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i] > 180 && d[i + 1] > 120 && d[i + 1] < 200 && d[i + 2] < 120) amber++;
+    else if (d[i + 1] > 200 && d[i] < 180) green++;
+  }
+  return { amber, green, status: document.querySelector('#fg-live-status').textContent };
+});
+check(marks.amber > 20, `an out-of-selection character is boxed in amber (${marks.amber} px)`);
+check(marks.green > 20, `the selected characters still draw (${marks.green} px)`);
+check(/amber crossed|\u6a59\u8272/.test(marks.status), `the status explains the amber marker (${marks.status.trim().slice(0, 80)})`);
+
+// Regression: a Google CJK family is served as ~120 subsets, and reusing the
+// subsets fetched for an earlier sample made new characters look absent from
+// the typeface. Noto Sans JP unquestionably has 気温.
+console.log('subsets are fetched as the sample widens:');
+const widened = await page.evaluate(async () => {
+  const el = document.querySelector('#fg-live-sample');
+  for (const v of ['\u8587\u8587', '\u6c17\u6e29']) {   // 薔薇 then 気温
+    el.value = v;
+    el.dispatchEvent(new Event('input'));
+    await new Promise((r) => setTimeout(r, 2500));
+  }
+  const cv = document.querySelector('#fg-live');
+  const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+  let red = 0;
+  for (let i = 0; i < d.length; i += 4) if (d[i] > 180 && d[i + 1] < 120 && d[i + 2] < 120) red++;
+  return { red, status: document.querySelector('#fg-live-status').textContent };
+});
+check(widened.red === 0, `気温 is found after an earlier sample loaded other subsets (${widened.red} red px)`);
+await page.evaluate(() => {
+  const el = document.querySelector('#fg-live-sample');
+  el.value = '';
+  el.dispatchEvent(new Event('input'));
+});
+
 // The local-file licence warning must be present — it is the whole reason
 // local files are allowed at all.
 await page.click('#fg-tab-local');
@@ -159,6 +240,22 @@ await page.locator('#fg-presets .cs-templates .fchip').filter({ hasText: /Latin 
 const counted = await page.locator('#fg-charcount').innerText();
 check(/\d/.test(counted), `charset summary shows a count (${counted})`);
 
+// ℃ is in the selection here but Roboto has no glyph for it — the canonical
+// "the font is missing a character you asked for" case, and it must be red.
+const redBox = await page.evaluate(async () => {
+  const el = document.querySelector('#fg-live-sample');
+  el.value = 'A\u2103B';
+  el.dispatchEvent(new Event('input'));
+  await new Promise((r) => setTimeout(r, 2000));
+  const cv = document.querySelector('#fg-live');
+  const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+  let red = 0;
+  for (let i = 0; i < d.length; i += 4) if (d[i] > 180 && d[i + 1] < 120 && d[i + 2] < 120) red++;
+  return { red, status: document.querySelector('#fg-live-status').textContent };
+});
+check(redBox.red > 20, `a character the typeface lacks is boxed in red (${redBox.red} px)`);
+check(/red crossed|\u8d64\u3044/.test(redBox.status), `the status explains the red marker (${redBox.status.trim().slice(0, 80)})`);
+
 // A count alone cannot answer "which characters is this?" — the inspector must
 // list them, and must be able to show one preset on its own.
 console.log('charset inspector:');
@@ -176,6 +273,9 @@ check(mapKana.includes('あ'), 'a single set can be inspected on its own');
 check(!mapKana.includes('Basic Latin (ASCII)'), 'inspecting one set does not show the others');
 await page.selectOption('#fg-charmap-scope', '');
 
+// Generate at 16 so the run is quick, and so the result's line height can be
+// checked against a known character height.
+await page.fill('#fg-size', '16');
 await page.click('#fg-generate');
 await page.waitForSelector('#fg-output:not([hidden])', { timeout: 120000 });
 
@@ -201,7 +301,11 @@ console.log(`  ${res.glyphs} glyphs, ${res.bytes}, line height ${res.height}, ${
 // unit squares (㎜, ㎏, …), so a chunk of the `units` preset is legitimately
 // absent — the run is healthy as long as most of it made it.
 check(res.glyphs > 120, `glyph count is plausible (${res.glyphs})`);
-check(res.height === '16px', `size is honoured as a 16px line height (${res.height})`);
+// The size is the CHARACTER height, so the line box is derived and larger:
+// tall enough for accents and descenders, but not the ~3x a family's declared
+// metrics would reserve.
+const lineH = Number(res.height.replace('px', ''));
+check(lineH >= 16 && lineH <= 40, `the derived line box is sane for 16px characters (${res.height})`);
 check(res.ink > 50, `preview canvas has ink (${res.ink})`);
 check(res.code.includes('lgfx::U8g2font'), 'header declares an lgfx::U8g2font');
 check(res.code.includes('Apache License 2.0'), 'header carries the licence notice');

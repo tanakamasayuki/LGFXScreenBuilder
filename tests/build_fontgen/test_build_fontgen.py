@@ -10,9 +10,11 @@ def test_build_fontgen(dut):
     dut.expect("TEST start build_fontgen", timeout=15)
     dut.expect("PANEL", timeout=5)
 
-    # The generator's size field is a LINE HEIGHT: a font asked for at 16px must
-    # report 16, not the ~19px line box a CSS font-size of 16 would give.
-    dut.expect("HEIGHT 16", timeout=5)
+    # The size field is a CHARACTER height and the line box is derived from the
+    # glyphs the font ended up with. LovyanGFX must read back exactly the line
+    # box the generator recorded - if these ever disagree, text is mispositioned
+    # on every screen using the font.
+    dut.expect("HEIGHT 26", timeout=5)
 
     # Advances are real, and the degree string is wider than nothing.
     width_ascii = int(dut.expect(r"WIDTH_ASCII (\d+)", timeout=5).group(1))

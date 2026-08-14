@@ -59,10 +59,16 @@ await page.waitForSelector('#cf-overlay:not([hidden])');
 
 // Defaults: a CJK-capable face at a line height that stays legible at 1bpp.
 check(await page.inputValue('#cf-family') === 'Noto Sans JP', 'the dialog defaults to Noto Sans JP');
-check(await page.inputValue('#cf-size') === '32', 'the dialog defaults to a 32px line height');
+check(await page.inputValue('#cf-size') === '32', 'the dialog defaults to a 32px character height');
 
 // The dialog carries the live preview too, beside the controls it previews.
-await page.waitForFunction(() => document.querySelector('#cf-live').height === 32, null, { timeout: 90000 });
+// The canvas height is the DERIVED line box, so the settled state is detected
+// from the status line, which reports the character height that was asked for.
+const rendered = (px) => new RegExp(`(characters|文字) ${px}px`);
+const settled = (px) => page.waitForFunction(
+  (re) => new RegExp(re).test(document.querySelector('#cf-live-status').textContent),
+  rendered(px).source, { timeout: 90000 });
+await settled(32);
 const dlgInk = await page.evaluate(() => {
   const cv = document.querySelector('#cf-live');
   const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
@@ -75,7 +81,7 @@ check(dlgInk > 100, `the dialog's live preview drew glyphs (${dlgInk} px)`);
 await page.fill('#cf-name', 'PanelFont');
 await page.fill('#cf-size', '16');
 await page.selectOption('#cf-family', 'Roboto');
-await page.waitForFunction(() => document.querySelector('#cf-live').height === 16, null, { timeout: 90000 });
+await settled(16);
 check(true, 'changing typeface and size updates the dialog preview');
 
 // The dialog carries the same charset inspector as the standalone page: a

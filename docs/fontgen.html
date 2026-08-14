@@ -75,7 +75,7 @@
     <section class="fg-card">
       <h2><span class="fg-step">2</span> <span data-i18n="fg.stepSize">Size &amp; name</span></h2>
       <div class="fg-row">
-        <label><span data-i18n="fg.size">Line height (px)</span>
+        <label><span data-i18n="fg.size">Character height (px)</span>
           <input type="number" id="fg-size" min="6" max="120" step="1">
         </label>
         <label><span data-i18n="fg.threshold">Ink threshold</span>
@@ -86,10 +86,12 @@
         </label>
       </div>
       <p class="sub" data-i18n="fg.sizeNote">
-        The size is the LINE HEIGHT in pixels, the way LovyanGFX names its own fonts
-        (lgfxJapanGothic_16 is 16 pixels tall) — not a CSS font-size. Output is 1bpp, so each
-        pixel is either on or off; the threshold decides how much anti-aliased coverage counts
-        as "on", and lowering it makes the font heavier.
+        The size is the CHARACTER height in pixels — the ink height of a reference glyph (an
+        ideograph for CJK-capable fonts, a capital otherwise), so "32" looks the same size in
+        every typeface. The line height is derived from the glyphs the font ends up with and is
+        reported next to the preview. Output is 1bpp, so each pixel is either on or off; the
+        threshold decides how much anti-aliased coverage counts as "on", and lowering it makes
+        the font heavier.
       </p>
 
       <!-- Live preview, next to the controls it previews. Typeface and size are

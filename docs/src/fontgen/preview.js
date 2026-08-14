@@ -23,17 +23,58 @@ import { codepointsOf } from './charsets.js';
  */
 export function drawGlyphs(canvas, glyphs, font, text, scale = 1, colors = {}) {
   const have = new Map(glyphs.map((g) => [g.code, g]));
-  const chars = [...text].map((c) => have.get(c.codePointAt(0))).filter(Boolean);
+  const allowed = colors.allowed || null;
+
+  // A character that will not be in the generated font is drawn as a crossed
+  // box rather than skipped. Silently closing the gap is the worst option: the
+  // line still reads as a sentence, so nothing tells you a character is gone.
+  // Two reasons, two colours: red = this typeface has no such glyph, amber =
+  // the glyph exists but the character is outside the selected set.
+  const cells = [...text].map((ch) => {
+    const cp = ch.codePointAt(0);
+    const g = have.get(cp) || null;
+    if (!g) return { g: null, why: 'missing' };
+    if (allowed && !allowed.has(cp)) return { g: null, why: 'excluded' };
+    return { g, why: null };
+  });
+
+  const tofuW = Math.max(4, Math.round(font.height * 0.5));
+  const widthOf = (c) => (c.g ? c.g.dx : tofuW + 1);
+
   const ctx = canvas.getContext('2d');
-  canvas.width = Math.max(1, chars.reduce((a, g) => a + g.dx, 0)) * scale;
+  canvas.width = Math.max(1, cells.reduce((a, g) => a + widthOf(g), 0)) * scale;
   canvas.height = Math.max(1, font.height) * scale;
   ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = colors.bg || '#11191d';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = colors.fg || '#7fe3a0';
+
+  const fg = colors.fg || '#7fe3a0';
+  const COLOR = { missing: colors.missing || '#ff6b6b', excluded: colors.excluded || '#e8a33d' };
   const baseline = font.height - font.descent;
   let pen = 0;
-  for (const g of chars) {
+  let drawn = 0;
+
+  for (const cell of cells) {
+    const g = cell.g;
+    if (!g) {
+      // Box outline plus a diagonal cross, one device pixel thick at any scale.
+      const x0 = pen * scale;
+      const y0 = Math.round(font.height * 0.08) * scale;
+      const w = tofuW * scale;
+      const h = Math.round(font.height * 0.84) * scale;
+      ctx.strokeStyle = COLOR[cell.why];
+      ctx.lineWidth = Math.max(1, scale);
+      ctx.strokeRect(x0 + ctx.lineWidth / 2, y0 + ctx.lineWidth / 2, w - ctx.lineWidth, h - ctx.lineWidth);
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x0 + w, y0 + h);
+      ctx.moveTo(x0 + w, y0);
+      ctx.lineTo(x0, y0 + h);
+      ctx.stroke();
+      pen += widthOf(cell);
+      continue;
+    }
+    ctx.fillStyle = fg;
     const top = baseline - g.y - g.h; // inverse of the decoder's yoffset
     for (let py = 0; py < g.h; py++) {
       for (let px = 0; px < g.w; px++) {
@@ -41,8 +82,9 @@ export function drawGlyphs(canvas, glyphs, font, text, scale = 1, colors = {}) {
       }
     }
     pen += g.dx;
+    drawn++;
   }
-  return chars.length;
+  return drawn;
 }
 
 // Loaded typefaces, keyed by what identifies them. Kept across refreshes so
@@ -54,26 +96,42 @@ const MAX_LOADED = 8;
 async function acquireFont({ kind, family, weight, italic, localBuffer, codepoints }) {
   const key = `${kind}|${family}|${weight}|${italic}`;
   const hit = LOADED.get(key);
-  if (hit && hit.buffer === localBuffer) return hit;
 
-  let entry;
   if (kind === 'google') {
-    const g = await loadGoogleFont(family, codepoints, { weight, italic });
-    entry = { cssFamily: g.family, faces: g.faces, buffer: localBuffer };
-  } else {
-    if (!localBuffer) throw new Error('no font file');
-    const f = await loadFont(localBuffer);
-    entry = { cssFamily: f.family, faces: [f.face], buffer: localBuffer };
+    // Widen an existing load rather than reusing it as-is: the sample changes,
+    // and a Google CJK family is ~120 subsets, so the subsets fetched for one
+    // sample rarely cover the next. Reusing the partial font would report the
+    // new characters as missing from the typeface, which is simply false.
+    const g = await loadGoogleFont(family, codepoints, { weight, italic, into: hit?.google });
+    const entry = {
+      cssFamily: g.family,
+      faces: [...(hit?.faces || []), ...g.faces],
+      google: { family: g.family, loaded: g.loaded },
+      buffer: null,
+    };
+    LOADED.delete(key);
+    LOADED.set(key, entry);
+    evict();
+    return entry;
   }
-  // Evict the oldest, dropping its FontFaces so the document does not grow a
-  // pile of dead faces over a long session.
-  if (LOADED.size >= MAX_LOADED) {
+
+  if (hit && hit.buffer === localBuffer) return hit;
+  if (!localBuffer) throw new Error('no font file');
+  const f = await loadFont(localBuffer);
+  const entry = { cssFamily: f.family, faces: [f.face], buffer: localBuffer };
+  LOADED.set(key, entry);
+  evict();
+  return entry;
+}
+
+// Drop the least recently used entry's FontFaces so the document does not grow
+// a pile of dead faces over a long session.
+function evict() {
+  while (LOADED.size > MAX_LOADED) {
     const [oldKey, old] = LOADED.entries().next().value;
     for (const f of old.faces) unloadFont(f);
     LOADED.delete(oldKey);
   }
-  LOADED.set(key, entry);
-  return entry;
 }
 
 // A representative sample drawn from what is actually selected. Falling back to
@@ -94,7 +152,8 @@ export function autoSample(codepoints) {
  * @param {Object} o
  *   canvas   - target <canvas>
  *   statusEl - element for progress / error text (optional)
- *   settings - () => { kind, family, weight, italic, size, threshold, localBuffer, sample, scale }
+ *   settings - () => { kind, family, weight, italic, size, threshold, localBuffer,
+ *                      sample, scale, allowed }  (allowed: Set of selected codepoints)
  *   t        - translator, for the status line
  */
 export function createLivePreview({ canvas, statusEl, settings, t }) {
@@ -136,8 +195,12 @@ export function createLivePreview({ canvas, statusEl, settings, t }) {
         threshold: s.threshold,
       });
       if (mine !== generation) return;
-      const drawn = drawGlyphs(canvas, glyphs, metrics, text, s.scale || 1);
-      const notes = [t('pv.ok', { h: metrics.height, w: canvas.width / (s.scale || 1), n: drawn })];
+      const drawn = drawGlyphs(canvas, glyphs, metrics, text, s.scale || 1, { allowed: s.allowed });
+      // Both numbers matter: the character height is what was asked for, the
+      // line height is what it costs per row on the panel.
+      const notes = [t('pv.ok', {
+        c: metrics.probeHeight, h: metrics.height, w: canvas.width / (s.scale || 1), n: drawn,
+      })];
       if (missing.length) {
         notes.push(t('pv.someMissing', {
           n: missing.length, sample: missing.slice(0, 8).map((c) => String.fromCodePoint(c)).join(''),
