@@ -134,7 +134,12 @@ const LITERAL = {
   cyrillic: [...range(0x0410, 0x044f), 0x0401, 0x0451],
 
   // --- symbol categories ---
-  symUnits: chars('°℃℉µΩ‰ℓ㎜㎝㎞㎎㎏㎡㎥㏄㍉㌔㌢㍍㌘㌧㌃㌶㍑㍗㌍㌦㌣㌫㍊㌻㎛㎲㎳㎂㎃㎄㎅㎆㎇㎈㎉㎊㎋㎌'),
+  // Ω (ohm) is deliberately NOT here: it is a Greek letter, it lives in the
+  // greek set, and the CJK webfonts this tool recommends carry no Greek at all
+  // — Google's Noto Sans JP has none of U+0370..U+03FF. Keeping it would mean
+  // the default selection always reports a missing character with the default
+  // typeface, for one symbol. It stays one keystroke away in "extra characters".
+  symUnits: chars('°℃℉µ‰ℓ㎜㎝㎞㎎㎏㎡㎥㏄㍉㌔㌢㍍㌘㌧㌃㌶㍑㍗㌍㌦㌣㌫㍊㌻㎛㎲㎳㎂㎃㎄㎅㎆㎇㎈㎉㎊㎋㎌'),
   symMath: chars('±×÷≠≒≡≤≥≦≧∞√∛∑∏∫∬∂∇∈∋⊂⊃∪∩∧∨¬⇒⇔∀∃∴∵∝⊥∠⌒∽≪≫'),
   symArrows: chars('←↑→↓↔↕↖↗↘↙⇐⇑⇒⇓⇔⇕↰↱↲↳⟵⟶'),
   symShapes: chars('■□▢▣▤▥▦▧▨▩▪▫▬▭▮▯▲△▴▵▶▷▸▹▼▽▾▿◀◁◂◃◆◇◈◉○◎●◐◑◒◓◔◕◯★☆♠♡♢♣♤♥♦♧'),

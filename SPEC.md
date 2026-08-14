@@ -519,6 +519,15 @@ The one thing standards do not cover is what a small screen needs beyond letters
 symbol categories (units & measurement, mathematics, arrows, shapes, currency, enclosed,
 misc) are literal lists in the generator — reviewable character by character in its diff.
 `℃` (U+2103) lives in **units & measurement**, which is what a thermometer UI reaches for.
+`Ω` deliberately does not: it is a Greek letter, it lives in the Greek set, and the CJK
+webfonts this tool recommends carry no Greek at all (Google's Noto Sans JP has none of
+U+0370..U+03FF), so putting it in a default-selected set would report a missing character
+on every fresh page load, for one symbol.
+
+Two limits are inherent rather than fixable and are therefore named, not hidden: a
+character the chosen typeface has no glyph for, and a character above U+FFFF — 常用漢字
+contains one, 𠮟 (U+20B9F), which a uint16 glyph encoding cannot address. Both are listed
+by the characters themselves, because "1 character was dropped" only invites the question.
 
 A count ("4,217 characters") does not tell anyone whether a set covers what their screen
 needs, so both entry points carry a **charset inspector**: the resolved codepoints listed as

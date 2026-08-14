@@ -54,7 +54,11 @@ function updateCharsetSummary() {
   const cps = currentCharset();
   const { bmp, dropped } = splitBmp(cps);
   $('fg-charcount').textContent = t('fg.charCount', { n: bmp.length.toLocaleString() });
-  $('fg-charwarn').textContent = dropped.length ? t('fg.dropped', { n: dropped.length }) : '';
+  // Name the characters: "1 character was dropped" invites the question, and
+  // the answer (常用漢字 carries 𠮟, which is outside the BMP) is short.
+  $('fg-charwarn').textContent = dropped.length
+    ? t('fg.dropped', { n: dropped.length, sample: dropped.map((c) => String.fromCodePoint(c)).join('') })
+    : '';
   // A rough flash figure before generating: 1bpp glyph data plus per-glyph
   // overhead, so nobody starts a 20k-glyph run without seeing the scale.
   const approx = Math.round(bmp.length * (state.size * state.size * 0.18 + 6));

@@ -170,6 +170,36 @@ check(!/not in the selected|選択中の文字種に含まれません/.test(koS
 const tplNames = await page.locator('#fg-presets .cs-templates .fchip').allInnerTexts();
 check(tplNames.length >= 10, `templates cover more than Japanese (${tplNames.length}: ${tplNames.join(', ')})`);
 
+// The defaults must be clean: the out-of-the-box typeface has to be able to
+// draw the out-of-the-box character set. Ω lives in the Greek set for exactly
+// this reason — Google's Noto Sans JP carries no Greek at all, so a units set
+// containing it would warn on every fresh page load.
+console.log('the default selection works with the default typeface:');
+const defaults = await page.evaluate(async () => {
+  const { resolveCharset, splitBmp } = await import('./src/fontgen/charsets.js');
+  const { loadGoogleFont } = await import('./src/fontgen/googlefonts.js');
+  const { rasterizeSet, unloadFont } = await import('./src/fontgen/rasterize.js');
+  const sets = ['ascii', 'hiragana', 'katakana', 'jaPunct', 'hanJa1', 'symUnits'];
+  const { bmp, dropped } = splitBmp(resolveCharset({ sets }));
+  // Only the symbol and kana sets: rasterizing 2,000 kanji here would dominate
+  // the run, and the kanji are not what this is guarding.
+  const probe = bmp.filter((c) => c < 0x4e00);
+  const g = await loadGoogleFont('Noto Sans JP', probe, {});
+  const { missing } = await rasterizeSet({ family: g.family, size: 16, codepoints: probe });
+  for (const f of g.faces) unloadFont(f);
+  return {
+    missing: missing.map((c) => String.fromCodePoint(c)),
+    dropped: dropped.map((c) => 'U+' + c.toString(16).toUpperCase()),
+    checked: probe.length,
+  };
+});
+check(defaults.missing.length === 0,
+  `Noto Sans JP draws every non-kanji character of the default set (${defaults.checked} checked${defaults.missing.length ? ', missing: ' + defaults.missing.join('') : ''})`);
+// 𠮟 is in 常用漢字 and sits outside the BMP, which a uint16 glyph encoding
+// cannot address. That one is unavoidable — it just has to be named.
+check(defaults.dropped.length === 1 && defaults.dropped[0] === 'U+20B9F',
+  `only the one non-BMP jōyō character is dropped (${defaults.dropped.join(', ') || 'none'})`);
+
 // Characters that will not be in the generated font must be visible, not
 // silently closed up — a gap you cannot see is a gap you ship. Two reasons,
 // two colours: red = the typeface has no such glyph, amber = outside the
