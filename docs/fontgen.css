@@ -79,6 +79,12 @@
    list, so "is my ℃ in there" is one glance. */
 .cm-missing { color: #b3261e; text-decoration: line-through; opacity: .75; }
 
+/* Fallback offer: informational, not an error — the font is usable either way,
+   this just says it could be more complete. */
+.fg-offer { border: 1px solid var(--accent); border-left-width: 4px; border-radius: 8px; background: var(--accent-soft); padding: 10px 12px; margin: 10px 0; }
+.fg-offer .fg-row { margin-top: 8px; }
+.fg-offer .fg-chars { font-size: 16px; letter-spacing: .1em; }
+
 /* --- results ------------------------------------------------------------ */
 .fg-primary { border-color: var(--accent); background: var(--accent); color: #fff; font-weight: 650; }
 .fg-primary:hover:not(:disabled) { background: #0a918b; border-color: #0a918b; }

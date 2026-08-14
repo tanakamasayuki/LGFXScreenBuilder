@@ -278,6 +278,16 @@ export const MESSAGES = {
     'cs.tpl.chineseTwUi': 'Chinese UI (Trad.)',
     'cs.tpl.koreanUi': 'Korean UI',
     'cs.tpl.multilingual': 'Multilingual',
+
+    // --- fallback fonts (§8.7.7) ---
+    'fb.checking': 'Looking for a typeface that has them…',
+    'fb.offer': '{n} of the {of} missing characters can be filled in from another typeface. The generated font then carries both, and the header credits both.',
+    'fb.noneFound': 'None of the curated typefaces has these {n} character(s) either.',
+    'fb.apply': 'Fill them in',
+    'fb.font': 'Fill from',
+    'fb.auto': 'Automatic (best match per character)',
+    'fb.filled': '{n} character(s) filled in from {family}: {sample}',
+    'fg.script.symbol': 'Symbols',
   },
   ja: {
     'app.note': '静的レイアウトエディタ',
@@ -552,6 +562,16 @@ export const MESSAGES = {
     'cs.tpl.chineseTwUi': '中国語UI（繁体）',
     'cs.tpl.koreanUi': '韓国語UI',
     'cs.tpl.multilingual': '多言語',
+
+    // --- fallback fonts (§8.7.7) ---
+    'fb.checking': 'その文字を持つ書体を探しています…',
+    'fb.offer': '欠けている {of} 文字のうち {n} 文字は別の書体から補完できます。生成フォントは両方のグリフを含み、ヘッダは両方を出典として記載します。',
+    'fb.noneFound': 'キュレーション済みの書体にもこの {n} 文字はありませんでした。',
+    'fb.apply': '補完する',
+    'fb.font': '補完元',
+    'fb.auto': '自動（文字ごとに最適なものから）',
+    'fb.filled': '{n} 文字を {family} から補完しました: {sample}',
+    'fg.script.symbol': '記号',
   },
   'zh-Hans': {
     'app.note': '静态布局编辑器',
@@ -826,6 +846,16 @@ export const MESSAGES = {
     'cs.tpl.chineseTwUi': '中文界面（繁体）',
     'cs.tpl.koreanUi': '韩文界面',
     'cs.tpl.multilingual': '多语言',
+
+    // --- fallback fonts (§8.7.7) ---
+    'fb.checking': '正在查找拥有这些字符的字体…',
+    'fb.offer': '缺失的 {of} 个字符中有 {n} 个可以从其他字体补齐。生成的字体将同时包含两者，头文件也会同时署名。',
+    'fb.noneFound': '精选字体中也没有这 {n} 个字符。',
+    'fb.apply': '补齐',
+    'fb.font': '补齐来源',
+    'fb.auto': '自动（按字符选最合适的）',
+    'fb.filled': '已从 {family} 补齐 {n} 个字符：{sample}',
+    'fg.script.symbol': '符号',
   },
   'zh-Hant': {
     'app.note': '靜態佈局編輯器',
@@ -1100,6 +1130,16 @@ export const MESSAGES = {
     'cs.tpl.chineseTwUi': '中文介面（繁體）',
     'cs.tpl.koreanUi': '韓文介面',
     'cs.tpl.multilingual': '多語言',
+
+    // --- fallback fonts (§8.7.7) ---
+    'fb.checking': '正在尋找擁有這些字元的字型…',
+    'fb.offer': '缺少的 {of} 個字元中有 {n} 個可以從其他字型補齊。產生的字型將同時包含兩者，標頭檔也會同時署名。',
+    'fb.noneFound': '精選字型中也沒有這 {n} 個字元。',
+    'fb.apply': '補齊',
+    'fb.font': '補齊來源',
+    'fb.auto': '自動（依字元選最合適的）',
+    'fb.filled': '已從 {family} 補齊 {n} 個字元：{sample}',
+    'fg.script.symbol': '符號',
   },
   ko: {
     'app.note': '정적 레이아웃 편집기',
@@ -1374,6 +1414,16 @@ export const MESSAGES = {
     'cs.tpl.chineseTwUi': '중국어 UI(번체)',
     'cs.tpl.koreanUi': '한국어 UI',
     'cs.tpl.multilingual': '다국어',
+
+    // --- fallback fonts (§8.7.7) ---
+    'fb.checking': '해당 문자를 가진 서체를 찾는 중…',
+    'fb.offer': '없는 {of}자 중 {n}자는 다른 서체에서 채울 수 있습니다. 생성된 폰트는 양쪽 글리프를 모두 담고, 헤더는 양쪽을 모두 출처로 기록합니다.',
+    'fb.noneFound': '선별된 서체에도 이 {n}자가 없습니다.',
+    'fb.apply': '채우기',
+    'fb.font': '채울 서체',
+    'fb.auto': '자동(문자별로 가장 적합한 것)',
+    'fb.filled': '{family}에서 {n}자를 채웠습니다: {sample}',
+    'fg.script.symbol': '기호',
   },
   es: {
     'app.note': 'Editor de diseño estático',
@@ -1648,6 +1698,16 @@ export const MESSAGES = {
     'cs.tpl.chineseTwUi': 'Interfaz china (trad.)',
     'cs.tpl.koreanUi': 'Interfaz coreana',
     'cs.tpl.multilingual': 'Multilingüe',
+
+    // --- fallback fonts (§8.7.7) ---
+    'fb.checking': 'Buscando una tipografía que los tenga…',
+    'fb.offer': '{n} de los {of} caracteres que faltan pueden tomarse de otra tipografía. La fuente generada llevará ambas, y la cabecera acreditará a las dos.',
+    'fb.noneFound': 'Ninguna de las tipografías de la lista tiene tampoco esos {n} caracteres.',
+    'fb.apply': 'Rellenarlos',
+    'fb.font': 'Tomar de',
+    'fb.auto': 'Automático (la mejor para cada carácter)',
+    'fb.filled': '{n} carácter(es) tomados de {family}: {sample}',
+    'fg.script.symbol': 'Símbolos',
   },
   fr: {
     'app.note': "Éditeur de mise en page statique",
@@ -1922,6 +1982,16 @@ export const MESSAGES = {
     'cs.tpl.chineseTwUi': 'Interface chinoise (trad.)',
     'cs.tpl.koreanUi': 'Interface coréenne',
     'cs.tpl.multilingual': 'Multilingue',
+
+    // --- fallback fonts (§8.7.7) ---
+    'fb.checking': 'Recherche d’une police qui les possède…',
+    'fb.offer': '{n} des {of} caractères manquants peuvent être repris d’une autre police. La police générée contiendra les deux, et l’en-tête créditera les deux.',
+    'fb.noneFound': 'Aucune des polices de la liste ne possède ces {n} caractère(s) non plus.',
+    'fb.apply': 'Les compléter',
+    'fb.font': 'Reprendre de',
+    'fb.auto': 'Automatique (la meilleure par caractère)',
+    'fb.filled': '{n} caractère(s) repris de {family} : {sample}',
+    'fg.script.symbol': 'Symboles',
   },
   de: {
     'app.note': 'Statischer Layout-Editor',
@@ -2196,6 +2266,16 @@ export const MESSAGES = {
     'cs.tpl.chineseTwUi': 'Chinesische UI (trad.)',
     'cs.tpl.koreanUi': 'Koreanische UI',
     'cs.tpl.multilingual': 'Mehrsprachig',
+
+    // --- fallback fonts (§8.7.7) ---
+    'fb.checking': 'Suche nach einer Schriftart, die sie hat…',
+    'fb.offer': '{n} der {of} fehlenden Zeichen lassen sich aus einer anderen Schriftart ergänzen. Die erzeugte Schrift enthält dann beide, und der Header nennt beide.',
+    'fb.noneFound': 'Auch keine der kuratierten Schriftarten hat diese {n} Zeichen.',
+    'fb.apply': 'Ergänzen',
+    'fb.font': 'Ergänzen aus',
+    'fb.auto': 'Automatisch (je Zeichen die passendste)',
+    'fb.filled': '{n} Zeichen aus {family} ergänzt: {sample}',
+    'fg.script.symbol': 'Symbole',
   },
 };
 

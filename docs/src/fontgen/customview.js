@@ -11,7 +11,8 @@ import { ALL_SET_IDS, resolveCharset, splitBmp, codepointsOfSet, migrateSets, co
 import { createCharsetUI } from './charsetui.js';
 import { renderCharmap } from './charmap.js';
 import { drawGlyphs, createLivePreview, autoSample } from './preview.js';
-import { FONTS } from './googlefonts.js';
+import { FONTS, FALLBACK_CHAIN } from './googlefonts.js';
+import { probeFallback, FALLBACK_AUTO } from './compose.js';
 import { buildFont, cachedFont, isCached, rememberLocalFile, hasLocalFile, forgetFont, recipeKey } from './build.js';
 
 const $ = (id) => document.getElementById(id);
@@ -44,6 +45,8 @@ const blankRecipe = () => ({
   sets: ['ascii', 'hiragana', 'katakana', 'jaPunct', 'hanJa1', 'symUnits'],
   customText: '',
   customRanges: '',
+  // null until the user accepts the offer: fallback never happens unasked.
+  fallback: null,
 });
 
 // --- right-pane list ------------------------------------------------------
@@ -170,6 +173,7 @@ export function openDialog(name = null) {
   $('cf-err').textContent = '';
   $('cf-status').textContent = '';
   $('cf-preview-wrap').hidden = true;
+  $('cf-fallback-offer').hidden = true;
 
   sampleEdited = false;
   preferredSample = '';
@@ -184,6 +188,33 @@ export function openDialog(name = null) {
 }
 
 const closeDialog = () => { $('cf-overlay').hidden = true; dlg = null; };
+
+// Offer to fill gaps from another typeface. Never applies anything on its own:
+// mixing typefaces changes how the font looks, so it is the user's call.
+async function offerFallback(missing) {
+  const box = $('cf-fallback-offer');
+  box.hidden = true;
+  if (!missing.length || dlg.recipe.fallback) return;
+  $('cf-fallback-text').innerHTML = `<span class="sub">${t('fb.checking')}</span>`;
+  box.hidden = false;
+  const style = { weight: dlg.recipe.source.weight, italic: !!dlg.recipe.source.italic };
+  const found = await probeFallback(missing, style, dlg.recipe.source.kind === 'google' ? dlg.recipe.source.family : null);
+  if (!dlg) return;
+  if (!found.length) {
+    $('cf-fallback-text').innerHTML = `<span class="sub">${t('fb.noneFound', { n: missing.length })}</span>`;
+    $('cf-fallback-apply').hidden = true;
+    return;
+  }
+  $('cf-fallback-apply').hidden = false;
+  const covered = found.reduce((a, f) => a + [...f.chars].length, 0);
+  $('cf-fallback-text').innerHTML =
+    `<div>${t('fb.offer', { n: covered, of: missing.length })}</div>` +
+    found.map((f) => `<div class="sub">${f.family}: <span class="fg-chars">${f.chars.slice(0, 40)}</span></div>`).join('');
+  $('cf-fallback-pick').innerHTML =
+    `<option value="${FALLBACK_AUTO}">${t('fb.auto')}</option>` +
+    FALLBACK_CHAIN.map((f) => `<option value="${f}">${f}</option>`).join('');
+  $('cf-fallback-pick').value = FALLBACK_AUTO;
+}
 
 // Build with the dialog's current values, reporting progress and errors inline.
 async function buildNow() {
@@ -204,12 +235,16 @@ async function buildNow() {
         $('cf-status').textContent = t('fg.statusRaster', { done: done.toLocaleString(), total: total.toLocaleString() });
       },
     });
+    const filled = (entry.sources || []).slice(1);
     $('cf-status').textContent = t('cf.built', {
       glyphs: entry.stats.glyphCount.toLocaleString(), size: fmtBytes(entry.stats.bytes),
-    });
+    }) + filled.map((src) => '  ' + t('fb.filled', {
+      n: src.count, family: src.family, sample: src.chars.slice(0, 12),
+    })).join('');
     dlg.built = { name, entry };
     drawPreview(entry);
     renderCharmapPanel();
+    offerFallback(entry.missing);
     return dlg.built;
   } catch (e) {
     $('cf-err').textContent = e.message;
@@ -294,6 +329,11 @@ export function initCustomFonts() {
 
   $('cf-charmap-details').addEventListener('toggle', renderCharmapPanel);
   $('cf-charmap-scope').addEventListener('change', renderCharmapPanel);
+  $('cf-fallback-apply').addEventListener('click', () => {
+    dlg.recipe.fallback = $('cf-fallback-pick').value || FALLBACK_AUTO;
+    $('cf-fallback-offer').hidden = true;
+    buildNow();
+  });
   $('cf-preview-btn').addEventListener('click', buildNow);
 
   $('cf-ok').addEventListener('click', async () => {

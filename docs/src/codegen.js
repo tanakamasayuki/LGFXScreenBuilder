@@ -24,13 +24,21 @@ const DATUM_ENUM = {
 // require the notice to travel with derived font data, and the emitted array
 // IS derived font data — so it goes into the header, not just the UI.
 function fontNotice(fd) {
-  const src = fd.source || {};
-  const out = [`Rasterized from: ${src.family || '(unknown typeface)'}`];
-  if (src.by) out.push(`Author: ${src.by}`);
-  out.push(src.license
-    ? `License: ${src.license.name || src.license.id}${src.license.url ? ` — ${src.license.url}` : ''}`
-    : 'License: UNKNOWN (local file) — confirm that embedding and redistribution are permitted.');
-  if (src.origin) out.push(`Source: ${src.origin}`);
+  // A font may be composed from several typefaces (§8.7.7 fallback fills in the
+  // characters the chosen one lacks), and is then a derived work of every one
+  // of them — so each gets its own entry.
+  const list = (fd.sources && fd.sources.length) ? fd.sources : [fd.source || {}];
+  const out = [];
+  list.forEach((src, i) => {
+    out.push(i === 0
+      ? `Rasterized from: ${src.family || '(unknown typeface)'}`
+      : `Filled in from: ${src.family} (${src.count} characters${src.chars ? ': ' + src.chars.slice(0, 30) : ''})`);
+    if (src.by) out.push(`  Author: ${src.by}`);
+    out.push(src.license
+      ? `  License: ${src.license.name || src.license.id}${src.license.url ? ` — ${src.license.url}` : ''}`
+      : '  License: UNKNOWN (local file) — confirm that embedding and redistribution are permitted.');
+    if (src.origin) out.push(`  Source: ${src.origin}`);
+  });
   return out.join('\n');
 }
 

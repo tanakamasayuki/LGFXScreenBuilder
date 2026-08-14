@@ -524,10 +524,30 @@ webfonts this tool recommends carry no Greek at all (Google's Noto Sans JP has n
 U+0370..U+03FF), so putting it in a default-selected set would report a missing character
 on every fresh page load, for one symbol.
 
-Two limits are inherent rather than fixable and are therefore named, not hidden: a
-character the chosen typeface has no glyph for, and a character above U+FFFF — 常用漢字
-contains one, 𠮟 (U+20B9F), which a uint16 glyph encoding cannot address. Both are listed
-by the characters themselves, because "1 character was dropped" only invites the question.
+**Fallback fills the gaps the typeface leaves.** No single typeface covers everything a
+screen might need — Google's Noto Sans JP carries no Greek at all, so a Japanese UI showing
+Ω for ohms would simply lose it. So a character the chosen typeface has no glyph for can be
+taken from another one. Three properties make that safe rather than merely convenient:
+
+- **It is offered, never applied unasked.** Mixing typefaces changes how the font looks, so
+  the tool detects the gap, names the characters, names the typeface that could supply them,
+  and waits for one click. The choice is stored on the recipe, so an export rebuilds the
+  same font.
+- **Sizes match.** A filled-in glyph is measured on the *same* reference character as the
+  primary, so it comes out the same height instead of visibly larger or smaller.
+- **Every source is credited.** The generated font is a derived work of each typeface it
+  drew from, so the header carries one attribution block per source with its author, licence
+  and the characters it supplied. OFL requires exactly this.
+
+The automatic chain is Noto Sans Symbols 2 → Noto Sans → Noto Sans JP → SC → KR; the first
+is there because it exists precisely for the ranges text faces skip (measured against
+Google's own subsets it covers ← ▲ ℃ ≠ ② ☃ Ω, none of which Noto Sans has). A specific
+family can be pinned instead.
+
+One limit remains inherent rather than fixable, and is therefore named, not hidden: a
+character above U+FFFF. 常用漢字 contains one, 𠮟 (U+20B9F), which a uint16 glyph encoding
+cannot address. It is listed by the character itself, because "1 character was dropped" only
+invites the question.
 
 A count ("4,217 characters") does not tell anyone whether a set covers what their screen
 needs, so both entry points carry a **charset inspector**: the resolved codepoints listed as

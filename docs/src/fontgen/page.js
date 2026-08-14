@@ -10,8 +10,8 @@
 import { ALL_SET_IDS, resolveCharset, splitBmp, codepointsOfSet, migrateSets, countOf } from './charsets.js';
 import { createCharsetUI } from './charsetui.js';
 import { renderCharmap } from './charmap.js';
-import { FONTS, findFont, loadGoogleFont } from './googlefonts.js';
-import { loadFont, unloadFont, rasterizeSet } from './rasterize.js';
+import { FONTS, FALLBACK_CHAIN } from './googlefonts.js';
+import { composeFont, probeFallback, FALLBACK_AUTO } from './compose.js';
 import { drawGlyphs, createLivePreview, autoSample } from './preview.js';
 import { encodeU8g2 } from './u8g2enc.js';
 import { emitHeader, sanitizeIdent } from './emit.js';
@@ -36,6 +36,8 @@ const state = {
   sets: ['ascii', 'hiragana', 'katakana', 'jaPunct', 'hanJa1', 'symUnits'],
   customText: '',
   customRanges: '',
+  // null until the user accepts the offer: fallback never happens unasked.
+  fallback: null,           // null | 'auto' | family name
   result: null,             // { header, data, glyphs, missing, stats, charset }
 };
 
@@ -164,41 +166,24 @@ async function generate() {
 
   $('fg-generate').disabled = true;
   $('fg-output').hidden = true;
-  let loaded = null;
   try {
-    // 1. get the typeface into the document
-    let source, family;
-    if (state.tab === 'google') {
-      const meta = findFont(state.family);
-      status(t('fg.statusFetch', { family: state.family }));
-      const g = await loadGoogleFont(state.family, cps, { weight: state.weight, italic: state.italic });
-      loaded = { faces: g.faces };
-      source = {
-        family: state.family, by: meta.by, license: meta.license,
-        origin: `Google Fonts (${g.subsets}/${g.of} subsets)`,
-      };
-      family = g.family;
-    } else {
-      if (!state.localFile) { status(t('fg.errNoFile'), 'err'); $('fg-generate').disabled = false; return; }
-      status(t('fg.statusLoad'));
-      const f = await loadFont(state.localFile.buffer);
-      loaded = { faces: [f.face] };
-      source = { family: state.localFile.name, license: null, origin: t('fg.originLocal') };
-      family = f.family;
-    }
+    const source = state.tab === 'google'
+      ? { kind: 'google', family: state.family }
+      : { kind: 'local', family: state.localFile?.name, buffer: state.localFile?.buffer };
+    if (state.tab === 'local' && !source.buffer) { status(t('fg.errNoFile'), 'err'); return; }
 
-    // 2. rasterize
-    const { glyphs, missing, font } = await rasterizeSet({
-      family,
+    const { glyphs, missing, font, sources } = await composeFont({
+      source,
+      fallback: state.fallback,
       size: state.size,
       codepoints: cps,
       style: { weight: state.weight, italic: state.italic },
       threshold: state.threshold,
-      onProgress: ({ done, total }) => status(t('fg.statusRaster', { done: done.toLocaleString(), total: total.toLocaleString() })),
+      onProgress: ({ done, total, family }) => status(
+        t('fg.statusRaster', { done: done.toLocaleString(), total: total.toLocaleString() }) + ` (${family})`),
     });
     if (!glyphs.length) throw new Error(t('fg.errNoGlyphs'));
 
-    // 3. encode + emit
     status(t('fg.statusEncode'));
     const enc = encodeU8g2(glyphs, font);
     const stats = {
@@ -206,17 +191,45 @@ async function generate() {
       glyphCount: enc.glyphCount, bytes: enc.data.length,
     };
     const charset = { presets: state.sets.map((id) => t('cs.set.' + id)), codepoints: cps };
-    const header = emitHeader({ name: state.name, data: enc.data, source, charset, stats });
+    const header = emitHeader({ name: state.name, data: enc.data, source: sources[0], sources, charset, stats });
 
-    state.result = { header, data: enc.data, glyphs, missing, stats, font, skipped: enc.skipped };
+    state.result = { header, data: enc.data, glyphs, missing, stats, font, sources, skipped: enc.skipped };
     showResult();
     status('');
+    // Only ask about filling gaps once there are gaps to fill.
+    offerFallback(missing);
   } catch (e) {
     status(e.message, 'err');
   } finally {
-    if (loaded) for (const f of loaded.faces) unloadFont(f);
     $('fg-generate').disabled = false;
   }
+}
+
+// Detect what a fallback could supply and offer it. Never applies anything:
+// mixing typefaces changes how the font looks, so it is the user's call.
+async function offerFallback(missing) {
+  const box = $('fg-fallback-offer');
+  box.hidden = true;
+  if (!missing.length || state.fallback) return;
+
+  $('fg-fallback-text').innerHTML = `<span class="sub">${t('fb.checking')}</span>`;
+  box.hidden = false;
+  const style = { weight: state.weight, italic: state.italic };
+  const found = await probeFallback(missing, style, state.tab === 'google' ? state.family : null);
+  if (!found.length) {
+    $('fg-fallback-text').innerHTML = `<span class="sub">${t('fb.noneFound', { n: missing.length })}</span>`;
+    $('fg-fallback-apply').hidden = true;
+    return;
+  }
+  $('fg-fallback-apply').hidden = false;
+  const covered = found.reduce((a, f) => a + [...f.chars].length, 0);
+  $('fg-fallback-text').innerHTML =
+    `<div>${t('fb.offer', { n: covered, of: missing.length })}</div>` +
+    found.map((f) => `<div class="sub">${f.family}: <span class="fg-chars">${f.chars.slice(0, 40)}</span></div>`).join('');
+  $('fg-fallback-pick').innerHTML =
+    `<option value="${FALLBACK_AUTO}">${t('fb.auto')}</option>` +
+    FALLBACK_CHAIN.map((f) => `<option value="${f}">${f}</option>`).join('');
+  $('fg-fallback-pick').value = FALLBACK_AUTO;
 }
 
 function showResult() {
@@ -227,6 +240,11 @@ function showResult() {
   $('fg-res-height').textContent = `${r.stats.height}px`;
 
   const notes = [];
+  // Which typeface supplied what: a font composed from several sources is a
+  // derived work of all of them, so this is not a nicety.
+  for (const src of (r.sources || []).slice(1)) {
+    notes.push(t('fb.filled', { n: src.count, family: src.family, sample: src.chars.slice(0, 20) }));
+  }
   if (r.missing.length) {
     notes.push(t('fg.missing', {
       n: r.missing.length,
@@ -351,6 +369,13 @@ export function initFontgen() {
   $('fg-charmap-scope').addEventListener('change', renderCharmapPanel);
 
   $('fg-generate').onclick = generate;
+  // Accepting the offer stores the choice and re-runs, so what you see next is
+  // the font you will actually get.
+  $('fg-fallback-apply').onclick = () => {
+    state.fallback = $('fg-fallback-pick').value || FALLBACK_AUTO;
+    $('fg-fallback-offer').hidden = true;
+    generate();
+  };
   $('fg-zoom').addEventListener('input', () => { if (state.result) showResult(); });
   $('fg-sample').addEventListener('input', () => { if (state.result) showResult(); });
 

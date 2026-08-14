@@ -11,8 +11,7 @@
 // there is nothing to re-fetch, so the file has to be handed back — the UI asks
 // for it rather than silently exporting a project with a font missing.
 import { resolveCharset, splitBmp, migrateSets } from './charsets.js';
-import { findFont, loadGoogleFont } from './googlefonts.js';
-import { loadFont, unloadFont, rasterizeSet } from './rasterize.js';
+import { composeFont } from './compose.js';
 import { encodeU8g2 } from './u8g2enc.js';
 
 // name -> { data, stats, source, charset, key }. Module-level (not store state)
@@ -29,6 +28,7 @@ const localFiles = new Map(); // name -> ArrayBuffer
 export const recipeKey = (r) => JSON.stringify([
   r.source?.kind, r.source?.family, r.source?.weight, r.source?.italic,
   r.size, r.threshold, setsOf(r).slice().sort(), r.customText, r.customRanges,
+  r.fallback || null,
 ]);
 
 // A recipe's set list, with any ids saved against the previous character-set
@@ -55,51 +55,41 @@ export async function buildFont(name, recipe, { onProgress } = {}) {
   if (!cps.length) throw new Error(`"${name}": no characters selected`);
 
   const style = { weight: recipe.source.weight || 400, italic: !!recipe.source.italic };
-  let family, faces, source;
-
-  if (recipe.source.kind === 'google') {
-    const meta = findFont(recipe.source.family);
-    const g = await loadGoogleFont(recipe.source.family, cps, style);
-    family = g.family;
-    faces = g.faces;
-    source = {
-      family: recipe.source.family, by: meta?.by, license: meta?.license,
-      origin: `Google Fonts (${g.subsets}/${g.of} subsets)`,
-    };
-  } else {
-    const buf = localFiles.get(name);
-    if (!buf) throw new Error(`"${name}": the local font file is not available in this session`);
-    const f = await loadFont(buf);
-    family = f.family;
-    faces = [f.face];
-    source = { family: recipe.source.family, license: null, origin: 'local file supplied by the user' };
+  const buffer = recipe.source.kind === 'local' ? localFiles.get(name) : null;
+  if (recipe.source.kind === 'local' && !buffer) {
+    throw new Error(`"${name}": the local font file is not available in this session`);
   }
 
-  try {
-    const { glyphs, missing, font } = await rasterizeSet({
-      family, size: recipe.size, codepoints: cps, style, threshold: recipe.threshold, onProgress,
-    });
-    if (!glyphs.length) throw new Error(`"${name}": the typeface has none of the selected characters`);
-    const enc = encodeU8g2(glyphs, font);
-    const entry = {
-      key: recipeKey(recipe),
-      data: enc.data,
-      glyphs,
-      font,
-      missing,
-      skipped: enc.skipped,
-      source,
-      charset: { presets: setsOf(recipe), codepoints: cps },
-      stats: {
-        height: font.height, ascent: font.ascent, descent: font.descent,
-        glyphCount: enc.glyphCount, bytes: enc.data.length,
-      },
-    };
-    cache.set(name, entry);
-    return entry;
-  } finally {
-    for (const f of faces) unloadFont(f);
-  }
+  const { glyphs, missing, font, sources } = await composeFont({
+    source: { kind: recipe.source.kind, family: recipe.source.family, buffer },
+    fallback: recipe.fallback || null,
+    size: recipe.size,
+    codepoints: cps,
+    style,
+    threshold: recipe.threshold,
+    onProgress,
+  });
+  if (!glyphs.length) throw new Error(`"${name}": the typeface has none of the selected characters`);
+
+  const enc = encodeU8g2(glyphs, font);
+  const entry = {
+    key: recipeKey(recipe),
+    data: enc.data,
+    glyphs,
+    font,
+    missing,
+    skipped: enc.skipped,
+    sources,
+    // The first source is the typeface asked for; the rest filled in gaps.
+    source: sources[0],
+    charset: { presets: setsOf(recipe), codepoints: cps },
+    stats: {
+      height: font.height, ascent: font.ascent, descent: font.descent,
+      glyphCount: enc.glyphCount, bytes: enc.data.length,
+    },
+  };
+  cache.set(name, entry);
+  return entry;
 }
 
 // Custom fonts in a project, as [name, recipe] pairs.

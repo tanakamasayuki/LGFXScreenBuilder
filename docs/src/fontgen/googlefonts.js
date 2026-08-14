@@ -48,6 +48,9 @@ export const FONTS = [
   { family: 'BIZ UDPGothic', script: 'japanese', license: OFL, by: 'Morisawa' },
   { family: 'DotGothic16', script: 'japanese', pixel: true, license: OFL, by: 'Fontworks' },
 
+  // --- symbols (a fallback source more than a text face) ---
+  { family: 'Noto Sans Symbols 2', script: 'symbol', license: OFL, by: 'Google' },
+
   // --- other CJK ---
   { family: 'Noto Sans SC', script: 'cjk', license: OFL, by: 'Google' },
   { family: 'Noto Sans TC', script: 'cjk', license: OFL, by: 'Google' },
@@ -55,6 +58,26 @@ export const FONTS = [
 ];
 
 export const findFont = (family) => FONTS.find((f) => f.family === family) || null;
+
+/**
+ * Order in which families are tried to fill in characters the chosen typeface
+ * has no glyph for (§8.7.7).
+ *
+ * Symbols 2 comes first because it exists precisely for the ranges text faces
+ * skip — measured against Google's own subsets it covers ← ▲ ℃ ≠ ② ☃ Ω, none of
+ * which Noto Sans has. Noto Sans then supplies Latin/Greek/Cyrillic (Google's
+ * Noto Sans JP carries no Greek at all, which is how Ω goes missing in the
+ * first place), and the CJK families supply ideographs and the squared CJK
+ * units. Noto Sans Math is deliberately absent: its single subset covers the
+ * math alphanumerics, none of the characters these sets contain.
+ */
+export const FALLBACK_CHAIN = [
+  'Noto Sans Symbols 2',
+  'Noto Sans',
+  'Noto Sans JP',
+  'Noto Sans SC',
+  'Noto Sans KR',
+];
 
 const CSS_API = 'https://fonts.googleapis.com/css2';
 

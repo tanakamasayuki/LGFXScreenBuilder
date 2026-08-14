@@ -160,6 +160,19 @@
         </div>
         <div id="fg-res-notes"></div>
 
+        <!-- Fallback is offered, never applied behind the user's back: the gap
+             is named, the font that would fill it is named, and one click
+             applies it (§8.7.7). -->
+        <div class="fg-offer" id="fg-fallback-offer" hidden>
+          <div id="fg-fallback-text"></div>
+          <div class="fg-row">
+            <button class="mini" id="fg-fallback-apply" data-i18n="fb.apply">Fill them in</button>
+            <label><span data-i18n="fb.font">Fill from</span>
+              <select id="fg-fallback-pick"></select>
+            </label>
+          </div>
+        </div>
+
         <div class="fg-row">
           <label class="grow"><span data-i18n="fg.sample">Preview text</span>
             <input type="text" id="fg-sample">

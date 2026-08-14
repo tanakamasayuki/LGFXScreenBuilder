@@ -111,8 +111,17 @@ function pickProbe(family, style, codepoints) {
  * in the font. rasterizeSet() measures it from the glyphs it actually produced,
  * which is both tight and guaranteed not to clip.
  */
-export function measureFont(family, size, style = {}, codepoints = []) {
-  const probe = pickProbe(family, style, codepoints);
+export function measureFont(family, size, style = {}, codepoints = [], { probeChar = null } = {}) {
+  // A fallback font must be measured on the SAME reference character as the
+  // font it is filling in for, or its glyphs come out a different size and the
+  // seam is obvious. If it does not have that character, it falls back to
+  // picking its own.
+  const forced = probeChar ? { cp: probeChar.codePointAt(0) } : null;
+  if (forced) {
+    const h = probeInk(makeSurface(REF_PX), forced.cp, REF_PX, family, style);
+    if (h) forced.refHeight = h; else forced.refHeight = 0;
+  }
+  const probe = forced && forced.refHeight ? forced : pickProbe(family, style, codepoints);
   // A font that draws none of the requested characters has no scale to derive;
   // fall back to treating the size as an em size so callers still get output
   // (they will report the empty result themselves).
@@ -196,14 +205,16 @@ function rasterizeOne(surf, code, size, family, style, threshold) {
  *   style      - { weight, italic }
  *   threshold  - alpha cutoff for 1bpp (1..255; 128 is a neutral default)
  *   onProgress - ({done, total}) called between chunks
+ *   probeChar  - measure on this reference character (fallback fonts pass the
+ *                primary's, so their glyphs come out the same size)
  * @returns {Promise<{glyphs: Array, missing: Array, font: Object}>}
  *   font is { height, ascent, descent, cssPx, probe } — the line box measured
  *   from the glyphs that were actually produced.
  */
 export async function rasterizeSet({
-  family, size, codepoints, style = {}, threshold = 128, onProgress,
+  family, size, codepoints, style = {}, threshold = 128, onProgress, probeChar = null,
 } = {}) {
-  const sizing = measureFont(family, size, style, codepoints);
+  const sizing = measureFont(family, size, style, codepoints, { probeChar });
   // Glyphs are drawn at the CSS size that yields the requested character height.
   const surf = makeSurface(sizing.cssPx);
   const glyphs = [];
@@ -221,11 +232,21 @@ export async function rasterizeSet({
     }
   }
 
-  // The line box comes from the glyphs that were actually produced, not from
-  // the family's declared metrics: it is then exactly tall enough for this
-  // font's contents — no clipping, and no rows of padding paid for in flash
-  // because the family reserves room for characters this font does not carry.
-  // (g.y is the baseline-to-bitmap-bottom distance, positive above baseline.)
+  return { glyphs, missing, font: { ...sizing, ...lineBoxOf(glyphs) } };
+}
+
+/**
+ * The line box of a glyph set: its furthest ink above and below the baseline.
+ *
+ * Derived from the glyphs rather than the family's declared metrics, so it is
+ * exactly tall enough for this font's contents — no clipping, and no rows of
+ * padding paid for in flash because the family reserves room for characters
+ * this font does not carry. Exported because a font composed from several
+ * typefaces has to be re-measured after the fills are merged in.
+ *
+ * (g.y is the baseline-to-bitmap-bottom distance, positive above the baseline.)
+ */
+export function lineBoxOf(glyphs) {
   let ascent = 0;
   let descent = 0;
   for (const g of glyphs) {
@@ -235,7 +256,5 @@ export async function rasterizeSet({
   }
   ascent = Math.max(1, Math.ceil(ascent));
   descent = Math.max(0, Math.ceil(descent));
-
-  const font = { ...sizing, ascent, descent, height: ascent + descent };
-  return { glyphs, missing, font };
+  return { ascent, descent, height: ascent + descent };
 }

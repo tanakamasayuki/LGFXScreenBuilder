@@ -386,6 +386,59 @@ check(coverage.struck.includes('℃'), 'the inspector marks ℃ as missing from 
 check(!coverage.struck.includes('A'), 'characters the typeface does have are not marked missing');
 check(/\d/.test(coverage.note), `the inspector explains the marking (${coverage.note.trim().slice(0, 60)}…)`);
 
+// When the typeface cannot supply a character, the tool offers to take it from
+// another one — offers, not does: mixing typefaces changes how the font looks,
+// so it stays the user's call. Roboto has no ℃, and Google's Noto Sans JP has
+// no Greek at all, which is how these gaps arise in practice.
+console.log('fallback is offered for characters the typeface lacks:');
+await page.waitForFunction(
+  () => !document.querySelector('#fg-fallback-offer').hidden
+     && !/…$/.test(document.querySelector('#fg-fallback-text').textContent.trim()),
+  null, { timeout: 90000 });
+const offer = await page.evaluate(() => ({
+  text: document.querySelector('#fg-fallback-text').innerText,
+  applyShown: !document.querySelector('#fg-fallback-apply').hidden,
+  notes: document.querySelector('#fg-res-notes').innerText,
+}));
+check(offer.applyShown, `the fill is offered (${offer.text.replace(/\n/g, ' | ').slice(0, 110)})`);
+check(/Noto Sans/.test(offer.text), 'it names the typeface that would supply them');
+check(/℃/.test(offer.notes), 'and until then the gap is still reported');
+
+// Accepting it re-runs, and the character is really in the font afterwards.
+await page.click('#fg-fallback-apply');
+await page.waitForFunction(
+  () => document.querySelector('#fg-res-notes').innerText.includes('Noto Sans'),
+  null, { timeout: 120000 });
+const filled = await page.evaluate(async () => {
+  const el = document.querySelector('#fg-sample');
+  el.value = '℃';
+  el.dispatchEvent(new Event('input'));
+  await new Promise((r) => setTimeout(r, 100));
+  const cv = document.querySelector('#fg-preview');
+  const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+  let green = 0, red = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 1] > 200 && d[i] < 180) green++;
+    else if (d[i] > 180 && d[i + 1] < 120) red++;
+  }
+  return {
+    green, red,
+    notes: document.querySelector('#fg-res-notes').innerText,
+    code: document.querySelector('#fg-code').textContent,
+  };
+});
+check(filled.green > 20 && filled.red === 0, `℃ is now in the font and draws normally (${filled.green} ink px, ${filled.red} red)`);
+check(/filled in from|補完しました/.test(filled.notes), `the fill is reported (${filled.notes.trim().split('\n')[0]})`);
+// A font built from two typefaces is a derived work of both, so both must be
+// credited in the header.
+check(/Font source 2/.test(filled.code), 'the header carries a second attribution block');
+check((filled.code.match(/License  :/g) || []).length >= 2, 'with a licence for each typeface used');
+
+// Once the fill is applied the inspector must stop calling ℃ missing — it is in
+// the font now, just from a different typeface.
+const afterFill = await page.evaluate(() => [...document.querySelectorAll('#fg-charmap .cm-missing')].map((x) => x.textContent).join(''));
+check(!afterFill.includes('℃'), `the inspector no longer marks ℃ missing (${afterFill || 'nothing struck'})`);
+
 check(pageErrors.length === 0, `still no uncaught errors${pageErrors.length ? ': ' + pageErrors.join('; ') : ''}`);
 
 await browser.close();
