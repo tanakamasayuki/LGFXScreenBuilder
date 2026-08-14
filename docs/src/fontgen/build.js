@@ -10,7 +10,7 @@
 // fonts that is automatic. For a typeface the user supplied as a local file
 // there is nothing to re-fetch, so the file has to be handed back — the UI asks
 // for it rather than silently exporting a project with a font missing.
-import { resolveCharset, splitBmp } from './charsets.js';
+import { resolveCharset, splitBmp, migrateSets } from './charsets.js';
 import { findFont, loadGoogleFont } from './googlefonts.js';
 import { loadFont, unloadFont, rasterizeSet } from './rasterize.js';
 import { encodeU8g2 } from './u8g2enc.js';
@@ -28,8 +28,13 @@ const localFiles = new Map(); // name -> ArrayBuffer
 // re-render does not.
 export const recipeKey = (r) => JSON.stringify([
   r.source?.kind, r.source?.family, r.source?.weight, r.source?.italic,
-  r.size, r.threshold, [...(r.presets || [])].sort(), r.customText, r.customRanges,
+  r.size, r.threshold, setsOf(r).slice().sort(), r.customText, r.customRanges,
 ]);
+
+// A recipe's set list, with any ids saved against the previous character-set
+// model mapped onto current ones (charsets.js migrateSets). Doing it here means
+// an old project rebuilds correctly on export without being opened for editing.
+export const setsOf = (r) => migrateSets(r.sets || r.presets || []);
 
 export const cachedFont = (name) => cache.get(name) || null;
 export const isCached = (name, recipe) => cache.get(name)?.key === recipeKey(recipe);
@@ -45,7 +50,7 @@ export function forgetFont(name) { cache.delete(name); localFiles.delete(name); 
  */
 export async function buildFont(name, recipe, { onProgress } = {}) {
   const cps = splitBmp(resolveCharset({
-    presets: recipe.presets, customText: recipe.customText, customRanges: recipe.customRanges,
+    sets: setsOf(recipe), customText: recipe.customText, customRanges: recipe.customRanges,
   })).bmp;
   if (!cps.length) throw new Error(`"${name}": no characters selected`);
 
@@ -84,7 +89,7 @@ export async function buildFont(name, recipe, { onProgress } = {}) {
       missing,
       skipped: enc.skipped,
       source,
-      charset: { presets: recipe.presets || [], codepoints: cps },
+      charset: { presets: setsOf(recipe), codepoints: cps },
       stats: {
         height: font.height, ascent: font.ascent, descent: font.descent,
         glyphCount: enc.glyphCount, bytes: enc.data.length,

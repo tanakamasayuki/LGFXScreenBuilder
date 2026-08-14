@@ -76,6 +76,18 @@ async function acquireFont({ kind, family, weight, italic, localBuffer, codepoin
   return entry;
 }
 
+// A representative sample drawn from what is actually selected. Falling back to
+// a fixed string would preview characters the font will not contain, which is
+// exactly the confusion this avoids.
+export function autoSample(codepoints) {
+  const have = new Set(codepoints);
+  const candidates = ['Hello 25.6\u2103', '\u3042\u30a2\u6f22\u5b57', '12:34', 'ABC abc 0123', '\uac00\ub098\ub2e4'];
+  const fits = candidates.filter((s) => [...s].every((c) => have.has(c.codePointAt(0))));
+  if (fits.length) return fits.join('  ');
+  // Nothing canonical fits: show the start of the selection itself.
+  return codepoints.slice(0, 16).map((c) => String.fromCodePoint(c)).join('');
+}
+
 /**
  * A preview that follows the controls.
  *
@@ -102,6 +114,10 @@ export function createLivePreview({ canvas, statusEl, settings, t }) {
     const s = settings();
     const text = s.sample || '';
     const cps = [...new Set(codepointsOf(text))].filter((c) => c >= 0x20 && c <= 0xffff).sort((a, b) => a - b);
+    // Characters outside the current character set would be drawn from the
+    // typeface but never reach the generated font, so say so rather than
+    // showing a preview the output cannot match.
+    const outside = s.allowed ? cps.filter((c) => !s.allowed.has(c)) : [];
     if (!cps.length || (s.kind === 'local' && !s.localBuffer)) {
       canvas.width = 1;
       canvas.height = 1;
@@ -121,9 +137,18 @@ export function createLivePreview({ canvas, statusEl, settings, t }) {
       });
       if (mine !== generation) return;
       const drawn = drawGlyphs(canvas, glyphs, metrics, text, s.scale || 1);
-      say(missing.length
-        ? t('pv.someMissing', { n: missing.length, sample: missing.slice(0, 8).map((c) => String.fromCodePoint(c)).join('') })
-        : t('pv.ok', { h: metrics.height, w: canvas.width / (s.scale || 1), n: drawn }));
+      const notes = [t('pv.ok', { h: metrics.height, w: canvas.width / (s.scale || 1), n: drawn })];
+      if (missing.length) {
+        notes.push(t('pv.someMissing', {
+          n: missing.length, sample: missing.slice(0, 8).map((c) => String.fromCodePoint(c)).join(''),
+        }));
+      }
+      if (outside.length) {
+        notes.push(t('pv.notSelected', {
+          n: outside.length, sample: outside.slice(0, 8).map((c) => String.fromCodePoint(c)).join(''),
+        }));
+      }
+      say(notes.join('  '), outside.length > 0);
     } catch (e) {
       if (mine !== generation) return;
       canvas.width = 1;

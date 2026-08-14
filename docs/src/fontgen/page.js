@@ -7,11 +7,12 @@
 //
 // The same modules back the editor's integrated flow (fontsview.js), which
 // stores a recipe and re-runs this pipeline at export time.
-import { PRESETS, PRESET_GROUPS, resolveCharset, splitBmp, codepointsOfPreset } from './charsets.js';
+import { ALL_SET_IDS, resolveCharset, splitBmp, codepointsOfSet, migrateSets, countOf } from './charsets.js';
+import { createCharsetUI } from './charsetui.js';
 import { renderCharmap } from './charmap.js';
 import { FONTS, findFont, loadGoogleFont } from './googlefonts.js';
 import { loadFont, unloadFont, rasterizeSet } from './rasterize.js';
-import { drawGlyphs, createLivePreview } from './preview.js';
+import { drawGlyphs, createLivePreview, autoSample } from './preview.js';
 import { encodeU8g2 } from './u8g2enc.js';
 import { emitHeader, sanitizeIdent } from './emit.js';
 import { t, applyStatic, setLang, getLang, detectLanguage, LANGS } from '../i18n.js';
@@ -31,7 +32,8 @@ const state = {
   size: 32,
   threshold: 128,
   name: 'MyFont',
-  presets: new Set(['ascii']),
+  // Flat list of set ids (see charsets.js); the picker groups them into axes.
+  sets: ['ascii', 'hiragana', 'katakana', 'jaPunct', 'hanJa1', 'symUnits'],
   customText: '',
   customRanges: '',
   result: null,             // { header, data, glyphs, missing, stats, charset }
@@ -39,36 +41,11 @@ const state = {
 
 // --- character-set panel --------------------------------------------------
 
-function renderPresets() {
-  const host = $('fg-presets');
-  host.innerHTML = '';
-  for (const group of PRESET_GROUPS) {
-    const box = document.createElement('div');
-    box.className = 'fg-group';
-    box.innerHTML = `<div class="fg-group-title">${t('fg.group.' + group)}</div>`;
-    const row = document.createElement('div');
-    row.className = 'fg-chips';
-    for (const p of PRESETS.filter((x) => x.group === group)) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'fchip' + (state.presets.has(p.id) ? ' on' : '');
-      b.dataset.id = p.id;
-      b.innerHTML = `${t('fg.preset.' + p.id)} <span class="fg-n">${p.count.toLocaleString()}</span>`;
-      b.onclick = () => {
-        if (state.presets.has(p.id)) state.presets.delete(p.id); else state.presets.add(p.id);
-        renderPresets();
-        updateCharsetSummary();
-      };
-      row.appendChild(b);
-    }
-    box.appendChild(row);
-    host.appendChild(box);
-  }
-}
+let charsetUI = null;
 
 // Currently selected codepoints (presets ∪ custom text ∪ custom ranges).
 const currentCharset = () => resolveCharset({
-  presets: [...state.presets],
+  sets: state.sets,
   customText: state.customText,
   customRanges: state.customRanges,
 });
@@ -83,6 +60,7 @@ function updateCharsetSummary() {
   const approx = Math.round(bmp.length * (state.size * state.size * 0.18 + 6));
   $('fg-estimate').textContent = bmp.length ? t('fg.estimate', { size: fmtBytes(approx) }) : '';
   $('fg-generate').disabled = bmp.length === 0;
+  syncSample();
   renderCharmapPanel();
 }
 
@@ -92,7 +70,7 @@ function fillCharmapScope() {
   const sel = $('fg-charmap-scope');
   const keep = sel.value;
   sel.innerHTML = `<option value="">${t('cm.scopeSelected')}</option>` +
-    PRESETS.map((p) => `<option value="${p.id}">${t('fg.preset.' + p.id)} (${p.count.toLocaleString()})</option>`).join('');
+    ALL_SET_IDS.map((id) => `<option value="${id}">${t('cs.set.' + id)} (${countOf(id).toLocaleString()})</option>`).join('');
   if (keep) sel.value = keep;
 }
 
@@ -101,7 +79,7 @@ function fillCharmapScope() {
 function renderCharmapPanel() {
   if (!$('fg-charmap-details').open) return;
   const scope = $('fg-charmap-scope').value;
-  const cps = scope ? codepointsOfPreset(scope) : currentCharset();
+  const cps = scope ? codepointsOfSet(scope) : currentCharset();
   // After a run, the same view doubles as the coverage report: characters the
   // typeface turned out not to have are struck through where they sit.
   const missing = !scope && state.result ? state.result.missing : null;
@@ -143,11 +121,15 @@ function setTab(tab) {
 
 // --- preview --------------------------------------------------------------
 
-// Default live-preview sample: Latin, digits, a unit and some Japanese, so the
-// pixel size of both scripts is visible at a glance.
-const LIVE_SAMPLE = 'Hello 25.6\u2103  \u3042\u30a2\u6f22\u5b57 12:34';
-
 let live = null;
+// Whether the user typed their own sample. Until they do, the sample tracks the
+// selection, so the preview never shows characters the font will not contain.
+let sampleEdited = false;
+
+function syncSample() {
+  if (sampleEdited) return;
+  $('fg-live-sample').value = autoSample(currentCharset());
+}
 
 // A sample that shows off whatever the user actually selected.
 function sampleText(glyphs) {
@@ -212,7 +194,7 @@ async function generate() {
       height: font.height, ascent: font.ascent, descent: font.descent,
       glyphCount: enc.glyphCount, bytes: enc.data.length,
     };
-    const charset = { presets: [...state.presets].map((p) => t('fg.preset.' + p)), codepoints: cps };
+    const charset = { presets: state.sets.map((id) => t('cs.set.' + id)), codepoints: cps };
     const header = emitHeader({ name: state.name, data: enc.data, source, charset, stats });
 
     state.result = { header, data: enc.data, glyphs, missing, stats, font, skipped: enc.skipped };
@@ -301,7 +283,6 @@ export function initFontgen() {
   $('fg-italic').addEventListener('change', () => { state.italic = $('fg-italic').checked; live.refresh(0); });
 
   // Live preview: everything that changes how a glyph looks refreshes it.
-  $('fg-live-sample').value = LIVE_SAMPLE;
   live = createLivePreview({
     canvas: $('fg-live'),
     statusEl: $('fg-live-status'),
@@ -316,9 +297,15 @@ export function initFontgen() {
       localBuffer: state.localFile?.buffer || null,
       sample: $('fg-live-sample').value,
       scale: Number($('fg-live-zoom').value),
+      allowed: new Set(currentCharset()),
     }),
   });
-  $('fg-live-sample').addEventListener('input', () => live.refresh());
+  $('fg-live-sample').addEventListener('input', () => {
+    // Blanking the field hands control back to the selection.
+    sampleEdited = $('fg-live-sample').value.trim() !== '';
+    if (!sampleEdited) syncSample();
+    live.refresh();
+  });
   $('fg-live-zoom').addEventListener('change', () => live.refresh(0));
 
   $('fg-file').addEventListener('change', async () => {
@@ -337,6 +324,15 @@ export function initFontgen() {
 
   $('fg-custom').addEventListener('input', () => { state.customText = $('fg-custom').value; updateCharsetSummary(); });
   $('fg-ranges').addEventListener('input', () => { state.customRanges = $('fg-ranges').value; updateCharsetSummary(); });
+
+  // Character-set picker (shared with the editor dialog).
+  charsetUI = createCharsetUI({
+    host: $('fg-presets'),
+    getSets: () => state.sets,
+    setSets: (v) => { state.sets = v; updateCharsetSummary(); live?.refresh(); },
+    getText: () => state.customText,
+    setText: (v) => { state.customText = v; $('fg-custom').value = v; },
+  });
 
   fillCharmapScope();
   $('fg-charmap-details').addEventListener('toggle', renderCharmapPanel);
@@ -359,7 +355,7 @@ export function initFontgen() {
 function redrawAll() {
   applyStatic(document);
   renderFontList();
-  renderPresets();
+  charsetUI?.render();
   updateCharsetSummary();
   live?.refresh(0);
   if (state.result) showResult();

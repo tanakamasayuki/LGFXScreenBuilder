@@ -41,10 +41,23 @@
 .fg-file { display: block; margin-bottom: 6px; }
 
 /* --- charset ------------------------------------------------------------ */
-.fg-group { margin-bottom: 8px; }
-.fg-group-title { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 4px; }
 .fg-chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .fg-n { opacity: .6; font-size: 11px; margin-left: 3px; }
+
+/* Additive sets are real checkboxes; a control that adds must not look like a
+   radio group. Tier ladders keep the chip look, because they ARE exclusive. */
+.cs-templates, .cs-axis { padding: 8px 0; border-top: 1px solid var(--line); }
+.cs-templates { border-top: 0; padding-top: 0; }
+.cs-axis-title { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 5px; }
+.cs-axis-title .sub { text-transform: none; letter-spacing: 0; }
+.cs-checks { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.cs-check { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; cursor: pointer; padding: 2px 4px; border-radius: 5px; }
+.cs-check:hover { background: var(--soft); }
+.cs-check.on { font-weight: 600; }
+.cs-check input { width: auto; min-height: auto; margin: 0; }
+.cs-n { opacity: .55; font-size: 11px; }
+.cs-tier { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-bottom: 4px; }
+.cs-tier-name { font-size: 12px; min-width: 8.5em; color: var(--text); }
 .fg-summary { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
 
 /* --- charset inspector -------------------------------------------------- */

@@ -7,9 +7,10 @@
 import { store, mutate } from '../store.js';
 import { adoptCustomFont, removeFont, customFontNames, fontEntry } from '../model.js';
 import { t } from '../i18n.js';
-import { PRESETS, PRESET_GROUPS, resolveCharset, splitBmp, codepointsOfPreset } from './charsets.js';
+import { ALL_SET_IDS, resolveCharset, splitBmp, codepointsOfSet, migrateSets, countOf } from './charsets.js';
+import { createCharsetUI } from './charsetui.js';
 import { renderCharmap } from './charmap.js';
-import { drawGlyphs, createLivePreview } from './preview.js';
+import { drawGlyphs, createLivePreview, autoSample } from './preview.js';
 import { FONTS } from './googlefonts.js';
 import { buildFont, cachedFont, isCached, rememberLocalFile, hasLocalFile, forgetFont, recipeKey } from './build.js';
 
@@ -20,15 +21,22 @@ const fmtBytes = (n) => (n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${(n / 1024).t
 let dlg = null;
 let live = null;
 
-// Default line height 32: 1bpp CJK below ~24px loses the strokes that tell
-// kanji apart, so the starting point is a size that actually reads.
-const LIVE_SAMPLE = 'Hello 25.6\u2103  \u3042\u30a2\u6f22\u5b57 12:34';
+// Whether the user typed their own preview sample. Until they do, the sample
+// tracks the selection, so the preview never shows characters the generated
+// font will not contain.
+let sampleEdited = false;
+
+function syncSample() {
+  if (sampleEdited || !dlg) return;
+  $('cf-live-sample').value = autoSample(dlgCharset());
+}
 
 const blankRecipe = () => ({
   source: { kind: 'google', family: 'Noto Sans JP', weight: 400, italic: false },
   size: 32,
   threshold: 128,
-  presets: ['ascii'],
+  // Flat list of set ids (see charsets.js); the picker groups them into axes.
+  sets: ['ascii', 'hiragana', 'katakana', 'jaPunct', 'hanJa1', 'symUnits'],
   customText: '',
   customRanges: '',
 });
@@ -74,34 +82,20 @@ export function renderCustomFonts() {
   });
 }
 
-// --- dialog ---------------------------------------------------------------
-
-function renderPresetChips() {
-  const host = $('cf-presets');
-  host.innerHTML = '';
-  for (const group of PRESET_GROUPS) {
-    const row = document.createElement('div');
-    row.className = 'fg-chips';
-    row.style.marginBottom = '4px';
-    for (const p of PRESETS.filter((x) => x.group === group)) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'fchip' + (dlg.recipe.presets.includes(p.id) ? ' on' : '');
-      b.innerHTML = `${t('fg.preset.' + p.id)} <span class="fg-n">${p.count.toLocaleString()}</span>`;
-      b.onclick = () => {
-        const i = dlg.recipe.presets.indexOf(p.id);
-        if (i < 0) dlg.recipe.presets.push(p.id); else dlg.recipe.presets.splice(i, 1);
-        renderPresetChips();
-        updateCount();
-      };
-      row.appendChild(b);
-    }
-    host.appendChild(row);
-  }
+// Bring a stored recipe up to the current set model.
+function migrated(recipe) {
+  const legacy = recipe.presets || [];
+  recipe.sets = migrateSets(recipe.sets || legacy);
+  delete recipe.presets;
+  return recipe;
 }
 
+// --- dialog ---------------------------------------------------------------
+
+let charsetUI = null;
+
 const dlgCharset = () => splitBmp(resolveCharset({
-  presets: dlg.recipe.presets,
+  sets: dlg.recipe.sets,
   customText: dlg.recipe.customText,
   customRanges: dlg.recipe.customRanges,
 })).bmp;
@@ -111,6 +105,7 @@ function updateCount() {
   $('cf-charcount').textContent = t('fg.charCount', { n: cps.length.toLocaleString() });
   const approx = Math.round(cps.length * (dlg.recipe.size * dlg.recipe.size * 0.18 + 6));
   $('cf-estimate').textContent = cps.length ? t('fg.estimate', { size: fmtBytes(approx) }) : '';
+  syncSample();
   renderCharmapPanel();
 }
 
@@ -118,7 +113,7 @@ function fillCharmapScope() {
   const sel = $('cf-charmap-scope');
   const keep = sel.value;
   sel.innerHTML = `<option value="">${t('cm.scopeSelected')}</option>` +
-    PRESETS.map((p) => `<option value="${p.id}">${t('fg.preset.' + p.id)} (${p.count.toLocaleString()})</option>`).join('');
+    ALL_SET_IDS.map((id) => `<option value="${id}">${t('cs.set.' + id)} (${countOf(id).toLocaleString()})</option>`).join('');
   if (keep) sel.value = keep;
 }
 
@@ -127,7 +122,7 @@ function fillCharmapScope() {
 function renderCharmapPanel() {
   if (!dlg || !$('cf-charmap-details').open) return;
   const scope = $('cf-charmap-scope').value;
-  const cps = scope ? codepointsOfPreset(scope) : dlgCharset();
+  const cps = scope ? codepointsOfSet(scope) : dlgCharset();
   // After a build the same view reports coverage: characters this typeface
   // turned out not to have are struck through where they sit.
   const missing = !scope && dlg.built ? dlg.built.entry.missing : null;
@@ -150,7 +145,9 @@ export function openDialog(name = null) {
   const existing = name ? fontEntry(store.project, name) : null;
   dlg = {
     editing: name,
-    recipe: existing ? structuredClone(existing.custom) : blankRecipe(),
+    // Recipes saved against the previous set ids are mapped onto current ones
+    // (charsets.js migrateSets) rather than silently losing their selection.
+    recipe: existing ? migrated(structuredClone(existing.custom)) : blankRecipe(),
     built: null,
   };
 
@@ -169,10 +166,10 @@ export function openDialog(name = null) {
   $('cf-status').textContent = '';
   $('cf-preview-wrap').hidden = true;
 
-  if (!$('cf-live-sample').value) $('cf-live-sample').value = LIVE_SAMPLE;
+  sampleEdited = false;
 
   setTab(dlg.recipe.source.kind);
-  renderPresetChips();
+  charsetUI.render();
   fillCharmapScope();
   $('cf-charmap-details').open = false;
   updateCount();
@@ -258,9 +255,15 @@ export function initCustomFonts() {
       localBuffer: dlg.pendingFile || null,
       sample: $('cf-live-sample').value,
       scale: Number($('cf-live-zoom').value),
+      allowed: new Set(dlgCharset()),
     }),
   });
-  $('cf-live-sample').addEventListener('input', () => live.refresh());
+  $('cf-live-sample').addEventListener('input', () => {
+    // Blanking the field hands control back to the selection.
+    sampleEdited = $('cf-live-sample').value.trim() !== '';
+    if (!sampleEdited) syncSample();
+    live.refresh();
+  });
   $('cf-live-zoom').addEventListener('change', () => live.refresh(0));
   $('cf-custom').addEventListener('input', () => { dlg.recipe.customText = $('cf-custom').value; updateCount(); });
   $('cf-ranges').addEventListener('input', () => { dlg.recipe.customRanges = $('cf-ranges').value; updateCount(); });
@@ -272,6 +275,14 @@ export function initCustomFonts() {
     dlg.recipe.source.family = file.name.replace(/\.[^.]+$/, '');
     $('cf-filename').textContent = file.name;
     live.refresh(0);
+  });
+
+  charsetUI = createCharsetUI({
+    host: $('cf-presets'),
+    getSets: () => dlg.recipe.sets,
+    setSets: (v) => { dlg.recipe.sets = v; updateCount(); live?.refresh(); },
+    getText: () => dlg.recipe.customText,
+    setText: (v) => { dlg.recipe.customText = v; $('cf-custom').value = v; },
   });
 
   $('cf-charmap-details').addEventListener('toggle', renderCharmapPanel);

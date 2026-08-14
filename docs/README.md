@@ -73,9 +73,13 @@ python -m http.server 8000 --directory docs
 - **Font generator** (SPEC §8.7.7): when no preset fits, generate one. Pick a
   typeface (curated OFL-1.1 / Apache-2.0 web fonts, or your own file), a line
   height, and a character set, and get a `lgfx::U8g2font` header carrying only
-  those glyphs. Presets cover ASCII/Latin-1, Japanese (mini/full), CJK and
-  SC/TC/KR, plus curated **units & symbols** (`° ℃ ℉ ± × ÷ …`) and **clock/date**
-  sets, and any extra characters or `U+xxxx-U+yyyy` ranges you add. Two entry
+  those glyphs. Character sets are **composed on independent axes** — Latin/
+  European, kana, han, hangul, symbols — plus any extra characters or
+  `U+xxxx-U+yyyy` ranges. Every set is derived from Unicode's own data (Unihan +
+  `KSC5601.TXT`), so sizes match the published standards exactly; han is chosen
+  **per language** and unioned, and its levels are cumulative, so moving up a
+  level can never silently drop a character. One-click templates (Clock, Sensor
+  readout, Japanese UI, …) fill in a starting selection. Two entry
   points, one pipeline (`src/fontgen/`): [`fontgen.html`](fontgen.html) is
   standalone — no project, just download the `.h` — while Fonts mode adopts the
   font onto the project and emits it into the exported header. The project stores

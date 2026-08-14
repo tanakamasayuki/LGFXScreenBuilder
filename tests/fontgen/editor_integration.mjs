@@ -84,10 +84,17 @@ await page.evaluate(() => { document.querySelector('#cf-charmap-details').open =
 await page.waitForSelector('#cf-charmap .cm-block');
 const dlgMap = await page.locator('#cf-charmap').innerText();
 check(dlgMap.includes('Basic Latin (ASCII)'), 'the dialog lists the selected characters by block');
-await page.selectOption('#cf-charmap-scope', 'units');
+await page.selectOption('#cf-charmap-scope', 'symUnits');
 await page.waitForFunction(() => document.querySelector('#cf-charmap').innerText.includes('℃'));
-check(true, 'a single preset can be inspected from the dialog');
+check(true, 'a single set can be inspected from the dialog');
 await page.selectOption('#cf-charmap-scope', '');
+
+// The picker must offer checkboxes for additive sets and ladders for han.
+check(await page.locator('#cf-presets .cs-check').count() >= 10, 'the dialog renders additive sets as checkboxes');
+check(await page.locator('#cf-presets .cs-tier').count() >= 5, 'the dialog renders per-language han tiers');
+
+// Keep the run small: the Latin UI template drops the kanji the default carries.
+await page.locator('#cf-presets .cs-templates .fchip').filter({ hasText: /Latin UI|英数UI/ }).first().click();
 
 // Default preset is ASCII; that is enough and keeps the run quick.
 await page.click('#cf-ok');

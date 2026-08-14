@@ -6,10 +6,11 @@
 // full run produces a plausible font: glyphs found, bytes emitted, a header
 // with the licence notice, and a preview canvas with actual ink in it.
 //
-// It also asserts the two things most likely to rot silently: that ℃ (U+2103)
-// comes out of the "units" preset (the gap in the imported Japanese-mini list
-// that motivated that preset), and that the local-file licence warning is on
-// the page.
+// It also asserts what is most likely to rot silently: that the character-set
+// picker offers checkboxes for additive sets and ladders for the per-language
+// han tiers, that the inspector lists real characters, that ℃ (U+2103) is both
+// selectable and honestly reported as absent from a typeface that lacks it, and
+// that the local-file licence warning is on the page.
 //
 // Requires a Chromium from `npx playwright install chromium`; skips loudly if
 // playwright is not installed.
@@ -69,7 +70,9 @@ await page.waitForSelector('#fg-fontlist .fg-font');
 
 console.log('page load:');
 check(pageErrors.length === 0, `no uncaught errors${pageErrors.length ? ': ' + pageErrors.join('; ') : ''}`);
-check(await page.locator('#fg-presets .fchip').count() >= 10, 'preset chips rendered');
+check(await page.locator('#fg-presets .cs-check').count() >= 10, 'additive sets render as checkboxes');
+check(await page.locator('#fg-presets .cs-tier').count() >= 5, 'per-language han tiers render as ladders');
+check(await page.locator('#fg-presets .cs-templates .fchip').count() >= 5, 'templates are offered');
 
 // Defaults: a CJK-capable face at a line height that stays legible at 1bpp.
 check(await page.locator('#fg-fontlist .fg-font.on .fg-font-name').innerText() === 'Noto Sans JP',
@@ -119,7 +122,8 @@ await page.evaluate(() => {
 });
 // Match on the name span only — the button also holds the licence badge.
 await page.locator('#fg-fontlist .fg-font-name').filter({ hasText: /^Roboto$/ }).first().click();
-await page.locator('#fg-presets .fchip', { hasText: /Units|単位/ }).first().click();
+// Latin UI template: ASCII + Latin-1 + units — small, quick, and it carries ℃.
+await page.locator('#fg-presets .cs-templates .fchip').filter({ hasText: /Latin UI|英数UI/ }).first().click();
 
 const counted = await page.locator('#fg-charcount').innerText();
 check(/\d/.test(counted), `charset summary shows a count (${counted})`);
@@ -134,11 +138,11 @@ check(mapAll.includes('℃'), 'the selected set lists ℃ as an actual character
 check(mapAll.includes('Basic Latin (ASCII)'), 'characters are grouped by Unicode block');
 check(/U\+0020/.test(mapAll), 'each block shows its codepoint range');
 
-await page.selectOption('#fg-charmap-scope', 'kana');
+await page.selectOption('#fg-charmap-scope', 'hiragana');
 await page.waitForFunction(() => document.querySelector('#fg-charmap').innerText.includes('Hiragana'));
 const mapKana = await page.locator('#fg-charmap').innerText();
-check(mapKana.includes('あ') && mapKana.includes('ア'), 'a single preset can be inspected on its own');
-check(!mapKana.includes('Basic Latin (ASCII)'), 'inspecting one preset does not show the others');
+check(mapKana.includes('あ'), 'a single set can be inspected on its own');
+check(!mapKana.includes('Basic Latin (ASCII)'), 'inspecting one set does not show the others');
 await page.selectOption('#fg-charmap-scope', '');
 
 await page.click('#fg-generate');

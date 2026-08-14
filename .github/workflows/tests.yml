@@ -56,9 +56,14 @@ jobs:
       - name: Check u8g2 font encoder round trip
         run: node tests/fontgen/u8g2_roundtrip.mjs
 
-      # SPEC §8.7.7: the character-set lists are imported from an upstream
-      # repository, so a stale committed copy must fail rather than drift.
-      - name: Check imported character-set data is current
+      # SPEC §8.7.7: han tiers must stay cumulative and legacy recipes must keep
+      # resolving — both are silent-failure modes that only surface on a device.
+      - name: Check the character-set model
+        run: node tests/fontgen/charsets.mjs
+
+      # SPEC §8.7.7: the sets are derived from Unicode data, so a stale committed
+      # copy must fail rather than drift.
+      - name: Check derived character-set data is current
         run: node tools/gen-charsets.mjs --check
 
       # The rasterizer runs on FontFace + canvas, so the generator and the

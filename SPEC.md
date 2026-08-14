@@ -478,13 +478,34 @@ adjust against. So the preview lives next to them and follows every change, rast
 is — through the same rasterizer as the real run. It is not an approximation: those are the
 output pixels, at 1:1 by default.
 
-**Character sets.** Presets are additive and unioned with free-form extra characters and
-`U+xxxx-U+yyyy` ranges. The bulk lists (ASCII+Latin-1, Japanese mini/full, CJK, SC/TC/KR)
-are imported by `tools/gen-charsets.mjs` from the enable-headers of the **efont Arduino
-library** — the codepoint *lists* only; the /efont/ Unicode font data itself is a separate
-work by its own authors and is not used here. Curated sets fill what those lists miss,
-chiefly **units & symbols**: the Japanese-mini list has `°` but not `℃` (U+2103), which is
-exactly what a thermometer UI needs.
+**Character sets are composed, not picked from a menu of bundles.** Selection runs on
+independent axes — Latin/European, kana and Japanese punctuation, han, hangul, symbols —
+plus free-form extra characters and `U+xxxx-U+yyyy` ranges. Everything is unioned.
+
+- **Every set is derived from Unicode's own data** (`tools/gen-charsets.mjs`): Unihan's
+  `kJoyoKanji`, `kJinmeiyoKanji`, `kJis0`, `kGB0`, `kBigFive` and `kKoreanEducationHanja`,
+  plus `KSC5601.TXT`. Sizes match the published standards exactly (JIS level 1 = 2,965,
+  GB 2312 level 1 = 3,755, KS X 1001 hangul = 2,350, …), so a set is auditable rather than
+  something to take on faith.
+- **Han is per language, unioned.** Japanese, Simplified, Traditional and Korean are
+  different repertoires, not points on one scale — measured against the sets this replaced,
+  "CJK" was missing 536 characters that "Japanese" had, including the 社/祉/祈 variant forms.
+  So each language gets its own level, and the results combine. "All CJK ideographs" is
+  simply another entry rather than something sitting above Japanese.
+- **Tiers are cumulative unions.** The raw standards do not nest: 常用漢字 has 34 characters
+  outside JIS level 1 and 4 outside JIS X 0208 entirely. Each tier is therefore defined as
+  everything below it plus one more standard, so moving up a level can never silently drop a
+  character. The previous sets failed exactly this — their "Japanese mini" carried 9
+  characters (`～ ＼ ￡ ―`, the CP932 forms) that their "Japanese" did not.
+- **Additive sets are checkboxes; tiers are ladders.** A control that adds must not look
+  like a radio group, and a scale should look like a scale.
+- **Templates** (Clock, Sensor readout, Japanese UI, …) fill in a selection in one click and
+  leave it editable, so they teach the model instead of hiding it.
+
+The one thing standards do not cover is what a small screen needs beyond letters, so the
+symbol categories (units & measurement, mathematics, arrows, shapes, currency, enclosed,
+misc) are literal lists in the generator — reviewable character by character in its diff.
+`℃` (U+2103) lives in **units & measurement**, which is what a thermometer UI reaches for.
 
 A count ("4,217 characters") does not tell anyone whether a preset covers what their screen
 needs, so both entry points carry a **charset inspector**: the resolved codepoints listed as
