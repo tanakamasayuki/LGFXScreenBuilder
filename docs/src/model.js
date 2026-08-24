@@ -56,6 +56,16 @@ const circle = (x, y, r, color, visible = true, fill = true) => ({ x, y, r, fill
 const text = (x, y, datum, size, color, content, visible = true) =>
   ({ x, y, datum, size, color, text: content, visible });
 
+// A broad preset selection makes the demo useful as a font sampler as well as
+// a layout sampler. Every demo profile enables these; individual Text parts
+// below deliberately mix families on the same screen.
+const DEMO_FONTS = [
+  'Font2', 'Font4', 'Font7', 'Font8x8C64', 'AsciiFont8x16', 'TomThumb',
+  'FreeMono12pt7b', 'FreeSans12pt7b', 'FreeSansBold12pt7b',
+  'FreeSerifBold12pt7b', 'Orbitron_Light_24', 'Roboto_Thin_24',
+  'Satisfy_24', 'Yellowtail_32', 'DejaVu12', 'lgfxJapanGothic_16',
+];
+
 // A varied sample project used by the Demo button and as the initial project.
 export function sampleProject() {
   const scenes = [
@@ -63,6 +73,7 @@ export function sampleProject() {
       id: 'Boot', desc: '起動直後に一瞬だけ出すスプラッシュ', parts: [
         { id: 'logo', type: 'Rect', desc: '' },
         { id: 'boot', type: 'Text', desc: '起動メッセージ' },
+        { id: 'version', type: 'Text', desc: 'バージョン表示' },
       ],
     },
     {
@@ -138,22 +149,23 @@ export function sampleProject() {
 
   const profiles = [
     {
-      id: 'Core', w: 320, h: 240, rotation: 0,
+      id: 'Core', w: 320, h: 240, rotation: 0, fonts: [...DEMO_FONTS],
       layout: {
         Boot: {
           logo: rect(110, 80, 100, 60, '#1e2a30'),
           boot: text(160, 160, 'MC', 2, '#9ce5ac', 'Booting...'),
+          version: text(160, 205, 'MC', 1, '#6f8a92', 'LGFXSB demo v1'),
         },
         Main: {
           headerBand: rect(0, 0, 320, 40, '#1e2a30'),
           title: text(12, 10, 'TL', 2, '#ffffff', 'Main'),
           battery: text(310, 12, 'TR', 1.5, '#9ce5ac', '82%'),
-          temp: text(18, 70, 'TL', 4, '#ffffff', '24.5C'),
+          temp: text(18, 70, 'TL', 4, '#ffffff', '24.5'),
           panel: rect(18, 150, 284, 54, '#172126'),
         },
         Settings: {
           header: rect(0, 0, 320, 40, '#1e2a30'),
-          ttl: text(12, 10, 'TL', 2, '#ffffff', 'Settings'),
+          ttl: text(12, 10, 'TL', 2, '#ffffff', '設定'),
           row1: text(18, 60, 'TL', 2, '#ffffff', 'Wi-Fi'),
         },
         Dialog: {
@@ -202,11 +214,12 @@ export function sampleProject() {
       },
     },
     {
-      id: 'Stick', w: 135, h: 240, rotation: 0,
+      id: 'Stick', w: 135, h: 240, rotation: 0, fonts: [...DEMO_FONTS],
       layout: {
         Boot: {
           logo: rect(30, 80, 75, 50, '#1e2a30'),
           boot: text(69, 148, 'MC', 1.5, '#9ce5ac', 'Boot...'),
+          version: text(67, 205, 'MC', 1, '#6f8a92', 'LGFXSB v1'),
         },
         Main: {
           headerBand: rect(0, 0, 135, 30, '#1e2a30'),
@@ -217,7 +230,7 @@ export function sampleProject() {
         },
         Settings: {
           header: rect(0, 0, 135, 30, '#1e2a30'),
-          ttl: text(8, 7, 'TL', 1.5, '#ffffff', 'Settings'),
+          ttl: text(8, 7, 'TL', 1.5, '#ffffff', '設定'),
           row1: text(10, 40, 'TL', 1.5, '#ffffff', 'Wi-Fi'),
         },
         Dialog: {
@@ -266,22 +279,23 @@ export function sampleProject() {
       },
     },
     {
-      id: 'Cardputer', w: 240, h: 135, rotation: 0,
+      id: 'Cardputer', w: 240, h: 135, rotation: 0, fonts: [...DEMO_FONTS],
       layout: {
         Boot: {
           logo: rect(80, 30, 80, 40, '#1e2a30'),
           boot: text(120, 88, 'MC', 1.5, '#9ce5ac', 'Booting...'),
+          version: text(120, 116, 'MC', 1, '#6f8a92', 'LGFXSB demo v1'),
         },
         Main: {
           headerBand: rect(0, 0, 240, 26, '#1e2a30'),
           title: text(8, 5, 'TL', 1.5, '#ffffff', 'Main'),
           battery: text(232, 6, 'TR', 1.25, '#9ce5ac', '82%'),
-          temp: text(12, 40, 'TL', 3, '#ffffff', '24.5C'),
+          temp: text(12, 40, 'TL', 3, '#ffffff', '24.5'),
           panel: rect(12, 86, 216, 40, '#172126', false),
         },
         Settings: {
           header: rect(0, 0, 240, 26, '#1e2a30'),
-          ttl: text(8, 5, 'TL', 1.5, '#ffffff', 'Settings'),
+          ttl: text(8, 5, 'TL', 1.5, '#ffffff', '設定'),
           row1: text(12, 36, 'TL', 1.5, '#ffffff', 'Wi-Fi'),
         },
         Dialog: {
@@ -331,6 +345,53 @@ export function sampleProject() {
     },
   ];
 
+  const fontForPart = {
+    Boot: { boot: 'Orbitron_Light_24', version: 'TomThumb' },
+    Main: { title: 'FreeSansBold12pt7b', battery: 'DejaVu12', temp: 'Font7' },
+    Settings: { ttl: 'lgfxJapanGothic_16', row1: 'Font2' },
+    Dialog: { msg: 'FreeSerifBold12pt7b', hint: 'Font8x8C64' },
+    Clock: { time: 'Font7', date: 'Orbitron_Light_24', alarm: 'FreeMono12pt7b' },
+    Sensors: {
+      sensorTitle: 'AsciiFont8x16', tempValue: 'Roboto_Thin_24',
+      humidity: 'FreeSans12pt7b', pressure: 'FreeMono12pt7b',
+    },
+    Network: {
+      networkTitle: 'Font4', ssid: 'FreeMono12pt7b', ip: 'DejaVu12',
+      networkState: 'Satisfy_24',
+    },
+    Chart: { chartTitle: 'Roboto_Thin_24', current: 'Yellowtail_32' },
+  };
+  const fontSize = {
+    Core: {
+      Font2: 1, Font4: 0.75, Font7: 1, Font8x8C64: 2, AsciiFont8x16: 1,
+      TomThumb: 2, FreeMono12pt7b: 0.75, FreeSans12pt7b: 0.75,
+      FreeSansBold12pt7b: 1, FreeSerifBold12pt7b: 1,
+      Orbitron_Light_24: 0.75, Roboto_Thin_24: 1.25, Satisfy_24: 1,
+      Yellowtail_32: 0.75, DejaVu12: 1, lgfxJapanGothic_16: 1,
+    },
+    Stick: {
+      Font2: 0.75, Font4: 0.5, Font7: 0.75, Font8x8C64: 1.25, AsciiFont8x16: 0.75,
+      TomThumb: 1.5, FreeMono12pt7b: 0.5, FreeSans12pt7b: 0.5,
+      FreeSansBold12pt7b: 0.75, FreeSerifBold12pt7b: 0.75,
+      Orbitron_Light_24: 0.5, Roboto_Thin_24: 0.75, Satisfy_24: 0.75,
+      Yellowtail_32: 0.5, DejaVu12: 0.75, lgfxJapanGothic_16: 0.75,
+    },
+    Cardputer: {
+      Font2: 0.75, Font4: 0.5, Font7: 0.75, Font8x8C64: 1.25, AsciiFont8x16: 0.75,
+      TomThumb: 1.5, FreeMono12pt7b: 0.5, FreeSans12pt7b: 0.75,
+      FreeSansBold12pt7b: 0.75, FreeSerifBold12pt7b: 0.75,
+      Orbitron_Light_24: 0.5, Roboto_Thin_24: 0.75, Satisfy_24: 0.75,
+      Yellowtail_32: 0.5, DejaVu12: 0.75, lgfxJapanGothic_16: 0.75,
+    },
+  };
+  for (const profile of profiles) {
+    for (const [sceneId, parts] of Object.entries(fontForPart)) {
+      for (const [partId, font] of Object.entries(parts)) {
+        Object.assign(profile.layout[sceneId][partId], { font, size: fontSize[profile.id][font] });
+      }
+    }
+  }
+
   return {
     name: 'MyScreen',
     targetLibrary: 'M5Unified',
@@ -338,7 +399,7 @@ export function sampleProject() {
     profiles,
     scenes,
     assets: [], // image assets: { id, w, h, dataUrl (preview), rgb565: [] (export) }
-    fonts: [],  // adopted preset fonts: { name } (§8.7.3); profile.fonts enables per profile
+    fonts: DEMO_FONTS.map((name) => ({ name })),
   };
 }
 

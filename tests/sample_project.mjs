@@ -6,13 +6,20 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { PART_TYPES, dispDims, sampleProject } from '../docs/src/model.js';
 import { generateHeader, generateSketch } from '../docs/src/codegen.js';
+import { FONT_CATALOG } from '../docs/src/font-catalog.js';
 
 const project = sampleProject();
 const sceneIds = new Set(project.scenes.map((scene) => scene.id));
 const demonstratedTypes = new Set();
+const adoptedFonts = new Set(project.fonts.map((font) => font.name));
+const catalogFonts = new Set(FONT_CATALOG.map((font) => font.name));
 
 if (project.scenes.length < 8) throw new Error(`demo has only ${project.scenes.length} scenes`);
 if (sceneIds.size !== project.scenes.length) throw new Error('demo scene IDs must be unique');
+if (adoptedFonts.size < 12) throw new Error(`demo adopts only ${adoptedFonts.size} fonts`);
+for (const font of adoptedFonts) {
+  if (!catalogFonts.has(font)) throw new Error(`demo adopts unknown preset font ${font}`);
+}
 
 for (const scene of project.scenes) {
   const partIds = new Set(scene.parts.map((part) => part.id));
@@ -20,6 +27,10 @@ for (const scene of project.scenes) {
   for (const part of scene.parts) demonstratedTypes.add(part.type);
 
   for (const profile of project.profiles) {
+    const enabledFonts = new Set(profile.fonts || []);
+    for (const font of adoptedFonts) {
+      if (!enabledFonts.has(font)) throw new Error(`${profile.id}: ${font} is not enabled`);
+    }
     const placements = profile.layout[scene.id];
     if (!placements) throw new Error(`${profile.id}: missing ${scene.id} layout`);
     const placementIds = Object.keys(placements);
@@ -30,6 +41,9 @@ for (const scene of project.scenes) {
     const { w, h } = dispDims(profile);
     for (const part of scene.parts) {
       const p = placements[part.id];
+      if (part.type === 'Text' && p.font && !enabledFonts.has(p.font)) {
+        throw new Error(`${profile.id}/${scene.id}/${part.id}: ${p.font} is not enabled`);
+      }
       const points = part.type === 'Line'
         ? [[p.x, p.y], [p.x2, p.y2]]
         : part.type === 'Circle'
@@ -41,6 +55,11 @@ for (const scene of project.scenes) {
         throw new Error(`${profile.id}/${scene.id}/${part.id}: placement is outside ${w}x${h}`);
       }
     }
+    const usedHere = new Set(scene.parts
+      .filter((part) => part.type === 'Text')
+      .map((part) => placements[part.id].font)
+      .filter(Boolean));
+    if (usedHere.size < 2) throw new Error(`${profile.id}/${scene.id}: uses fewer than two fonts`);
   }
 }
 
@@ -52,6 +71,9 @@ const header = generateHeader(project);
 const sketch = generateSketch(project, project.targetLibrary);
 for (const scene of project.scenes) {
   if (!header.includes(`struct ${scene.id} {`)) throw new Error(`${scene.id}: missing from generated header`);
+}
+for (const font of adoptedFonts) {
+  if (!header.includes(`&lgfx::v1::fonts::${font}`)) throw new Error(`${font}: missing from generated header`);
 }
 if (!header.includes(`kSceneInfoCount = ${project.scenes.length}`)
     || !sketch.includes('kSceneCount = detail::kSceneInfoCount')) {
@@ -68,4 +90,4 @@ for (const page of ['index.html', 'fontgen.html']) {
   }
 }
 
-console.log(`Sample project OK: ${project.scenes.length} scenes, ${project.profiles.length} profiles, favicon linked.`);
+console.log(`Sample project OK: ${project.scenes.length} scenes, ${project.profiles.length} profiles, ${adoptedFonts.size} fonts, favicon linked.`);

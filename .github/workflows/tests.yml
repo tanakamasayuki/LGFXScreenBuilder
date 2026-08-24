@@ -27,6 +27,11 @@ jobs:
         working-directory: docs
         run: npm ci --ignore-scripts
 
+      # The initial/Demo project is also a feature sampler: keep every scene
+      # complete for every device and keep its preset fonts enabled and used.
+      - name: Check the sample project
+        run: node tests/sample_project.mjs
+
       # Guard against committed generated headers drifting from the codegen.
       # Runs on the pristine checkout, before any test regenerates a header.
       - name: Check generated headers are up to date
