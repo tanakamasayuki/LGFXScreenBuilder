@@ -76,6 +76,10 @@ await page.evaluate(async () => {
     st.ui.selected = 'boot';
   });
 });
+const previousFont = await page.evaluate(async () => {
+  const { store } = await import('./src/store.js');
+  return store.project.profiles[0].layout.Boot.boot.font || null;
+});
 await page.selectOption('#props select[data-k="font"]', 'FreeSans24pt7b');
 await requestedFont;
 const whileLoading = await page.evaluate(async () => {
@@ -84,7 +88,8 @@ const whileLoading = await page.evaluate(async () => {
   const shown = document.querySelector('#canvas-screen .part.text[data-id="boot"]');
   return { committed: part.font, tag: shown?.tagName, text: shown?.textContent || '' };
 });
-check(whileLoading.committed == null, 'the project keeps the previous font until loading completes');
+check(whileLoading.committed === previousFont,
+  `the project keeps the previous font until loading completes (${previousFont || 'Font0'})`);
 check(whileLoading.tag === 'CANVAS' && !whileLoading.text,
   'no CSS/system-font text is shown during the load');
 releaseFont();
