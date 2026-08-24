@@ -16,7 +16,7 @@
 //     used, with its author and licence, because the generated font is then a
 //     derived work of all of them and OFL requires the notice to travel.
 import { loadGoogleFont, findFont, FALLBACK_CHAIN } from './googlefonts.js';
-import { generateFont, loadTtf, merge, rasterizeSet, unloadTtf } from 'lgfx-font-tool';
+import { generateFont, loadTtf, rasterizeSet, unloadTtf } from 'lgfx-font-tool';
 
 // 'auto' walks the curated chain; a family name pins one font; null disables it.
 export const FALLBACK_AUTO = 'auto';
@@ -80,16 +80,18 @@ export async function composeFont({
   const open = [];
   const key = primaryKey(source, size, threshold, style, codepoints);
   try {
+    let primaryCss = null;
     let first = primed && primed.key === key ? primed.result : null;
     if (!first) {
       const primary = await acquire(source, codepoints, style);
+      primaryCss = primary.family;
       open.push(...primary.faces);
       const made = await generateFont({
         family: primary.family, px: size, codepoints, style, threshold,
         familyName: source.family,
         onProgress: (p) => onProgress?.({ ...p, family: source.family }),
       });
-      first = { model: made.font, missing: made.missing, meta: primary.meta };
+      first = { model: made.font, missing: made.missing, sizing: made.sizing, meta: primary.meta };
     }
 
     let model = first.model;
@@ -117,29 +119,52 @@ export async function composeFont({
       const chain = [...(plan || []), ...rest]
         .filter((f, i, a) => f !== source.family && a.indexOf(f) === i);
 
+      const fallbacks = [];
+      const fallbackMeta = [];
+
       for (const family of chain) {
         if (!missing.length) break;
         try {
           const fb = await acquire({ kind: 'google', family }, missing, style);
           open.push(...fb.faces);
-          const got = await generateFont({
-            family: fb.family, px: size, codepoints: missing, style, threshold,
-            familyName: family,
-            onProgress: (p) => onProgress?.({ ...p, family }),
+          const probe = await rasterizeSet({
+            family: fb.family, size, codepoints: missing, style, threshold,
+            sizing: first.sizing,
           });
-          if (!got.font.glyphs.size) continue;
-          model = merge(model, got.font);
-          sources.push({
-            ...fb.meta,
-            count: got.font.glyphs.size,
-            chars: [...got.font.glyphs.keys()].map((c) => String.fromCodePoint(c)).join(''),
-          });
-          missing = got.missing;
+          if (!probe.glyphs.length) continue;
+          fallbacks.push({ family: fb.family });
+          fallbackMeta.push(fb.meta);
+          missing = probe.missing;
         } catch (e) {
           // A family that will not load is simply not a usable fallback and the
           // characters stay missing — but swallowing the reason hides real bugs,
           // so it is kept and surfaced with the result.
           skipped.push({ family, reason: e.message });
+        }
+      }
+
+      if (fallbacks.length) {
+        // generateFont owns scale inheritance, baseline merge, and the final
+        // line box in v1.0.0. Reacquire the primary only when a cached primary
+        // pass supplied the gap list but no FontFace is currently registered.
+        if (!primaryCss) {
+          const primary = await acquire(source, codepoints, style);
+          primaryCss = primary.family;
+          open.push(...primary.faces);
+        }
+        const made = await generateFont({
+          family: primaryCss, fallbacks, px: size, codepoints, style, threshold,
+          familyName: source.family,
+          onProgress: (p) => onProgress?.({ ...p, family: source.family }),
+        });
+        model = made.font;
+        missing = made.missing;
+        for (const fill of made.filled) {
+          const meta = fallbackMeta[fill.index];
+          sources.push({
+            ...meta, count: fill.codepoints.length,
+            chars: fill.codepoints.map((c) => String.fromCodePoint(c)).join(''),
+          });
         }
       }
     }
