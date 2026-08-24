@@ -367,9 +367,9 @@ The unit for specifying text size is the **multiplier as the canonical (stored) 
 
 In addition to the multiplier input, the editor **displays the resulting px height as auxiliary information**. The reverse-lookup input of "entering a px height and automatically selecting the font + multiplier" is not handled in the current specification.
 
-The live font preview in the browser is an approximate display. The look is checked using fonts the browser can handle, such as web fonts, system fonts, and user-loaded TTF/OTF.
+The browser preview uses the LGFXFontToolJs neutral font model and LovyanGFX-compatible renderer. Preset and generated custom fonts render arbitrary text and scale with the same bitmap rules as the device; an approximate fallback is used only during the initial font-data load.
 
-For Arduino output, a font-reference scheme that is easy to handle with LovyanGFX/M5GFX is prioritized. Because the browser preview and the actual-device display may not match exactly, the spec treats it as an approximate preview.
+For Arduino output, a font-reference scheme that is easy to handle with LovyanGFX/M5GFX is prioritized. The browser preview uses the same font bytes and rendering rules.
 
 If matching the actual-device display becomes necessary in the future, a scheme will be considered that extracts the characters used and outputs them as a glyph atlas or bitmap font, using the same glyph data in the browser preview and the Arduino runtime.
 
@@ -398,7 +398,7 @@ There are ~200 presets, too many to list all in the Text dropdown. So **fonts ar
 - Adding (adopting) a font is done in a dedicated dialog that **filters the catalog by type / family / style / size / script** and confirms the look with an **approximate preview** before adopting.
 - **Adoption picks "use it" per profile** (§8.7.4). The Text inspector's font dropdown shows **only the fonts enabled for that profile** (keeps it small and prevents misuse of fonts unsuited to the device).
 
-Preview fidelity: **the preview at font adoption (selection) time shows the host-rendered sample PNG (§8.7.2) = the same glyphs as the device** (not an approximation). The live display of **arbitrary text + an arbitrary multiplier on the Design canvas remains approximate** (preset glyph data is not in the browser; the look is matched with a web/system font close to the family type — mono/sans/serif — plus the measured pixel height from the catalog). When a live exact match for arbitrary strings is required, proceed to custom fonts that extract the used characters (glyph atlas output) (§15).
+Preview fidelity: **the preview at font adoption (selection) time shows the host-rendered sample PNG (§8.7.2) = the same glyphs as the device**. On the Design canvas, LGFXFontToolJs loads the preset or generated custom font and renders **arbitrary text + an arbitrary multiplier with LovyanGFX-compatible rules**. An approximate CSS preview is used only while network font data is loading so editing does not stall.
 
 #### 8.7.4 Data model and flash (per-profile font usage)
 

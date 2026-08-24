@@ -10,9 +10,9 @@
 // fonts that is automatic. For a typeface the user supplied as a local file
 // there is nothing to re-fetch, so the file has to be handed back — the UI asks
 // for it rather than silently exporting a project with a font missing.
-import { resolveCharset, splitBmp, migrateSets } from './charsets.js';
+import { resolveCharset, splitBmp } from 'lgfx-font-tool';
 import { composeFont } from './compose.js';
-import { encodeU8g2 } from './u8g2enc.js';
+import { canEncode, encode } from 'lgfx-font-tool';
 
 // name -> { data, stats, source, charset, key }. Module-level (not store state)
 // because it is derived data, must not enter undo history, and must not be
@@ -35,10 +35,8 @@ export const recipeKey = (r) => JSON.stringify([
   r.fallback || null,
 ]);
 
-// A recipe's set list, with any ids saved against the previous character-set
-// model mapped onto current ones (charsets.js migrateSets). Doing it here means
-// an old project rebuilds correctly on export without being opened for editing.
-export const setsOf = (r) => migrateSets(r.sets || r.presets || []);
+// A recipe's set list. Set meaning and resolution belong to LGFXFontToolJs.
+export const setsOf = (r) => r.sets || r.presets || [];
 
 export const cachedFont = (name) => cache.get(name) || null;
 export const isCached = (name, recipe) => cache.get(name)?.key === recipeKey(recipe);
@@ -64,7 +62,7 @@ export async function buildFont(name, recipe, { onProgress } = {}) {
     throw new Error(`"${name}": the local font file is not available in this session`);
   }
 
-  const { glyphs, missing, font, sources, primed } = await composeFont({
+  const { model, missing, sources, primed } = await composeFont({
     source: { kind: recipe.source.kind, family: recipe.source.family, buffer },
     fallback: recipe.fallback || null,
     size: recipe.size,
@@ -75,23 +73,26 @@ export async function buildFont(name, recipe, { onProgress } = {}) {
     onProgress,
   });
   primedPasses.set(name, primed);
-  if (!glyphs.length) throw new Error(`"${name}": the typeface has none of the selected characters`);
+  if (!model.glyphs.size) throw new Error(`"${name}": the typeface has none of the selected characters`);
 
-  const enc = encodeU8g2(glyphs, font);
+  const check = canEncode(model, 'u8g2');
+  const skipped = [...new Map(check.issues
+    .filter((i) => i.level === 'error' && i.codepoint !== undefined)
+    .map((i) => [i.codepoint, { code: i.codepoint, reason: i.code }])).values()];
+  const data = encode(model, { format: 'u8g2', dropInvalid: true });
   const entry = {
     key: recipeKey(recipe),
-    data: enc.data,
-    glyphs,
-    font,
+    data,
+    model,
     missing,
-    skipped: enc.skipped,
+    skipped,
     sources,
     // The first source is the typeface asked for; the rest filled in gaps.
     source: sources[0],
     charset: { presets: setsOf(recipe), codepoints: cps },
     stats: {
-      height: font.height, ascent: font.ascent, descent: font.descent,
-      glyphCount: enc.glyphCount, bytes: enc.data.length,
+      height: model.ascent + model.descent, ascent: model.ascent, descent: model.descent,
+      glyphCount: model.glyphs.size - skipped.length, bytes: data.length,
     },
   };
   cache.set(name, entry);

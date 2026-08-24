@@ -12,9 +12,32 @@
 // string, so it costs a handful of glyphs no matter how large the character set
 // is, and it goes through the same rasterizer as the real run: what it shows is
 // what the panel gets.
-import { loadFont, unloadFont, rasterizeSet } from './rasterize.js';
 import { loadGoogleFont } from './googlefonts.js';
 import { codepointsOf } from './charsets.js';
+import {
+  createBitmap, drawString, generateFont, loadTtf, measureText, unloadTtf,
+} from 'lgfx-font-tool';
+
+/** Draw a neutral LGFXFontTool model with the pixel-exact LovyanGFX renderer. */
+export function drawModel(canvas, model, text, scale = 1, colors = {}) {
+  const m = measureText(model, text);
+  const w = Math.max(1, m.width), h = Math.max(1, m.height);
+  const bmp = createBitmap(w, h, 1);
+  drawString(bmp, model, text, 0, 0);
+  canvas.width = w * scale;
+  canvas.height = h * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = colors.bg || '#11191d';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = colors.fg || '#7fe3a0';
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (bmp.data[y * bmp.stride + (x >> 3)] & (0x80 >> (x & 7))) {
+      ctx.fillRect(x * scale, y * scale, scale, scale);
+    }
+  }
+  return [...text].filter((ch) => model.glyphs.has(ch.codePointAt(0))).length;
+}
 
 /**
  * Draw glyphs onto a canvas as the panel would, 1 device pixel per glyph pixel
@@ -117,7 +140,7 @@ async function acquireFont({ kind, family, weight, italic, localBuffer, codepoin
 
   if (hit && hit.buffer === localBuffer) return hit;
   if (!localBuffer) throw new Error('no font file');
-  const f = await loadFont(localBuffer);
+  const f = await loadTtf(localBuffer);
   const entry = { cssFamily: f.family, faces: [f.face], buffer: localBuffer };
   LOADED.set(key, entry);
   evict();
@@ -129,7 +152,7 @@ async function acquireFont({ kind, family, weight, italic, localBuffer, codepoin
 function evict() {
   while (LOADED.size > MAX_LOADED) {
     const [oldKey, old] = LOADED.entries().next().value;
-    for (const f of old.faces) unloadFont(f);
+    for (const f of old.faces) unloadTtf(f);
     LOADED.delete(oldKey);
   }
 }
@@ -187,23 +210,25 @@ export function createLivePreview({ canvas, statusEl, settings, t }) {
       say(t('pv.loading'));
       const font = await acquireFont({ ...s, codepoints: cps });
       if (mine !== generation) return;
-      const { glyphs, missing, font: metrics } = await rasterizeSet({
+      const made = await generateFont({
         family: font.cssFamily,
-        size: s.size,
+        px: s.size,
         codepoints: cps,
         style: { weight: s.weight, italic: s.italic },
         threshold: s.threshold,
       });
       if (mine !== generation) return;
-      const drawn = drawGlyphs(canvas, glyphs, metrics, text, s.scale || 1, { allowed: s.allowed });
+      const drawn = drawModel(canvas, made.font, text, s.scale || 1);
       // Both numbers matter: the character height is what was asked for, the
       // line height is what it costs per row on the panel.
       const notes = [t('pv.ok', {
-        c: metrics.probeHeight, h: metrics.height, w: canvas.width / (s.scale || 1), n: drawn,
+        c: made.font.meta.format?.gen?.probeHeight || s.size,
+        h: made.font.ascent + made.font.descent,
+        w: canvas.width / (s.scale || 1), n: drawn,
       })];
-      if (missing.length) {
+      if (made.missing.length) {
         notes.push(t('pv.someMissing', {
-          n: missing.length, sample: missing.slice(0, 8).map((c) => String.fromCodePoint(c)).join(''),
+          n: made.missing.length, sample: made.missing.slice(0, 8).map((c) => String.fromCodePoint(c)).join(''),
         }));
       }
       if (outside.length) {

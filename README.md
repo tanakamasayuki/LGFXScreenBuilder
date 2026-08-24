@@ -72,6 +72,9 @@ your code only supplies the values that change. See [examples/](examples/).
 
 - **One design, many devices.** A profile per device holds an independent layout of
   the same parts; `Profile::Auto` selects by screen size and profile order.
+- **Device-faithful font generation and preview.** [LGFXFontToolJs](https://github.com/tanakamasayuki/LGFXFontToolJs)
+  provides charset resolution, TTF/OTF generation, u8g2 encoding, and the
+  LovyanGFX-compatible renderer over one neutral font model.
 - **Parts:** rounded rectangles, lines, circles, single-line text (anchored by
   datum, scaled by multiplier), and PNG/JPEG image assets (decoded to RGB565).
 - **Preset fonts, per profile.** Browse a catalog of LovyanGFX fonts (filter by

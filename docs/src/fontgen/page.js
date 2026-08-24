@@ -12,8 +12,8 @@ import { createCharsetUI } from './charsetui.js';
 import { renderCharmap } from './charmap.js';
 import { FONTS, FALLBACK_CHAIN } from './googlefonts.js';
 import { composeFont, probeFallback, FALLBACK_AUTO } from './compose.js';
-import { drawGlyphs, createLivePreview, autoSample } from './preview.js';
-import { encodeU8g2 } from './u8g2enc.js';
+import { drawModel, createLivePreview, autoSample } from './preview.js';
+import { canEncode, encode } from 'lgfx-font-tool';
 import { emitHeader, sanitizeIdent } from './emit.js';
 import { t, applyStatic, setLang, getLang, detectLanguage, LANGS } from '../i18n.js';
 
@@ -155,8 +155,8 @@ function syncSample() {
 }
 
 // A sample that shows off whatever the user actually selected.
-function sampleText(glyphs) {
-  const have = new Set(glyphs.map((g) => g.code));
+function sampleText(model) {
+  const have = new Set(model.glyphs.keys());
   const candidates = ['12:34', 'Hello 25.6℃', 'あア漢字', 'ABC abc 123'];
   const pick = candidates.filter((s) => [...s].every((c) => have.has(c.codePointAt(0))));
   return pick.join('  ') || [...have].slice(0, 24).map((c) => String.fromCodePoint(c)).join('');
@@ -182,7 +182,7 @@ async function generate() {
       : { kind: 'local', family: state.localFile?.name, buffer: state.localFile?.buffer };
     if (state.tab === 'local' && !source.buffer) { status(t('fg.errNoFile'), 'err'); return; }
 
-    const { glyphs, missing, font, sources, primed } = await composeFont({
+    const { model, missing, sources, primed } = await composeFont({
       source,
       fallback: state.fallback,
       size: state.size,
@@ -195,18 +195,22 @@ async function generate() {
         t('fg.statusRaster', { done: done.toLocaleString(), total: total.toLocaleString() }) + ` (${family})`),
     });
     state.primed = primed;
-    if (!glyphs.length) throw new Error(t('fg.errNoGlyphs'));
+    if (!model.glyphs.size) throw new Error(t('fg.errNoGlyphs'));
 
     status(t('fg.statusEncode'));
-    const enc = encodeU8g2(glyphs, font);
+    const check = canEncode(model, 'u8g2');
+    const skipped = [...new Map(check.issues
+      .filter((i) => i.level === 'error' && i.codepoint !== undefined)
+      .map((i) => [i.codepoint, { code: i.codepoint, reason: i.code }])).values()];
+    const data = encode(model, { format: 'u8g2', dropInvalid: true });
     const stats = {
-      height: font.height, ascent: font.ascent, descent: font.descent,
-      glyphCount: enc.glyphCount, bytes: enc.data.length,
+      height: model.ascent + model.descent, ascent: model.ascent, descent: model.descent,
+      glyphCount: model.glyphs.size - skipped.length, bytes: data.length,
     };
     const charset = { presets: state.sets.map((id) => t('cs.set.' + id)), codepoints: cps };
-    const header = emitHeader({ name: state.name, data: enc.data, source: sources[0], sources, charset, stats });
+    const header = emitHeader({ name: state.name, data, source: sources[0], sources, charset, stats });
 
-    state.result = { header, data: enc.data, glyphs, missing, stats, font, sources, skipped: enc.skipped };
+    state.result = { header, data, model, missing, stats, sources, skipped };
     showResult();
     status('');
     // Only ask about filling gaps once there are gaps to fill.
@@ -303,8 +307,8 @@ function showResult() {
   }
   $('fg-res-notes').innerHTML = notes.map((n) => `<div class="fg-note">${n}</div>`).join('');
 
-  const text = $('fg-sample').value.trim() || sampleText(r.glyphs);
-  drawGlyphs($('fg-preview'), r.glyphs, r.font, text, Number($('fg-zoom').value));
+  const text = $('fg-sample').value.trim() || sampleText(r.model);
+  drawModel($('fg-preview'), r.model, text, Number($('fg-zoom').value));
 
   // Show the whole header. Only a set big enough to make the browser struggle
   // is cut, and then it says so in words rather than trailing off in an ellipsis

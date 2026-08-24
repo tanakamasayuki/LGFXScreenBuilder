@@ -23,6 +23,10 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install authoring-tool dependencies
+        working-directory: docs
+        run: npm ci --ignore-scripts
+
       # Guard against committed generated headers drifting from the codegen.
       # Runs on the pristine checkout, before any test regenerates a header.
       - name: Check generated headers are up to date

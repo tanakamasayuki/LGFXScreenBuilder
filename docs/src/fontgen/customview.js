@@ -10,7 +10,7 @@ import { t } from '../i18n.js';
 import { ALL_SET_IDS, resolveCharset, splitBmp, codepointsOfSet, migrateSets, countOf } from './charsets.js';
 import { createCharsetUI } from './charsetui.js';
 import { renderCharmap } from './charmap.js';
-import { drawGlyphs, createLivePreview, autoSample } from './preview.js';
+import { drawModel, createLivePreview, autoSample } from './preview.js';
 import { FONTS, FALLBACK_CHAIN } from './googlefonts.js';
 import { probeFallback, FALLBACK_AUTO } from './compose.js';
 import { buildFont, cachedFont, isCached, rememberLocalFile, hasLocalFile, forgetFont, recipeKey } from './build.js';
@@ -292,11 +292,12 @@ async function buildNow() {
 
 // Draw a sample from the generated 1bpp glyphs — the same pixels the panel gets.
 function drawPreview(entry) {
-  const have = new Set(entry.glyphs.map((g) => g.code));
+  const glyphs = [...entry.model.glyphs.keys()];
+  const have = new Set(glyphs);
   const text = ['Hello 25.6℃', 'あア漢字 12:34', 'ABC abc 0123']
     .find((s) => [...s].every((c) => have.has(c.codePointAt(0))))
-    || entry.glyphs.slice(0, 20).map((g) => String.fromCodePoint(g.code)).join('');
-  drawGlyphs($('cf-preview'), entry.glyphs, entry.font, text, 1);
+    || glyphs.slice(0, 20).map((c) => String.fromCodePoint(c)).join('');
+  drawModel($('cf-preview'), entry.model, text, 1);
   $('cf-preview-wrap').hidden = false;
 }
 

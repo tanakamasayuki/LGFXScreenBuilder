@@ -13,6 +13,7 @@ tests/report.html
 
 # Tool caches
 tools/cache/
+node_modules/
 
 # Local editor/user files
 .vscode/

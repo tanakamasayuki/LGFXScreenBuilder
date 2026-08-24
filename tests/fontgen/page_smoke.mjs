@@ -131,15 +131,15 @@ await page.waitForFunction(
 console.log('size is consistent across typefaces:');
 const heights = await page.evaluate(async () => {
   const { loadGoogleFont } = await import('./src/fontgen/googlefonts.js');
-  const { rasterizeSet, unloadFont } = await import('./src/fontgen/rasterize.js');
+  const { rasterizeSet, unloadTtf } = await import('lgfx-font-tool');
   const probe = { latin: 'H'.codePointAt(0), cjk: '漢'.codePointAt(0) };
   const out = [];
   for (const [family, kind] of [['Roboto', 'latin'], ['Inter', 'latin'], ['Noto Sans JP', 'cjk'], ['BIZ UDGothic', 'cjk']]) {
     const cp = probe[kind];
     const g = await loadGoogleFont(family, [cp], {});
-    const { glyphs, font } = await rasterizeSet({ family: g.family, size: 32, codepoints: [cp] });
-    for (const f of g.faces) unloadFont(f);
-    out.push({ family, ink: glyphs[0] ? glyphs[0].h : 0, line: font.height });
+    const { glyphs, box } = await rasterizeSet({ family: g.family, size: 32, codepoints: [cp] });
+    for (const f of g.faces) unloadTtf(f);
+    out.push({ family, ink: glyphs[0] ? glyphs[0].h : 0, line: box.height });
   }
   return out;
 });
@@ -187,7 +187,7 @@ console.log('the default selection works with the default typeface:');
 const defaults = await page.evaluate(async () => {
   const { resolveCharset, splitBmp } = await import('./src/fontgen/charsets.js');
   const { loadGoogleFont } = await import('./src/fontgen/googlefonts.js');
-  const { rasterizeSet, unloadFont } = await import('./src/fontgen/rasterize.js');
+  const { rasterizeSet, unloadTtf } = await import('lgfx-font-tool');
   const sets = ['ascii', 'hiragana', 'katakana', 'jaPunct', 'hanJa1', 'symUnits'];
   const { bmp, dropped } = splitBmp(resolveCharset({ sets }));
   // Only the symbol and kana sets: rasterizing 2,000 kanji here would dominate
@@ -195,7 +195,7 @@ const defaults = await page.evaluate(async () => {
   const probe = bmp.filter((c) => c < 0x4e00);
   const g = await loadGoogleFont('Noto Sans JP', probe, {});
   const { missing } = await rasterizeSet({ family: g.family, size: 16, codepoints: probe });
-  for (const f of g.faces) unloadFont(f);
+  for (const f of g.faces) unloadTtf(f);
   return {
     missing: missing.map((c) => String.fromCodePoint(c)),
     dropped: dropped.map((c) => 'U+' + c.toString(16).toUpperCase()),
@@ -474,15 +474,15 @@ console.log('fills are scaled to the primary, whitespace included:');
 const scaled = await page.evaluate(async () => {
   const { resolveCharset, splitBmp } = await import('./src/fontgen/charsets.js');
   const { composeFont } = await import('./src/fontgen/compose.js');
-  const { encodeU8g2 } = await import('./src/fontgen/u8g2enc.js');
+  const { encode } = await import('lgfx-font-tool');
   const cps = splitBmp(resolveCharset({ sets: ['ascii', 'hiragana', 'jaPunct'], customText: '気温' })).bmp;
   const c = await composeFont({ source: { kind: 'google', family: 'Micro 5' }, fallback: 'auto', size: 32, codepoints: cps });
-  const by = new Map(c.glyphs.map((g) => [g.code, g]));
+  const by = c.model.glyphs;
   let encoded = null;
-  try { encoded = encodeU8g2(c.glyphs, c.font).glyphCount; } catch (e) { encoded = e.message; }
+  try { encoded = encode(c.model, { format: 'u8g2', dropInvalid: true }).length; } catch (e) { encoded = e.message; }
   return {
-    space: by.get(0x3000)?.dx, kana: by.get(0x3042)?.dx, kanji: by.get(0x6c17)?.dx,
-    widest: c.glyphs.reduce((a, g) => (g.h && g.dx > a ? g.dx : a), 0),
+    space: by.get(0x3000)?.xAdvance, kana: by.get(0x3042)?.xAdvance, kanji: by.get(0x6c17)?.xAdvance,
+    widest: [...by.values()].reduce((a, g) => (g.bitmap.height && g.xAdvance > a ? g.xAdvance : a), 0),
     skipped: c.skippedFallbacks || [], encoded,
   };
 });
@@ -491,7 +491,7 @@ check(scaled.space <= Math.max(scaled.kana, scaled.kanji, scaled.widest),
   `whitespace is no wider than the widest character (space ${scaled.space}, kana ${scaled.kana}, kanji ${scaled.kanji}, widest ${scaled.widest})`);
 check(scaled.skipped.length === 0,
   `no fallback family failed silently${scaled.skipped.length ? ': ' + JSON.stringify(scaled.skipped) : ''}`);
-check(typeof scaled.encoded === 'number', `and the result encodes (${scaled.encoded} glyphs)`);
+check(typeof scaled.encoded === 'number', `and the result encodes (${scaled.encoded} bytes)`);
 
 // Korean has to be reachable through the chain too — it sits at the end of it.
 //
@@ -530,17 +530,15 @@ check(korean.staleMissing === 0 && korean.staleSources.some((x) => x.startsWith(
 console.log('a pixel collision is not mistaken for a missing glyph:');
 const collision = await page.evaluate(async () => {
   const { loadGoogleFont } = await import('./src/fontgen/googlefonts.js');
-  const { rasterizeSet, unloadFont } = await import('./src/fontgen/rasterize.js');
+  const { rasterizeSet, unloadTtf } = await import('lgfx-font-tool');
   const cps = [0xad61, 0xac00];                       // 굡 가
   const g = await loadGoogleFont('Noto Sans KR', [...cps, 0x48], {});
   const out = [];
   for (const size of [24, 28, 32, 36, 40]) {
-    // probeChar 'H' reproduces the fallback pass, where the size is pinned to
-    // the PRIMARY's reference character — which is how 43.8px arises.
-    const r = await rasterizeSet({ family: g.family, size, codepoints: cps, probeChar: 'H' });
-    out.push({ size, px: Math.round(r.font.cssPx * 10) / 10, missing: r.missing.length });
+    const r = await rasterizeSet({ family: g.family, size, codepoints: cps });
+    out.push({ size, px: Math.round(r.sizing.cssPx * 10) / 10, missing: r.missing.length });
   }
-  for (const f of g.faces) unloadFont(f);
+  for (const f of g.faces) unloadTtf(f);
   return out;
 });
 console.log('  ' + collision.map((c) => `${c.size}→${c.px}px:${c.missing}`).join('  '));

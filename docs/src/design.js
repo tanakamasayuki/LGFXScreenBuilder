@@ -10,19 +10,71 @@ import {
   isTransparentScene, transparentColorOf, to565,
 } from './model.js';
 import { loadMetrics, metricsFor, approxCss, approxWeight, fontByName, fontDetailUrl } from './fonts.js';
+import { cachedFont } from './fontgen/build.js';
+import { createBitmap, drawString, loadFont, measureText } from 'lgfx-font-tool';
 import { aiLayoutJson, parseAiLayout } from './ailayout.js';
 import { downloadText } from './persist.js';
 import { flash } from './toast.js';
 import { t } from './i18n.js';
 
 
-// Approximate on-canvas height (px) of a Text part's font at multiplier 1.
-// Uses the host-introspected native height when available, else the default
-// 8px (Font0). The exact glyphs differ (approximate preview, SPEC §8.7.3).
+// Fallback height used only until the exact font model finishes loading.
 function fontBaseHeight(fontName) {
   if (!fontName) return 8;
   const m = metricsFor(fontName);
   return (m && m.height) || 8;
+}
+
+// Exact LovyanGFX font models are loaded lazily. The first frame may use the
+// CSS fallback; once the model arrives the canvas is redrawn with the same
+// bitmap renderer used by the device.
+const loadedFonts = new Map();
+const loadingFonts = new Set();
+function exactFont(fontName) {
+  const custom = fontName && cachedFont(fontName);
+  if (custom?.model) return custom.model;
+  const name = fontName || 'Font0';
+  if (loadedFonts.has(name)) return loadedFonts.get(name);
+  if (!loadingFonts.has(name)) {
+    loadingFonts.add(name);
+    loadFont(name).then((font) => {
+      loadedFonts.set(name, font);
+      renderCanvas();
+    }).catch((e) => console.warn(`[lgfxsb] could not load ${name}:`, e))
+      .finally(() => loadingFonts.delete(name));
+  }
+  return null;
+}
+
+const rgbOf = (css) => {
+  const n = parseInt(String(css || '#ffffff').replace('#', ''), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+};
+
+function drawExactText(canvas, font, text, size, color) {
+  const style = { sizeX: size, sizeY: size, datum: 'top-left' };
+  const m = measureText(font, text, style);
+  const w = Math.max(1, m.width), h = Math.max(1, m.height);
+  const bmp = createBitmap(w, h, 1);
+  drawString(bmp, font, text, 0, 0, style);
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(w, h);
+  const [r, g, b] = rgbOf(color);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const byte = bmp.data[y * bmp.stride + (x >> 3)];
+      if (!(byte & (0x80 >> (x & 7)))) continue;
+      const i = (y * w + x) * 4;
+      img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = b; img.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  canvas.style.width = w * scale + 'px';
+  canvas.style.height = h * scale + 'px';
+  canvas.style.imageRendering = 'pixelated';
+  return { w: w * scale, h: h * scale };
 }
 
 const $ = (id) => document.getElementById(id);
@@ -108,19 +160,30 @@ function renderCanvas() {
     if (def.type === 'Text') {
       d.style.color = e.color;
       if (isKey(e.color)) d.classList.add('keywarn');
-      // Size = chosen font's native px height × multiplier (default font = 8px).
-      // Family/style approximate the preset (exact glyphs come from the device).
-      const cat = e.font ? fontByName(e.font) : null;
-      d.style.fontSize = fontBaseHeight(e.font) * e.size * scale + 'px';
-      d.style.fontFamily = cat ? approxCss(cat) : '';
-      d.style.fontWeight = cat ? approxWeight(cat) : '';
-      d.style.fontStyle = cat && cat.italic ? 'italic' : '';
-      d.textContent = e.text;
-      scr.appendChild(d); // append first to measure
-      const bw = d.offsetWidth, bh = d.offsetHeight;
+      const exact = exactFont(e.font);
+      let bw, bh, target = d;
+      if (exact) {
+        const cv = document.createElement('canvas');
+        cv.className = d.className;
+        cv.dataset.id = def.id;
+        const box = drawExactText(cv, exact, e.text, e.size, e.color);
+        bw = box.w; bh = box.h;
+        scr.appendChild(cv);
+        target = cv;
+      } else {
+        // Network/offline fallback while the exact font model is loading.
+        const cat = e.font ? fontByName(e.font) : null;
+        d.style.fontSize = fontBaseHeight(e.font) * e.size * scale + 'px';
+        d.style.fontFamily = cat ? approxCss(cat) : '';
+        d.style.fontWeight = cat ? approxWeight(cat) : '';
+        d.style.fontStyle = cat && cat.italic ? 'italic' : '';
+        d.textContent = e.text;
+        scr.appendChild(d);
+        bw = d.offsetWidth; bh = d.offsetHeight;
+      }
       const fx = DATUM_FX[e.datum[1]] || 0, fy = DATUM_FY[e.datum[0]] || 0;
-      d.style.left = ax - fx * bw + 'px';
-      d.style.top = ay - fy * bh + 'px';
+      target.style.left = ax - fx * bw + 'px';
+      target.style.top = ay - fy * bh + 'px';
       if (def.id === store.ui.selected) {
         const a = document.createElement('div');
         a.className = 'anchor';
