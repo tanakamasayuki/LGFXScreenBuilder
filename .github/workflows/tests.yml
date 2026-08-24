@@ -86,6 +86,7 @@ jobs:
         run: node tests/fontgen/editor_integration.mjs
         env:
           PLAYWRIGHT_MODULE: ${{ runner.temp }}/pw/node_modules/playwright/index.mjs
+          LGFX_FONT_TOOL_E2E_HEADER: ${{ github.workspace }}/tests/build_font_project_e2e/GeneratedScreen.h
 
       - name: Install SDL2 (headless LovyanGFX / M5GFX backend)
         run: |
@@ -118,6 +119,8 @@ jobs:
       - name: Run pytest
         working-directory: tests
         run: uv run pytest -v --html=report.html --self-contained-html
+        env:
+          LGFX_FONT_TOOL_E2E: "1"
 
       - name: Upload graphics output artifacts
         if: always()

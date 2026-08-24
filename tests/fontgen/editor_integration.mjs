@@ -3,16 +3,18 @@
 //
 // Covers the part the standalone page cannot: that a generated font becomes a
 // project recipe, that the recipe (and NOT the glyph bytes) is what gets
-// saved, that Text can be assigned the font, and that the exported header
-// actually carries the byte array and references it.
+// saved, that Text can be assigned and pixel-rendered with the font, and that
+// the exported project header carries the byte array and references it. In CI
+// that exact header is handed to the LovyanGFX host test, closing the browser →
+// generated project → C++ renderer loop.
 //
 // Requires a Chromium (see page_smoke.mjs for the playwright setup).
 //
 //   PLAYWRIGHT_MODULE=... node tests/fontgen/editor_integration.mjs
 
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
-import { join, extname, normalize, dirname } from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
+import { join, extname, normalize, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'docs');
@@ -103,7 +105,12 @@ check(await page.locator('#cf-presets .cs-tier').count() >= 5, 'the dialog rende
 // Keep the run small: the Latin UI template drops the kanji the default carries.
 await page.locator('#cf-presets .cs-templates .fchip').filter({ hasText: /Latin UI|英数UI/ }).first().click();
 
-// Default preset is ASCII; that is enough and keeps the run quick.
+// Build once to discover Roboto's gaps, then accept the offered fallback. This
+// makes the exported project exercise multi-source sizing and U+2103 as well.
+await page.click('#cf-preview-btn');
+await page.waitForFunction(() => !document.querySelector('#cf-fallback-apply').hidden, null, { timeout: 120000 });
+await page.click('#cf-fallback-apply');
+await page.waitForFunction(() => !document.querySelector('#cf-ok').disabled, null, { timeout: 120000 });
 await page.click('#cf-ok');
 // The dialog closes only after the font has actually been built and adopted.
 await page.waitForFunction(() => document.getElementById('cf-overlay').hidden, null, { timeout: 120000 });
@@ -124,6 +131,7 @@ const entry = parsed.fonts.find((f) => f.name === 'PanelFont');
 check(!!entry, 'the project carries a PanelFont entry');
 check(!!entry.custom && entry.custom.size === 16, 'the entry holds the recipe (size 16)');
 check(entry.custom.source.family === 'Roboto', 'the recipe names the typeface');
+check(entry.custom.fallback === 'auto', 'the recipe records the accepted fallback');
 check(!/kFontData|0x[0-9a-f]{2}, 0x/.test(saved), 'the project file contains no glyph bytes');
 check(saved.length < 200000, `the project file stayed small (${saved.length} bytes)`);
 
@@ -139,11 +147,34 @@ const assigned = await page.evaluate(async () => {
   mutate((st) => {
     const pr = st.project.profiles[0];
     pr.layout[scene.id] = pr.layout[scene.id] || {};
-    pr.layout[scene.id][text.id] = { ...(pr.layout[scene.id][text.id] || {}), font: 'PanelFont', text: 'Hi' };
+    pr.layout[scene.id][text.id] = {
+      ...(pr.layout[scene.id][text.id] || {}), font: 'PanelFont', text: '25.6℃ Il1',
+    };
   });
   return { profile: prof.id, scene: scene.id, part: text.id };
 });
 check(!!assigned, `a Text part was assigned the font (${assigned && assigned.part})`);
+
+// The Design canvas must consume the cached neutral model, not fall back to a
+// browser CSS font. A canvas with ink proves drawString rendered the embedded
+// glyph bitmaps (including the fallback-sourced ℃).
+await page.click('.mode[data-mode="design"]');
+await page.waitForFunction((id) => {
+  const cv = document.querySelector(`#canvas-screen canvas.part.text[data-id="${id}"]`);
+  if (!cv) return false;
+  const px = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+  for (let i = 3; i < px.length; i += 4) if (px[i]) return true;
+  return false;
+}, assigned.part);
+const designPreview = await page.evaluate((id) => {
+  const cv = document.querySelector(`#canvas-screen canvas.part.text[data-id="${id}"]`);
+  const px = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+  let ink = 0;
+  for (let i = 3; i < px.length; i += 4) if (px[i]) ink++;
+  return { tag: cv.tagName, ink, w: cv.width, h: cv.height };
+}, assigned.part);
+check(designPreview.tag === 'CANVAS' && designPreview.ink > 30,
+  `Design rendered the embedded font model (${designPreview.w}x${designPreview.h}, ${designPreview.ink} ink px)`);
 
 const header = await page.evaluate(async () => {
   const { store } = await import('./src/store.js');
@@ -162,6 +193,16 @@ check(header.src.includes('&kFont_PanelFont'), 'the layout table references the 
 check(/Rasterized from: Roboto/.test(header.src), 'the header carries the attribution notice');
 check(/Apache License 2\.0/.test(header.src), 'the header states the licence');
 check(!header.src.includes('fonts::PanelFont'), 'it is not emitted as a library preset symbol');
+
+// CI feeds this exact browser-generated project header to a real LovyanGFX host
+// build. Local runs omit the env var and remain non-mutating.
+if (process.env.LGFX_FONT_TOOL_E2E_HEADER) {
+  const VERSION = await page.evaluate(async () => (await import('lgfx-font-tool')).VERSION);
+  const marked = `// Browser-generated E2E fixture: lgfx-font-tool ${VERSION}\n` +
+    `#define LGFX_FONT_TOOL_E2E_VERSION "${VERSION}"\n` + header.src;
+  await writeFile(resolve(process.env.LGFX_FONT_TOOL_E2E_HEADER), marked);
+  console.log(`  wrote C++ E2E header (${VERSION})`);
+}
 
 // A font enabled nowhere must not be emitted — that is the flash policy.
 console.log('flash policy:');

@@ -26,6 +26,12 @@ line height is the one that was requested, that ASCII, `℃` and plain bar shape
 of that coverage live in `fontgen/` (node + headless browser); see
 `build_fontgen/README.md`.
 
+`build_font_project_e2e/` closes the dynamic path: the browser editor generates
+and embeds a font with LGFXFontToolJs, exports the complete project header, and
+the LovyanGFX host backend renders that exact header through `Screen` in the same
+CI run. It checks browser-preview ink, device-side ink/metrics, fallback and
+missing glyphs, and a PNG capture.
+
 As the runtime and generator mature, add snapshot and pixel-diff tests here, following the same pattern used by `LGFXVirtualCanvas`.
 
 `manual/` holds generators that are **not** part of the default suite — they
