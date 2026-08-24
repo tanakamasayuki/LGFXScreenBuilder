@@ -9,7 +9,7 @@ import {
   reconcileAiLayout, applyAiLayout,
   isTransparentScene, transparentColorOf, to565,
 } from './model.js';
-import { loadMetrics, metricsFor, approxCss, approxWeight, fontByName, fontDetailUrl } from './fonts.js';
+import { loadMetrics, metricsFor, fontDetailUrl } from './fonts.js';
 import { cachedFont } from './fontgen/build.js';
 import { createBitmap, drawString, loadFont, measureText } from 'lgfx-font-tool';
 import { aiLayoutJson, parseAiLayout } from './ailayout.js';
@@ -25,25 +25,46 @@ function fontBaseHeight(fontName) {
   return (m && m.height) || 8;
 }
 
-// Exact LovyanGFX font models are loaded lazily. The first frame may use the
-// CSS fallback; once the model arrives the canvas is redrawn with the same
-// bitmap renderer used by the device.
+// Exact LovyanGFX font models are loaded lazily. Until one arrives we reserve
+// its approximate box but never draw a CSS substitute: the first visible text
+// is therefore already the same bitmap the device will use.
 const loadedFonts = new Map();
-const loadingFonts = new Set();
+const loadingFonts = new Map();
+function loadExactFont(fontName) {
+  const custom = fontName && cachedFont(fontName);
+  if (custom?.model) return Promise.resolve(custom.model);
+  // A custom recipe has no persisted bytes. It becomes exact after the user
+  // builds it; do not ask the preset loader for a made-up catalog name.
+  if (fontName && (store.project.fonts || []).some((f) => f.name === fontName && f.custom)) {
+    return Promise.resolve(null);
+  }
+  const name = fontName || 'Font0';
+  if (loadedFonts.has(name)) return Promise.resolve(loadedFonts.get(name));
+  if (!loadingFonts.has(name)) {
+    const pending = loadFont(name).then((font) => {
+      loadedFonts.set(name, font);
+      return font;
+    }).catch((e) => console.warn(`[lgfxsb] could not load ${name}:`, e))
+      .finally(() => loadingFonts.delete(name));
+    loadingFonts.set(name, pending);
+  }
+  return loadingFonts.get(name);
+}
+
 function exactFont(fontName) {
   const custom = fontName && cachedFont(fontName);
   if (custom?.model) return custom.model;
   const name = fontName || 'Font0';
   if (loadedFonts.has(name)) return loadedFonts.get(name);
-  if (!loadingFonts.has(name)) {
-    loadingFonts.add(name);
-    loadFont(name).then((font) => {
-      loadedFonts.set(name, font);
-      renderCanvas();
-    }).catch((e) => console.warn(`[lgfxsb] could not load ${name}:`, e))
-      .finally(() => loadingFonts.delete(name));
-  }
+  if (!loadingFonts.has(name)) loadExactFont(fontName).then((font) => { if (font) renderCanvas(); });
   return null;
+}
+
+function loadingTextBox(text, fontName, size) {
+  const h = Math.max(1, fontBaseHeight(fontName) * size * scale);
+  let units = 0;
+  for (const ch of String(text)) units += ch.codePointAt(0) > 0xff ? 1 : 0.58;
+  return { w: Math.max(scale, units * h), h };
 }
 
 const rgbOf = (css) => {
@@ -171,15 +192,14 @@ function renderCanvas() {
         scr.appendChild(cv);
         target = cv;
       } else {
-        // Network/offline fallback while the exact font model is loading.
-        const cat = e.font ? fontByName(e.font) : null;
-        d.style.fontSize = fontBaseHeight(e.font) * e.size * scale + 'px';
-        d.style.fontFamily = cat ? approxCss(cat) : '';
-        d.style.fontWeight = cat ? approxWeight(cat) : '';
-        d.style.fontStyle = cat && cat.italic ? 'italic' : '';
-        d.textContent = e.text;
+        // Reserve the anchored box without flashing a browser/system font.
+        const box = loadingTextBox(e.text, e.font, e.size);
+        bw = box.w; bh = box.h;
+        d.classList.add('font-loading');
+        d.setAttribute('aria-busy', 'true');
+        d.style.width = bw + 'px';
+        d.style.height = bh + 'px';
         scr.appendChild(d);
-        bw = d.offsetWidth; bh = d.offsetHeight;
       }
       const fx = DATUM_FX[e.datum[1]] || 0, fy = DATUM_FY[e.datum[0]] || 0;
       target.style.left = ax - fx * bw + 'px';
@@ -373,6 +393,18 @@ function renderInspector() {
     const ev = type === 'checkbox' ? 'change' : 'input';
     inp.addEventListener(ev, () => {
       const v = type === 'checkbox' ? inp.checked : (type === 'number' ? (+inp.value || 0) : inp.value);
+      if (k === 'font') {
+        const wanted = v === '' ? null : v;
+        // Keep the currently rendered exact font in place while the next model
+        // loads, then switch state and canvas together. Guard against a slower
+        // earlier selection winning after the user has picked something else.
+        loadExactFont(wanted).then(() => {
+          if (!inp.isConnected || inp.value !== v) return;
+          e.font = wanted;
+          renderCanvas(); renderParts(); renderInspector(); renderStatus();
+        });
+        return;
+      }
       e[k] = k === 'font' && v === '' ? null : (k === 'r' ? Math.max(0, v) : v); // empty font = default
       if (k === 'size') { const hint = $('px-hint'); if (hint) hint.textContent = t('units.pxApprox', { px: pxOf(v) }); }
       // keep focus: rerender canvas/list/status but not the inspector

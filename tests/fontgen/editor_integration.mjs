@@ -53,6 +53,57 @@ await page.evaluate(() => localStorage.clear());
 await page.reload();
 await page.waitForSelector('#view-design:not([hidden])');
 
+// Selecting a preset whose bytes are not loaded yet must not flash a CSS/system
+// font. Keep the previous exact bitmap visible until the requested model is
+// ready, then switch the project state and canvas together.
+console.log('cold font selection:');
+await page.waitForSelector('#canvas-screen canvas.part.text[data-id="boot"]');
+let releaseFont;
+let sawFontRequest;
+const fontGate = new Promise((r) => { releaseFont = r; });
+const requestedFont = new Promise((r) => { sawFontRequest = r; });
+await page.route('**/dist/data/FreeSans24pt7b.gfx', async (route) => {
+  sawFontRequest();
+  await fontGate;
+  await route.continue();
+});
+await page.evaluate(async () => {
+  const { store, mutate } = await import('./src/store.js');
+  const { adoptFont } = await import('./src/model.js');
+  mutate((st) => {
+    adoptFont(st.project, 'FreeSans24pt7b');
+    st.ui.sceneId = 'Boot';
+    st.ui.selected = 'boot';
+  });
+});
+await page.selectOption('#props select[data-k="font"]', 'FreeSans24pt7b');
+await requestedFont;
+const whileLoading = await page.evaluate(async () => {
+  const { store } = await import('./src/store.js');
+  const part = store.project.profiles[0].layout.Boot.boot;
+  const shown = document.querySelector('#canvas-screen .part.text[data-id="boot"]');
+  return { committed: part.font, tag: shown?.tagName, text: shown?.textContent || '' };
+});
+check(whileLoading.committed == null, 'the project keeps the previous font until loading completes');
+check(whileLoading.tag === 'CANVAS' && !whileLoading.text,
+  'no CSS/system-font text is shown during the load');
+releaseFont();
+await page.waitForFunction(async () => {
+  const { store } = await import('./src/store.js');
+  return store.project.profiles[0].layout.Boot.boot.font === 'FreeSans24pt7b' &&
+    !!document.querySelector('#canvas-screen canvas.part.text[data-id="boot"]');
+});
+check(true, 'the exact bitmap replaces it after loading');
+await page.unroute('**/dist/data/FreeSans24pt7b.gfx');
+await page.evaluate(async () => {
+  const { mutate } = await import('./src/store.js');
+  const { removeFont } = await import('./src/model.js');
+  mutate((st) => {
+    removeFont(st.project, 'FreeSans24pt7b');
+    st.ui.selected = null;
+  });
+});
+
 console.log('generate a font from the editor:');
 await page.click('.mode[data-mode="fonts"]');
 await page.waitForSelector('#cf-add');

@@ -367,7 +367,7 @@ The unit for specifying text size is the **multiplier as the canonical (stored) 
 
 In addition to the multiplier input, the editor **displays the resulting px height as auxiliary information**. The reverse-lookup input of "entering a px height and automatically selecting the font + multiplier" is not handled in the current specification.
 
-The browser preview uses the LGFXFontToolJs neutral font model and LovyanGFX-compatible renderer. Preset and generated custom fonts render arbitrary text and scale with the same bitmap rules as the device; an approximate fallback is used only during the initial font-data load.
+The browser preview uses the LGFXFontToolJs neutral font model and LovyanGFX-compatible renderer. Preset and generated custom fonts render arbitrary text and scale with the same bitmap rules as the device. During the initial font-data load the previous exact bitmap remains visible; when no previous bitmap exists, only a text-free loading placeholder is shown.
 
 For Arduino output, a font-reference scheme that is easy to handle with LovyanGFX/M5GFX is prioritized. The browser preview uses the same font bytes and rendering rules.
 
@@ -398,7 +398,7 @@ There are ~200 presets, too many to list all in the Text dropdown. So **fonts ar
 - Adding (adopting) a font is done in a dedicated dialog that **filters the catalog by type / family / style / size / script** and confirms the look with an **approximate preview** before adopting.
 - **Adoption picks "use it" per profile** (§8.7.4). The Text inspector's font dropdown shows **only the fonts enabled for that profile** (keeps it small and prevents misuse of fonts unsuited to the device).
 
-Preview fidelity: **the preview at font adoption (selection) time shows the host-rendered sample PNG (§8.7.2) = the same glyphs as the device**. On the Design canvas, LGFXFontToolJs loads the preset or generated custom font and renders **arbitrary text + an arbitrary multiplier with LovyanGFX-compatible rules**. An approximate CSS preview is used only while network font data is loading so editing does not stall.
+Preview fidelity: **the preview at font adoption (selection) time shows the host-rendered sample PNG (§8.7.2) = the same glyphs as the device**. On the Design canvas, LGFXFontToolJs loads the preset or generated custom font and renders **arbitrary text + an arbitrary multiplier with LovyanGFX-compatible rules**. A font change is committed only after its exact model loads; a cold initial load uses a text-free placeholder, never a CSS/system-font substitute.
 
 #### 8.7.4 Data model and flash (per-profile font usage)
 

@@ -78,6 +78,15 @@ select.icon { padding: 0 4px; }
 }
 .part.keywarn { outline: 1px dashed #e0a03c; outline-offset: 1px; }
 .part.text { display: flex; align-items: center; color: #fff; font-weight: 650; }
+.part.text.font-loading {
+  color: transparent;
+  border-color: transparent;
+  background: linear-gradient(90deg, transparent 0 30%, rgba(127, 227, 160, .14) 50%, transparent 70%);
+  background-size: 220% 100%;
+  animation: font-loading 1s ease-in-out infinite;
+}
+.part.text.font-loading.selected { border-color: var(--sel); }
+@keyframes font-loading { from { background-position: 100% 0; } to { background-position: -100% 0; } }
 .part.image { background: #2a3940; border: 1px dashed #5d6d73; }
 .part.selected { border-color: var(--sel); box-shadow: 0 0 0 1px var(--sel) inset; }
 /* Hidden parts render only while selected (see renderCanvas); dim + dashed so it

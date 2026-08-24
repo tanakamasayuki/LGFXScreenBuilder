@@ -56,7 +56,7 @@ const circle = (x, y, r, color, visible = true, fill = true) => ({ x, y, r, fill
 const text = (x, y, datum, size, color, content, visible = true) =>
   ({ x, y, datum, size, color, text: content, visible });
 
-// A sample project mirroring the design probe, used until load/save lands.
+// A varied sample project used by the Demo button and as the initial project.
 export function sampleProject() {
   const scenes = [
     {
@@ -90,6 +90,50 @@ export function sampleProject() {
         { id: 'hint', type: 'Text', desc: '' },
       ],
     },
+    {
+      id: 'Clock', desc: '中央寄せテキストを使った時計画面', parts: [
+        { id: 'clockPanel', type: 'Rect', desc: '' },
+        { id: 'time', type: 'Text', desc: '現在時刻' },
+        { id: 'date', type: 'Text', desc: '日付' },
+        { id: 'alarm', type: 'Text', desc: 'アラーム時刻' },
+      ],
+    },
+    {
+      id: 'Sensors', desc: '円形ゲージと複数の計測値', parts: [
+        { id: 'sensorTitle', type: 'Text', desc: '' },
+        { id: 'gauge', type: 'Circle', desc: 'ゲージ外周' },
+        { id: 'gaugeCore', type: 'Circle', desc: 'ゲージ中央' },
+        { id: 'tempValue', type: 'Text', desc: '温度' },
+        { id: 'humidity', type: 'Text', desc: '湿度' },
+        { id: 'pressure', type: 'Text', desc: '気圧' },
+      ],
+    },
+    {
+      id: 'Network', desc: 'ネットワーク状態と電波強度', parts: [
+        { id: 'networkHeader', type: 'Rect', desc: '' },
+        { id: 'networkTitle', type: 'Text', desc: '' },
+        { id: 'ssid', type: 'Text', desc: 'SSID' },
+        { id: 'ip', type: 'Text', desc: 'IPアドレス' },
+        { id: 'signal1', type: 'Rect', desc: '' },
+        { id: 'signal2', type: 'Rect', desc: '' },
+        { id: 'signal3', type: 'Rect', desc: '' },
+        { id: 'signal4', type: 'Rect', desc: '' },
+        { id: 'networkState', type: 'Text', desc: '接続状態' },
+      ],
+    },
+    {
+      id: 'Chart', desc: 'Line部品を組み合わせた折れ線グラフ', parts: [
+        { id: 'chartTitle', type: 'Text', desc: '' },
+        { id: 'axisX', type: 'Line', desc: '' },
+        { id: 'axisY', type: 'Line', desc: '' },
+        { id: 'trend1', type: 'Line', desc: '' },
+        { id: 'trend2', type: 'Line', desc: '' },
+        { id: 'trend3', type: 'Line', desc: '' },
+        { id: 'trend4', type: 'Line', desc: '' },
+        { id: 'trend5', type: 'Line', desc: '' },
+        { id: 'current', type: 'Text', desc: '最新値' },
+      ],
+    },
   ];
 
   const profiles = [
@@ -119,6 +163,42 @@ export function sampleProject() {
           msg: text(160, 105, 'MC', 2, '#ffffff', 'Delete?'),
           hint: text(160, 145, 'MC', 1.5, '#9ce5ac', 'A:OK  B:Cancel'),
         },
+        Clock: {
+          clockPanel: rect(28, 32, 264, 176, '#172126', true, 16),
+          time: text(160, 90, 'MC', 5, '#ffffff', '12:34'),
+          date: text(160, 145, 'MC', 2, '#9ce5ac', 'MON 24 AUG'),
+          alarm: text(160, 180, 'MC', 1.5, '#6f8a92', 'ALARM 06:30'),
+        },
+        Sensors: {
+          sensorTitle: text(16, 12, 'TL', 2, '#ffffff', 'Sensors'),
+          gauge: circle(92, 126, 62, '#9ce5ac', true, false),
+          gaugeCore: circle(92, 126, 48, '#172126'),
+          tempValue: text(92, 126, 'MC', 3, '#ffffff', '24.5C'),
+          humidity: text(180, 90, 'TL', 2, '#75c9ff', 'Humidity 60%'),
+          pressure: text(180, 135, 'TL', 2, '#9ce5ac', '1013 hPa'),
+        },
+        Network: {
+          networkHeader: rect(0, 0, 320, 38, '#1e2a30'),
+          networkTitle: text(12, 9, 'TL', 2, '#ffffff', 'Network'),
+          ssid: text(16, 62, 'TL', 2, '#ffffff', 'SSID: lab-net'),
+          ip: text(16, 98, 'TL', 1.5, '#75c9ff', '192.168.1.42'),
+          signal1: rect(230, 142, 10, 18, '#9ce5ac'),
+          signal2: rect(246, 130, 10, 30, '#9ce5ac'),
+          signal3: rect(262, 116, 10, 44, '#9ce5ac'),
+          signal4: rect(278, 100, 10, 60, '#26383d'),
+          networkState: text(16, 165, 'TL', 2, '#9ce5ac', 'Connected'),
+        },
+        Chart: {
+          chartTitle: text(14, 10, 'TL', 2, '#ffffff', 'Temperature / 24h'),
+          axisX: line(38, 195, 296, 195, '#6f8a92'),
+          axisY: line(38, 50, 38, 195, '#6f8a92'),
+          trend1: line(40, 160, 85, 145, '#9ce5ac'),
+          trend2: line(85, 145, 130, 155, '#9ce5ac'),
+          trend3: line(130, 155, 180, 100, '#9ce5ac'),
+          trend4: line(180, 100, 230, 120, '#9ce5ac'),
+          trend5: line(230, 120, 292, 72, '#9ce5ac'),
+          current: text(292, 55, 'TR', 2, '#9ce5ac', '24.5C'),
+        },
       },
     },
     {
@@ -147,6 +227,42 @@ export function sampleProject() {
           msg: text(67, 105, 'MC', 1.5, '#ffffff', 'Delete?'),
           hint: text(67, 140, 'MC', 1, '#9ce5ac', 'A:OK B:No'),
         },
+        Clock: {
+          clockPanel: rect(7, 40, 121, 150, '#172126', true, 12),
+          time: text(67, 92, 'MC', 3, '#ffffff', '12:34'),
+          date: text(67, 132, 'MC', 1.25, '#9ce5ac', 'MON 24 AUG'),
+          alarm: text(67, 165, 'MC', 1, '#6f8a92', 'ALARM 06:30'),
+        },
+        Sensors: {
+          sensorTitle: text(8, 8, 'TL', 1.5, '#ffffff', 'Sensors'),
+          gauge: circle(67, 88, 42, '#9ce5ac', true, false),
+          gaugeCore: circle(67, 88, 33, '#172126'),
+          tempValue: text(67, 88, 'MC', 2.25, '#ffffff', '24.5'),
+          humidity: text(8, 150, 'TL', 1.25, '#75c9ff', 'Humidity 60%'),
+          pressure: text(8, 180, 'TL', 1.25, '#9ce5ac', '1013 hPa'),
+        },
+        Network: {
+          networkHeader: rect(0, 0, 135, 30, '#1e2a30'),
+          networkTitle: text(8, 7, 'TL', 1.5, '#ffffff', 'Network'),
+          ssid: text(8, 48, 'TL', 1.25, '#ffffff', 'lab-net'),
+          ip: text(8, 78, 'TL', 1, '#75c9ff', '192.168.1.42'),
+          signal1: rect(75, 134, 8, 14, '#9ce5ac'),
+          signal2: rect(87, 124, 8, 24, '#9ce5ac'),
+          signal3: rect(99, 112, 8, 36, '#9ce5ac'),
+          signal4: rect(111, 98, 8, 50, '#26383d'),
+          networkState: text(8, 180, 'TL', 1.5, '#9ce5ac', 'Connected'),
+        },
+        Chart: {
+          chartTitle: text(8, 8, 'TL', 1.25, '#ffffff', 'Temperature'),
+          axisX: line(18, 210, 125, 210, '#6f8a92'),
+          axisY: line(18, 42, 18, 210, '#6f8a92'),
+          trend1: line(20, 170, 40, 155, '#9ce5ac'),
+          trend2: line(40, 155, 60, 165, '#9ce5ac'),
+          trend3: line(60, 165, 80, 105, '#9ce5ac'),
+          trend4: line(80, 105, 100, 125, '#9ce5ac'),
+          trend5: line(100, 125, 122, 70, '#9ce5ac'),
+          current: text(125, 45, 'TR', 1.25, '#9ce5ac', '24.5'),
+        },
       },
     },
     {
@@ -174,6 +290,42 @@ export function sampleProject() {
           frame: rect(40, 30, 160, 75, '#9ce5ac', true, 8, false),
           msg: text(120, 55, 'MC', 1.5, '#ffffff', 'Delete?'),
           hint: text(120, 88, 'MC', 1, '#9ce5ac', 'A:OK  B:Cancel'),
+        },
+        Clock: {
+          clockPanel: rect(20, 18, 200, 100, '#172126', true, 12),
+          time: text(120, 52, 'MC', 3, '#ffffff', '12:34'),
+          date: text(120, 84, 'MC', 1.25, '#9ce5ac', 'MON 24 AUG'),
+          alarm: text(120, 105, 'MC', 1, '#6f8a92', 'ALARM 06:30'),
+        },
+        Sensors: {
+          sensorTitle: text(8, 5, 'TL', 1.5, '#ffffff', 'Sensors'),
+          gauge: circle(62, 75, 42, '#9ce5ac', true, false),
+          gaugeCore: circle(62, 75, 33, '#172126'),
+          tempValue: text(62, 75, 'MC', 2.25, '#ffffff', '24.5'),
+          humidity: text(118, 48, 'TL', 1.25, '#75c9ff', 'Humidity 60%'),
+          pressure: text(118, 78, 'TL', 1.25, '#9ce5ac', '1013 hPa'),
+        },
+        Network: {
+          networkHeader: rect(0, 0, 240, 26, '#1e2a30'),
+          networkTitle: text(8, 5, 'TL', 1.5, '#ffffff', 'Network'),
+          ssid: text(8, 40, 'TL', 1.25, '#ffffff', 'SSID: lab-net'),
+          ip: text(8, 64, 'TL', 1.1, '#75c9ff', '192.168.1.42'),
+          signal1: rect(175, 82, 8, 12, '#9ce5ac'),
+          signal2: rect(188, 74, 8, 20, '#9ce5ac'),
+          signal3: rect(201, 64, 8, 30, '#9ce5ac'),
+          signal4: rect(214, 52, 8, 42, '#26383d'),
+          networkState: text(8, 104, 'TL', 1.25, '#9ce5ac', 'Connected'),
+        },
+        Chart: {
+          chartTitle: text(8, 5, 'TL', 1.25, '#ffffff', 'Temperature / 24h'),
+          axisX: line(22, 118, 228, 118, '#6f8a92'),
+          axisY: line(22, 30, 22, 118, '#6f8a92'),
+          trend1: line(24, 95, 62, 82, '#9ce5ac'),
+          trend2: line(62, 82, 100, 92, '#9ce5ac'),
+          trend3: line(100, 92, 138, 55, '#9ce5ac'),
+          trend4: line(138, 55, 176, 70, '#9ce5ac'),
+          trend5: line(176, 70, 224, 38, '#9ce5ac'),
+          current: text(228, 20, 'TR', 1.25, '#9ce5ac', '24.5C'),
         },
       },
     },
