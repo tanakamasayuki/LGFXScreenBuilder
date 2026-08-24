@@ -121,6 +121,17 @@ function parseCss(css) {
 const intersects = (ranges, cps) =>
   !ranges || cps.some((c) => ranges.some(([lo, hi]) => c >= lo && c <= hi));
 
+// A fallback family not covering the remaining codepoints is an ordinary
+// negative probe, not a load/rasterization failure. Give callers a stable way
+// to distinguish it without matching a localized error string.
+export class NoFontCoverageError extends Error {
+  constructor(family) {
+    super(`"${family}" covers none of the selected characters`);
+    this.name = 'NoFontCoverageError';
+    this.code = 'NO_FONT_COVERAGE';
+  }
+}
+
 /**
  * Load a Google font into the document, fetching only the subsets that actually
  * cover the requested codepoints. Google splits CJK families into ~100 subset
@@ -144,7 +155,7 @@ export async function loadGoogleFont(family, codepoints, { weight = 400, italic 
   const all = parseCss(await res.text());
   if (!all.length) throw new Error(`Google Fonts CSS: no @font-face for "${family}"`);
   const wanted = all.filter((f) => intersects(f.ranges, codepoints));
-  if (!wanted.length) throw new Error(`"${family}" covers none of the selected characters`);
+  if (!wanted.length) throw new NoFontCoverageError(family);
 
   // A private family name keeps repeated loads (and the page's own webfont
   // links) from colliding with this one.

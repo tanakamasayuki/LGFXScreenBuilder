@@ -15,15 +15,37 @@
 import { loadGoogleFont } from './googlefonts.js';
 import { codepointsOf } from './charsets.js';
 import {
-  createBitmap, drawString, generateFont, loadTtf, measureText, unloadTtf,
+  createBitmap, drawString, generateFont, loadTtf, unloadTtf,
 } from 'lgfx-font-tool';
 
 /** Draw a neutral LGFXFontTool model with the pixel-exact LovyanGFX renderer. */
 export function drawModel(canvas, model, text, scale = 1, colors = {}) {
-  const m = measureText(model, text);
-  const w = Math.max(1, m.width), h = Math.max(1, m.height);
+  const allowed = colors.allowed || null;
+  const h = Math.max(1, model.ascent + model.descent);
+  const tofuW = Math.max(4, Math.round(h * 0.5));
+  const cells = [...text].map((ch) => {
+    const cp = ch.codePointAt(0);
+    const glyph = model.glyphs.get(cp) || null;
+    return {
+      ch, glyph,
+      why: !glyph ? 'missing' : allowed && !allowed.has(cp) ? 'excluded' : null,
+    };
+  });
+  const widthOf = (cell) => cell.why ? tofuW + 1 : Math.max(0, cell.glyph.xAdvance);
+  const w = Math.max(1, cells.reduce((sum, cell) => sum + widthOf(cell), 0));
   const bmp = createBitmap(w, h, 1);
-  drawString(bmp, model, text, 0, 0);
+  let pen = 0;
+  let drawn = 0;
+  for (const cell of cells) {
+    if (!cell.why) {
+      // Keep LGFXFontToolJs as the renderer; drawing one known glyph at a time
+      // merely prevents its normal missing-glyph box from hiding why that cell
+      // will not be present in the generated font.
+      drawString(bmp, model, cell.ch, pen, 0);
+      drawn++;
+    }
+    pen += widthOf(cell);
+  }
   canvas.width = w * scale;
   canvas.height = h * scale;
   const ctx = canvas.getContext('2d');
@@ -36,7 +58,28 @@ export function drawModel(canvas, model, text, scale = 1, colors = {}) {
       ctx.fillRect(x * scale, y * scale, scale, scale);
     }
   }
-  return [...text].filter((ch) => model.glyphs.has(ch.codePointAt(0))).length;
+  const marker = { missing: colors.missing || '#ff6b6b', excluded: colors.excluded || '#e8a33d' };
+  pen = 0;
+  for (const cell of cells) {
+    if (cell.why) {
+      const x0 = pen * scale;
+      const y0 = Math.round(h * 0.08) * scale;
+      const mw = tofuW * scale;
+      const mh = Math.round(h * 0.84) * scale;
+      ctx.strokeStyle = marker[cell.why];
+      ctx.lineWidth = Math.max(1, scale);
+      ctx.strokeRect(x0 + ctx.lineWidth / 2, y0 + ctx.lineWidth / 2,
+        mw - ctx.lineWidth, mh - ctx.lineWidth);
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x0 + mw, y0 + mh);
+      ctx.moveTo(x0 + mw, y0);
+      ctx.lineTo(x0, y0 + mh);
+      ctx.stroke();
+    }
+    pen += widthOf(cell);
+  }
+  return drawn;
 }
 
 /**
@@ -218,7 +261,7 @@ export function createLivePreview({ canvas, statusEl, settings, t }) {
         threshold: s.threshold,
       });
       if (mine !== generation) return;
-      const drawn = drawModel(canvas, made.font, text, s.scale || 1);
+      const drawn = drawModel(canvas, made.font, text, s.scale || 1, { allowed: s.allowed });
       // Both numbers matter: the character height is what was asked for, the
       // line height is what it costs per row on the panel.
       const notes = [t('pv.ok', {

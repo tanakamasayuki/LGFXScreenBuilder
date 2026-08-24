@@ -186,7 +186,7 @@ export function sampleProject() {
           gauge: circle(92, 126, 62, '#9ce5ac', true, false),
           gaugeCore: circle(92, 126, 48, '#172126'),
           tempValue: text(92, 126, 'MC', 3, '#ffffff', '24.5C'),
-          humidity: text(180, 90, 'TL', 2, '#75c9ff', 'Humidity 60%'),
+          humidity: text(168, 90, 'TL', 2, '#75c9ff', 'Humidity 60%'),
           pressure: text(180, 135, 'TL', 2, '#9ce5ac', '1013 hPa'),
         },
         Network: {
@@ -243,7 +243,7 @@ export function sampleProject() {
         Clock: {
           clockPanel: rect(7, 40, 121, 150, '#172126', true, 12),
           time: text(67, 92, 'MC', 3, '#ffffff', '12:34'),
-          date: text(67, 132, 'MC', 1.25, '#9ce5ac', 'MON 24 AUG'),
+          date: text(67, 132, 'MC', 1.25, '#9ce5ac', 'AUG 24'),
           alarm: text(67, 165, 'MC', 1, '#6f8a92', 'ALARM 06:30'),
         },
         Sensors: {
@@ -251,7 +251,7 @@ export function sampleProject() {
           gauge: circle(67, 88, 42, '#9ce5ac', true, false),
           gaugeCore: circle(67, 88, 33, '#172126'),
           tempValue: text(67, 88, 'MC', 2.25, '#ffffff', '24.5'),
-          humidity: text(8, 150, 'TL', 1.25, '#75c9ff', 'Humidity 60%'),
+          humidity: text(8, 150, 'TL', 1.25, '#75c9ff', 'HUM 60%'),
           pressure: text(8, 180, 'TL', 1.25, '#9ce5ac', '1013 hPa'),
         },
         Network: {
@@ -266,7 +266,7 @@ export function sampleProject() {
           networkState: text(8, 180, 'TL', 1.5, '#9ce5ac', 'Connected'),
         },
         Chart: {
-          chartTitle: text(8, 8, 'TL', 1.25, '#ffffff', 'Temperature'),
+          chartTitle: text(8, 8, 'TL', 1.25, '#ffffff', 'TEMP 24h'),
           axisX: line(18, 210, 125, 210, '#6f8a92'),
           axisY: line(18, 42, 18, 210, '#6f8a92'),
           trend1: line(20, 170, 40, 155, '#9ce5ac'),
@@ -307,16 +307,16 @@ export function sampleProject() {
         },
         Clock: {
           clockPanel: rect(20, 18, 200, 100, '#172126', true, 12),
-          time: text(120, 52, 'MC', 3, '#ffffff', '12:34'),
-          date: text(120, 84, 'MC', 1.25, '#9ce5ac', 'MON 24 AUG'),
-          alarm: text(120, 105, 'MC', 1, '#6f8a92', 'ALARM 06:30'),
+          time: text(120, 43, 'MC', 3, '#ffffff', '12:34'),
+          date: text(120, 83, 'MC', 1.25, '#9ce5ac', 'MON 24 AUG'),
+          alarm: text(120, 109, 'MC', 1, '#6f8a92', 'ALARM 06:30'),
         },
         Sensors: {
           sensorTitle: text(8, 5, 'TL', 1.5, '#ffffff', 'Sensors'),
           gauge: circle(62, 75, 42, '#9ce5ac', true, false),
           gaugeCore: circle(62, 75, 33, '#172126'),
           tempValue: text(62, 75, 'MC', 2.25, '#ffffff', '24.5'),
-          humidity: text(118, 48, 'TL', 1.25, '#75c9ff', 'Humidity 60%'),
+          humidity: text(118, 48, 'TL', 1.25, '#75c9ff', 'HUM 60%'),
           pressure: text(118, 78, 'TL', 1.25, '#9ce5ac', '1013 hPa'),
         },
         Network: {
@@ -328,10 +328,10 @@ export function sampleProject() {
           signal2: rect(188, 74, 8, 20, '#9ce5ac'),
           signal3: rect(201, 64, 8, 30, '#9ce5ac'),
           signal4: rect(214, 52, 8, 42, '#26383d'),
-          networkState: text(8, 104, 'TL', 1.25, '#9ce5ac', 'Connected'),
+          networkState: text(8, 98, 'TL', 1.25, '#9ce5ac', 'Connected'),
         },
         Chart: {
-          chartTitle: text(8, 5, 'TL', 1.25, '#ffffff', 'Temperature / 24h'),
+          chartTitle: text(8, 5, 'TL', 1.25, '#ffffff', 'TEMP / 24h'),
           axisX: line(22, 118, 228, 118, '#6f8a92'),
           axisY: line(22, 30, 22, 118, '#6f8a92'),
           trend1: line(24, 95, 62, 82, '#9ce5ac'),
@@ -350,7 +350,7 @@ export function sampleProject() {
     Main: { title: 'FreeSansBold12pt7b', battery: 'DejaVu12', temp: 'Font7' },
     Settings: { ttl: 'lgfxJapanGothic_16', row1: 'Font2' },
     Dialog: { msg: 'FreeSerifBold12pt7b', hint: 'Font8x8C64' },
-    Clock: { time: 'Font7', date: 'Orbitron_Light_24', alarm: 'FreeMono12pt7b' },
+    Clock: { time: 'Font7', date: 'Orbitron_Light_24', alarm: 'DejaVu12' },
     Sensors: {
       sensorTitle: 'AsciiFont8x16', tempValue: 'Roboto_Thin_24',
       humidity: 'FreeSans12pt7b', pressure: 'FreeMono12pt7b',
@@ -361,33 +361,19 @@ export function sampleProject() {
     },
     Chart: { chartTitle: 'Roboto_Thin_24', current: 'Yellowtail_32' },
   };
-  const fontSize = {
-    Core: {
-      Font2: 1, Font4: 0.75, Font7: 1, Font8x8C64: 2, AsciiFont8x16: 1,
-      TomThumb: 2, FreeMono12pt7b: 0.75, FreeSans12pt7b: 0.75,
-      FreeSansBold12pt7b: 1, FreeSerifBold12pt7b: 1,
-      Orbitron_Light_24: 0.75, Roboto_Thin_24: 1.25, Satisfy_24: 1,
-      Yellowtail_32: 0.75, DejaVu12: 1, lgfxJapanGothic_16: 1,
-    },
-    Stick: {
-      Font2: 0.75, Font4: 0.5, Font7: 0.75, Font8x8C64: 1.25, AsciiFont8x16: 0.75,
-      TomThumb: 1.5, FreeMono12pt7b: 0.5, FreeSans12pt7b: 0.5,
-      FreeSansBold12pt7b: 0.75, FreeSerifBold12pt7b: 0.75,
-      Orbitron_Light_24: 0.5, Roboto_Thin_24: 0.75, Satisfy_24: 0.75,
-      Yellowtail_32: 0.5, DejaVu12: 0.75, lgfxJapanGothic_16: 0.75,
-    },
-    Cardputer: {
-      Font2: 0.75, Font4: 0.5, Font7: 0.75, Font8x8C64: 1.25, AsciiFont8x16: 0.75,
-      TomThumb: 1.5, FreeMono12pt7b: 0.5, FreeSans12pt7b: 0.75,
-      FreeSansBold12pt7b: 0.75, FreeSerifBold12pt7b: 0.75,
-      Orbitron_Light_24: 0.5, Roboto_Thin_24: 0.75, Satisfy_24: 0.75,
-      Yellowtail_32: 0.5, DejaVu12: 0.75, lgfxJapanGothic_16: 0.75,
-    },
-  };
   for (const profile of profiles) {
     for (const [sceneId, parts] of Object.entries(fontForPart)) {
-      for (const [partId, font] of Object.entries(parts)) {
-        Object.assign(profile.layout[sceneId][partId], { font, size: fontSize[profile.id][font] });
+      for (const [partId, plannedFont] of Object.entries(parts)) {
+        // Font7's 48px digits are wider than the Stick display for HH:MM, so
+        // use the smaller display face there instead of shrinking below 1x.
+        const font = profile.id === 'Stick' && sceneId === 'Clock' && partId === 'time'
+          ? 'Font4' : plannedFont;
+        Object.assign(profile.layout[sceneId][partId], {
+          font,
+          // 1x is the rule. TomThumb is intentionally doubled because its
+          // native five-pixel face is otherwise not legible on these panels.
+          size: font === 'TomThumb' ? 2 : 1,
+        });
       }
     }
   }

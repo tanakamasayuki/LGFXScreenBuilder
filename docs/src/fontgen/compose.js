@@ -15,7 +15,7 @@
 //   * **Every source is recorded.** The result carries one entry per typeface
 //     used, with its author and licence, because the generated font is then a
 //     derived work of all of them and OFL requires the notice to travel.
-import { loadGoogleFont, findFont, FALLBACK_CHAIN } from './googlefonts.js';
+import { loadGoogleFont, findFont, FALLBACK_CHAIN, NoFontCoverageError } from './googlefonts.js';
 import { generateFont, loadTtf, rasterizeSet, unloadTtf } from 'lgfx-font-tool';
 
 // 'auto' walks the curated chain; a family name pins one font; null disables it.
@@ -136,6 +136,10 @@ export async function composeFont({
           fallbackMeta.push(fb.meta);
           missing = probe.missing;
         } catch (e) {
+          // Reaching a family with no relevant unicode-range is the expected
+          // way a fallback chain advances to the next family. Only operational
+          // failures belong in skippedFallbacks and the user-facing warning.
+          if (e instanceof NoFontCoverageError || e?.code === 'NO_FONT_COVERAGE') continue;
           // A family that will not load is simply not a usable fallback and the
           // characters stay missing — but swallowing the reason hides real bugs,
           // so it is kept and surfaced with the result.
