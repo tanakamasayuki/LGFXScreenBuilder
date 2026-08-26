@@ -1,5 +1,5 @@
-/* Styles for the standalone font generator (fontgen.html).
-   Kept out of styles.css so the editor's stylesheet stays about the editor;
+/* Styles for the generated-font controls in the editor.
+   Kept out of styles.css so the main editor stylesheet stays focused;
    the shared tokens (--panel, --line, --accent, …) come from styles.css. */
 
 .fg-body { background: var(--bg); }

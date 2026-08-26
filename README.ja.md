@@ -15,7 +15,7 @@ LGFXScreenBuilder は LVGL のような GUI フレームワークでは**あり�
 
 - **オーサリングツール:** <https://tanakamasayuki.github.io/LGFXScreenBuilder/>
 - **フォントジェネレータ**（単独版 — 本ライブラリを使わなくても `.h` をダウンロードできます）:
-  <https://tanakamasayuki.github.io/LGFXScreenBuilder/fontgen.html>
+  <https://tanakamasayuki.github.io/LGFXFontToolJs/generator.html>
 - **画面キャプチャギャラリー**（全プロファイル × 全シーンを host バックエンドで描画）:
   <https://tanakamasayuki.github.io/LGFXScreenBuilderScreenshotTest/>
 

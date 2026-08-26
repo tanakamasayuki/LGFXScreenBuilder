@@ -1,4 +1,6 @@
-// Standalone embedded-font generator page (docs/fontgen.html, §8.7.7).
+// Legacy standalone embedded-font generator controller. docs/fontgen.html now
+// redirects to the upstream LGFXFontToolJs generator; the editor imports the
+// shared generator modules directly.
 //
 // This page is deliberately independent of the layout editor: it holds no
 // project, touches no store, and its only job is font in -> .h out. People who

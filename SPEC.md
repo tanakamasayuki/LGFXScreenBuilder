@@ -507,7 +507,7 @@ ink above and below the baseline), not from the family's declared metrics. It is
 exactly tall enough for this font's contents: no clipping, and no rows of padding paid for
 in flash because the family reserves room for characters this font does not carry.
 
-Generating is not always the right answer, and the standalone page says so before the work
+Generating is not always the right answer, and the generator UI says so before the work
 starts: the fonts that ship with LovyanGFX / M5GFX cost no flash at all, and the
 [preinstalled catalog](https://tanakamasayuki.github.io/LGFXFontCatalog/) is linked from the
 typeface step. What a preset cannot do is let the character set be chosen — a preset
@@ -662,11 +662,11 @@ generated header is likewise shown in full, and says so; only a set large enough
 the browser is cut, and then it says that in words instead of trailing off in an ellipsis
 that reads like the end of the file.
 
-**Two ways to use it, one pipeline.**
+**Two ways to generate a font.**
 
-- **Standalone page** (`docs/fontgen.html`): typeface → size → characters → download `.h`.
-  It holds no project state and is useful on its own to anyone using LovyanGFX or M5GFX
-  without this editor.
+- **Standalone page**: use the more capable upstream
+  [LGFXFontToolJs generator](https://tanakamasayuki.github.io/LGFXFontToolJs/generator.html).
+  The former `docs/fontgen.html` URL redirects there so existing links and bookmarks keep working.
 - **In the editor** (Fonts mode): the same dialog, but the result is adopted onto the
   project. A generated font behaves like any other adopted font — per-profile enable,
   selectable on Text, subject to the same flash policy (§8.7.4) — and codegen emits its

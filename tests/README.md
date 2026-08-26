@@ -20,7 +20,7 @@ it), and — in the buffered build — that the color key never reached the pane
 `LGFXVirtualCanvas` from the Arduino library index (pinned in its `sketch.yaml`).
 
 `build_fontgen/` covers **generated embedded fonts** (SPEC §8.7.7): it builds a
-font header produced by `docs/fontgen.html` and checks on real LovyanGFX that the
+font header produced by the LGFXFontToolJs generator and checks on real LovyanGFX that the
 line height is the one that was requested, that ASCII, `℃` and plain bar shapes
 (`Il1`) all actually draw, and that the frame is non-blank. The off-device halves
 of that coverage live in `fontgen/` (node + headless browser); see

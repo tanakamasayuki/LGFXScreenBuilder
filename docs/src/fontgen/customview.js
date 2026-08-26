@@ -1,8 +1,7 @@
 // Generated-font UI inside the editor (Fonts mode, §8.7.7).
 //
-// Same pipeline as the standalone page, different ending: instead of handing
-// the user a .h to download, this stores the RECIPE on the project and keeps
-// the bytes in the session cache (build.js). The project file therefore never
+// This stores the RECIPE on the project and keeps the bytes in the session
+// cache (build.js). The project file therefore never
 // carries font data, and export rebuilds what it needs.
 import { store, mutate } from '../store.js';
 import { adoptCustomFont, removeFont, customFontNames, fontEntry } from '../model.js';
@@ -39,7 +38,7 @@ function syncSample() {
 
 const blankRecipe = () => ({
   source: { kind: 'google', family: 'Noto Sans JP', weight: 400, italic: false },
-  // Character height. 24 for the same reason as the standalone page (page.js):
+  // Character height. 24 is the point where legibility gains start flattening:
   // above it, flash keeps climbing while legibility has already flattened — and
   // an embedded font costs flash on every profile it is enabled for.
   size: 24,

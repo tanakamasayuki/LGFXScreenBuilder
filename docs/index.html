@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Micro+5&family=Orbitron&family=Pixelify+Sans&family=Roboto:wght@100;400;700&family=Satisfy&family=Share+Tech+Mono&family=Silkscreen&family=Tiny5&family=VT323&family=Yellowtail&display=swap">
   <link rel="stylesheet" href="./styles.css">
-  <!-- fg-* classes, shared with the standalone generator (fontgen.html): the
-       custom-font dialog reuses its licence warning and pixel preview. -->
+  <!-- fg-* classes used by the custom-font dialog for its licence warning,
+       character picker, and pixel preview. -->
   <link rel="stylesheet" href="./fontgen.css">
 </head>
 <body>
@@ -281,7 +281,7 @@
           </div>
           <div id="cf-list"></div>
           <p class="sub" data-i18n="cf.note"></p>
-          <p class="sub"><a href="./fontgen.html" target="_blank" rel="noopener" data-i18n="cf.standalone">Standalone generator ↗</a></p>
+          <p class="sub"><a href="https://tanakamasayuki.github.io/LGFXFontToolJs/generator.html" target="_blank" rel="noopener" data-i18n="cf.standalone">Standalone generator ↗</a></p>
         </div>
       </aside>
     </div>
@@ -332,8 +332,8 @@
     </div>
   </div>
 
-  <!-- Custom font generator (§8.7.7). Same pipeline as fontgen.html; here the
-       result is stored as a recipe on the project instead of downloaded. -->
+  <!-- Custom font generator (§8.7.7). The result is stored as a recipe on the
+       project and rebuilt when the project is exported. -->
   <div id="cf-overlay" class="overlay" hidden>
     <div class="dialog cf-dialog">
       <h2 data-i18n="cf.dlgTitle">Generate an embedded font</h2>
@@ -393,8 +393,8 @@
       </div>
       <p class="sub"><strong id="cf-charcount"></strong> <span id="cf-estimate"></span></p>
 
-      <!-- Same inspector as the standalone page: a count cannot answer
-           "is ℃ in there", so the actual characters are listed. -->
+      <!-- A count cannot answer "is ℃ in there", so the actual characters are
+           listed in an inspector. -->
       <details class="fg-charmap" id="cf-charmap-details">
         <summary data-i18n="cm.show">Show the characters</summary>
         <div class="fg-row">

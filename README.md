@@ -13,7 +13,7 @@ values to generated structs. No string IDs, no widget tree, no web server.
 
 - **Authoring tool:** <https://tanakamasayuki.github.io/LGFXScreenBuilder/>
 - **Font generator** (standalone — works without this library, just downloads a `.h`):
-  <https://tanakamasayuki.github.io/LGFXScreenBuilder/fontgen.html>
+  <https://tanakamasayuki.github.io/LGFXFontToolJs/generator.html>
 - **Live screenshot gallery** (every profile × scene, rendered on a host backend):
   <https://tanakamasayuki.github.io/LGFXScreenBuilderScreenshotTest/>
 

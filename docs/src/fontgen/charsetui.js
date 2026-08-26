@@ -1,5 +1,4 @@
-// Character-set picker (§8.7.7), shared by the standalone page and the editor
-// dialog so both offer exactly the same choices.
+// Character-set picker used by the editor's generated-font dialog (§8.7.7).
 //
 // The layout follows the model in charsets.js rather than dressing it up:
 //

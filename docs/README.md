@@ -82,9 +82,10 @@ python -m http.server 8000 --directory docs
   **per language** and unioned, and its levels are cumulative, so moving up a
   level can never silently drop a character. One-click templates (Clock, Sensor
   readout, Japanese UI, …) fill in a starting selection. Two entry
-  points, one pipeline (`src/fontgen/`): [`fontgen.html`](fontgen.html) is
-  standalone — no project, just download the `.h` — while Fonts mode adopts the
-  font onto the project and emits it into the exported header. The project stores
+  points: the standalone link opens the upstream
+  [LGFXFontToolJs generator](https://tanakamasayuki.github.io/LGFXFontToolJs/generator.html),
+  while Fonts mode uses the local pipeline (`src/fontgen/`) to adopt the font onto
+  the project and emit it into the exported header. The project stores
   only the **recipe**; glyph bytes are rebuilt at export, so project files stay
   small and carry no redistributable copy of a typeface. Local font files are
   allowed with a warning: most commercial and OS-bundled typefaces forbid exactly

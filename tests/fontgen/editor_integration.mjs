@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // End-to-end check of the editor's generated-font flow (§8.7.7).
 //
-// Covers the part the standalone page cannot: that a generated font becomes a
+// Covers the editor path: a generated font becomes a
 // project recipe, that the recipe (and NOT the glyph bytes) is what gets
 // saved, that Text can be assigned and pixel-rendered with the font, and that
 // the exported project header carries the byte array and references it. In CI
@@ -143,8 +143,7 @@ await page.selectOption('#cf-family', 'Roboto');
 await settled(16);
 check(true, 'changing typeface and size updates the dialog preview');
 
-// The dialog carries the same charset inspector as the standalone page: a
-// preset must be inspectable as characters, not just as a count.
+// A preset must be inspectable as characters, not just as a count.
 await page.evaluate(() => { document.querySelector('#cf-charmap-details').open = true; });
 await page.waitForSelector('#cf-charmap .cm-block');
 const dlgMap = await page.locator('#cf-charmap').innerText();
