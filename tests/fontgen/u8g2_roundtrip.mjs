@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-// U8g2 encoder verification (docs/src/fontgen/u8g2enc.js).
+// U8g2 encoder verification (lgfx-font-tool's `encode(font, {format: 'u8g2'})`).
 //
-// The encoder is only useful if LovyanGFX can read what it writes, so this test
-// carries a *mirror* of LovyanGFX's decoder — a line-by-line port of
+// The bytes this project ships in a generated header come out of LGFXFontToolJs,
+// and they are only useful if LovyanGFX can read them. So this test carries a
+// *mirror* of LovyanGFX's decoder — a line-by-line port of
 // U8g2font::getGlyph / updateFontMetric / drawChar from
 // src/lgfx/v1/lgfx_fonts.cpp — and checks it two ways:
 //
@@ -11,6 +12,10 @@
 //      rather than matching our own assumptions.
 //   2. Random glyph sets survive encode -> decode with identical bitmaps and
 //      metrics, proving the encoder writes what the decoder expects.
+//
+// The mirror is deliberately independent of `decodeU8g2()` in the same library:
+// checking an encoder with its own decoder would pass even if both drifted away
+// from LovyanGFX together.
 //
 // Step 1 is skipped with a notice when the pinned LovyanGFX copy is absent
 // (it lives in ~/.arduino15/internal after a build), so this stays runnable on
@@ -21,7 +26,13 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import { encodeU8g2, costOf, planFor } from '../../docs/src/fontgen/u8g2enc.js';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+
+// The authoring tool's dependencies live under docs/, not at the repo root.
+const requireFromDocs = createRequire(new URL('../../docs/package.json', import.meta.url));
+const { createFont, createBitmap, setPixel, encode, canEncode } =
+  await import(pathToFileURL(requireFromDocs.resolve('lgfx-font-tool')).href);
 
 let failures = 0;
 const fail = (msg) => { console.error('FAIL: ' + msg); failures++; };
@@ -195,6 +206,36 @@ if (!realPath) {
 
 // --- 2. encode -> decode round trip --------------------------------------
 
+// The test cases below describe glyphs the way u8g2 stores them — width,
+// height, BDF-style bearings and an unpacked 0/1 bitmap. The library takes the
+// neutral model instead, so convert: its bitmap is 1bpp MSB-first, and its
+// yOffset measures the baseline to the bitmap's TOP (negative upward) where
+// u8g2's `y` measures the baseline to the BOTTOM.
+function toModel(glyphs, { height, descent }) {
+  const map = new Map();
+  for (const g of glyphs) {
+    const bitmap = createBitmap(g.w, g.h, 1);
+    for (let row = 0; row < g.h; row++) {
+      for (let col = 0; col < g.w; col++) {
+        if (g.bits[row * g.w + col]) setPixel(bitmap, col, row, 1);
+      }
+    }
+    map.set(g.code, {
+      codepoint: g.code,
+      xOffset: g.x,
+      yOffset: -(g.y + g.h),
+      xAdvance: g.dx,
+      bitmap,
+    });
+  }
+  return createFont({
+    familyName: 'roundtrip', styleName: 'Regular',
+    ascent: height - descent, descent, lineHeight: height, glyphs: map,
+  });
+}
+
+const errorsOf = (model) => canEncode(model, 'u8g2').issues.filter((i) => i.level === 'error');
+
 // Deterministic PRNG so a failure is reproducible.
 let seed = 12345;
 const rnd = (n) => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) % n);
@@ -209,13 +250,19 @@ function randomGlyph(code, maxW, maxH) {
 }
 
 function roundtrip(label, glyphs, font) {
-  const res = encodeU8g2(glyphs, font);
-  const f = res.data;
-  const skipped = new Set(res.skipped.map((s) => s.code));
+  const model = toModel(glyphs, font);
+  // A glyph the format cannot address is dropped by `dropInvalid`. Silently
+  // losing a character is the failure mode that actually bites on a device, so
+  // take the drop list from canEncode() and hold the encoder to exactly it.
+  const skipped = new Set(errorsOf(model).filter((i) => i.codepoint !== undefined).map((i) => i.codepoint));
+  const f = encode(model, { format: 'u8g2', dropInvalid: true });
   let checked = 0;
   for (const g of glyphs) {
-    if (skipped.has(g.code)) continue;
     const d = decodeGlyph(f, g.code);
+    if (skipped.has(g.code)) {
+      if (d) fail(`${label}: U+${g.code.toString(16)} was reported as dropped but decoded anyway`);
+      continue;
+    }
     if (!d) { fail(`${label}: U+${g.code.toString(16)} not found after encode`); return; }
     for (const k of ['w', 'h', 'x', 'y', 'dx']) {
       if (d[k] !== g[k]) { fail(`${label}: U+${g.code.toString(16)} ${k} ${d[k]} != ${g[k]}`); return; }
@@ -231,7 +278,7 @@ function roundtrip(label, glyphs, font) {
     fail(`${label}: absent U+FFFE resolved`);
   }
   console.log(`  ${label}: ${checked} glyphs, ${f.length} bytes ` +
-    `(bits0=${res.bitsPer.b0} bits1=${res.bitsPer.b1}${res.skipped.length ? `, ${res.skipped.length} skipped` : ''})`);
+    `(bits0=${H.bitsPer0(f)} bits1=${H.bitsPer1(f)}${skipped.size ? `, ${skipped.size} dropped` : ''})`);
 }
 
 console.log('round trip:');
@@ -249,7 +296,7 @@ roundtrip('mixed', [
 ], { height: 16, descent: 3 });
 
 // Large glyphs: long runs force pair splitting, and big entries approach the
-// 255-byte jump-byte ceiling that encodeU8g2 reports as `skipped`.
+// 255-byte jump-byte ceiling that the encoder reports as GLYPH_BYTES_OVER.
 roundtrip('large', Array.from({ length: 120 }, (_, i) => randomGlyph(0x30 + i, 40, 40)), { height: 40, descent: 8 });
 
 // Big glyphs, at the largest size the format really supports. The per-glyph
@@ -264,21 +311,20 @@ roundtrip('wide', Array.from({ length: 40 }, (_, i) => {
   return { ...g, dx: 60, x: 0, y: -20 };
 }), { height: 127, descent: 20 });
 
-// The run-length widths are chosen for FEWEST DROPPED GLYPHS first and smallest
-// output second. Size alone is the wrong objective: a glyph is reached through a
-// one-byte jump, so an entry over 255 bytes has to be dropped, and the widths
-// decide how long entries get. Optimising bytes alone therefore trades whole
-// characters away for a few hundred bytes — with a real Japanese set it dropped
-// 繊 and 酬 at a 32px character height, and 49 everyday kanji (機 職 織 臓 …) at
-// 36px.
+// --- 3. dropped glyphs are always reported -------------------------------
+
+// A glyph is reached through a one-byte jump, so an entry over 255 bytes cannot
+// be addressed and has to be dropped. Which glyphs that hits depends on the
+// run-length widths, and choosing those for FEWEST DROPS first (rather than
+// smallest output) is what keeps everyday kanji in a large font — the objective
+// lives in lgfx-font-tool's chooseRunBits and is tested there against all 64
+// candidates. What matters HERE is the property a generated header depends on:
+// a glyph that does not survive must appear in canEncode()'s issues, so the
+// editor can list it, rather than going missing between the recipe and the panel.
 //
-// Rather than hand-build a set that creates the conflict — the first attempt at
-// one did not, and passed identically against the old objective — this asserts
-// the property itself against all 64 candidates: whatever the encoder picked
-// must drop no more glyphs than any other choice would, and among the choices
-// that drop that many it must be the smallest.
-// Kanji-like glyph: thin strokes over a large box. Seeded so a failure is
-// reproducible rather than "it fails about a third of the time".
+// Kanji-like glyph: thin strokes over a large box, which is what actually lands
+// entries near the ceiling. Seeded so a failure is reproducible rather than
+// "it fails about a third of the time".
 let strokeSeed = 1;
 function strokeGlyph(code, size, strokes) {
   const rnd = () => (strokeSeed = (strokeSeed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
@@ -297,73 +343,78 @@ function strokeGlyph(code, size, strokes) {
   return { code, w: size, h: size, x: 0, y: -Math.floor(size / 6), dx: size, bits };
 }
 
-console.log('run-length widths are chosen for coverage, not just size:');
+console.log('every dropped glyph is reported, never silently missing:');
 strokeSeed = 1;
+let exercised = false;
 for (const [label, glyphs, font] of [
   ['sparse', Array.from({ length: 200 }, (_, i) => randomGlyph(0x3000 + i, 16, 16)), { height: 16, descent: 3 }],
   ['big', Array.from({ length: 60 }, (_, i) => randomGlyph(0x4e00 + i, 64, 64)), { height: 64, descent: 10 }],
-  // This one actually creates the conflict, and it took a search to find: the
-  // obvious hand-built cases (speckle vs solid block) all had the same answer
-  // under both objectives, so they proved nothing. Kanji-like glyphs are what
-  // does it — thin strokes over a large box, so the entries land just under the
-  // 255-byte ceiling and the width choice tips them over. Here the size-optimal
-  // choice (b0=5, b1=2) drops 4 glyphs that b0=3, b1=1 keeps.
   ['stroke density', [
     ...Array.from({ length: 60 }, (_, i) => strokeGlyph(0x30 + i, 22, 4)),
     ...Array.from({ length: 200 }, (_, i) => strokeGlyph(0x4e00 + i, 44, 30)),
   ], { height: 44, descent: 7 }],
+  // The three above are sized so nothing has to be dropped — that is the point
+  // of the coverage-first width choice. This one is deliberately past the
+  // ceiling, so the reporting path is actually exercised rather than vacuously
+  // satisfied by an empty drop list.
+  ['over the ceiling', Array.from({ length: 40 }, (_, i) => {
+    const g = randomGlyph(0x4e00 + i, 120, 120);
+    return { ...g, dx: 60, x: 0, y: -20 };
+  }), { height: 127, descent: 20 }],
 ]) {
-  const res = encodeU8g2(glyphs, font);
-  const plan = planFor(glyphs);
-  let bestLost = Infinity;
-  let bestTotal = Infinity;
-  for (let b0 = 1; b0 <= 8; b0++) {
-    for (let b1 = 1; b1 <= 8; b1++) {
-      const c = costOf(plan.runsPerGlyph, plan.glyphs, plan.fixedBits, b0, b1);
-      if (c.lost < bestLost || (c.lost === bestLost && c.total < bestTotal)) { bestLost = c.lost; bestTotal = c.total; }
-    }
-  }
-  const got = costOf(plan.runsPerGlyph, plan.glyphs, plan.fixedBits, res.bitsPer.b0, res.bitsPer.b1);
-  if (got.lost === bestLost && got.total === bestTotal && res.skipped.length === bestLost) {
-    console.log(`  ok   ${label}: bits0=${res.bitsPer.b0} bits1=${res.bitsPer.b1} drops ${got.lost}, ` +
-      `the fewest any of the 64 choices can (then smallest at ${Math.ceil(got.total / 8)} payload bytes)`);
+  const model = toModel(glyphs, font);
+  const reported = errorsOf(model).filter((i) => i.codepoint !== undefined);
+  const data = encode(model, { format: 'u8g2', dropInvalid: true });
+  const missing = glyphs.filter((g) => !decodeGlyph(data, g.code)).map((g) => g.code);
+  const reportedCodes = new Set(reported.map((i) => i.codepoint));
+  const unreported = missing.filter((c) => !reportedCodes.has(c));
+  if (unreported.length) {
+    fail(`${label}: ${unreported.length} glyph(s) vanished without being reported ` +
+      `(first U+${unreported[0].toString(16)})`);
+  } else if (reported.some((i) => i.code !== 'GLYPH_BYTES_OVER')) {
+    fail(`${label}: unexpected drop reason ${reported.map((i) => i.code).join(', ')}`);
   } else {
-    fail(`${label}: chose bits0=${res.bitsPer.b0} bits1=${res.bitsPer.b1} dropping ${got.lost} glyph(s) ` +
-      `(${res.skipped.length} actually skipped), but another choice drops only ${bestLost}`);
+    console.log(`  ok   ${label}: ${glyphs.length - missing.length}/${glyphs.length} kept, ` +
+      `${missing.length} dropped and all ${missing.length ? 'reported as GLYPH_BYTES_OVER' : 'accounted for'}`);
+    if (missing.length) exercised = true;
   }
 }
 
-// A glyph the format genuinely cannot hold must be refused with something the
-// user can act on, not a bare "too large".
+// A green run that never actually dropped anything would prove nothing about
+// the reporting path, so require at least one case to have exercised it.
+if (!exercised) fail('no case dropped a glyph — the drop-reporting path went untested');
+
+// --- 4. limits the format cannot hold ------------------------------------
+
+// These must be refused with something actionable, not truncated into a font
+// that draws wrong on the device.
 console.log('format limits:');
-try {
-  encodeU8g2([{ code: 0x3000, w: 10, h: 10, x: 0, y: 0, dx: 195, bits: new Uint8Array(100) }],
-    { height: 200, descent: 20, probeHeight: 200 });
-  fail('an advance beyond the signed 7-bit field was accepted');
-} catch (e) {
-  const named = /"　"/.test(e.message) && /195/.test(e.message) && /63/.test(e.message);
-  const advises = /character height of \d+px or less/.test(e.message);
-  if (named && advises) console.log(`  ok   the error names the character, the limit and a size that works\n       ${e.message}`);
-  else fail(`unhelpful limit error: ${e.message}`);
+
+function refuses(label, glyphs, font, wantCode) {
+  try {
+    encode(toModel(glyphs, font), { format: 'u8g2', dropInvalid: true });
+    fail(`${label}: accepted, but the format cannot hold it`);
+  } catch (e) {
+    const issue = e.issues?.find((i) => i.code === wantCode);
+    if (!issue) fail(`${label}: threw without a ${wantCode} issue (${e.message})`);
+    else console.log(`  ok   ${label}: refused as ${wantCode} ${JSON.stringify(issue.params)}`);
+  }
 }
+
+// The advance field is signed 7-bit, so 195 cannot be stored. dropInvalid must
+// not paper over it either — losing the glyph silently would be worse.
+refuses('an advance beyond the signed 7-bit field',
+  [{ code: 0x3000, w: 10, h: 10, x: 0, y: 0, dx: 195, bits: new Uint8Array(100) }],
+  { height: 20, descent: 4 }, 'XADVANCE_RANGE');
 
 // The header's own fields are a second, tighter limit than the per-glyph ones,
 // and the failure they cause is worse than clipping: getDefaultMetric assigns
 // max_char_height (an int8_t) straight to metrics->height, so a line box over
-// 127 comes back negative and the text lays out inverted. Nothing in the encoder
-// would have noticed — the 63px advance ceiling normally stops a font getting
-// this tall first, which is precisely why an unguarded case would ship broken.
-try {
-  encodeU8g2([{ code: 0x41, w: 100, h: 100, x: 0, y: -20, dx: 60, bits: new Uint8Array(10000) }],
-    { height: 200, descent: 20, probeHeight: 160 });
-  fail('a line height beyond the header int8 was accepted');
-} catch (e) {
-  if (/line height is 200px/.test(e.message) && /max 127/.test(e.message) && /character height of \d+px or less/.test(e.message)) {
-    console.log(`  ok   an over-tall line box is refused, not silently inverted\n       ${e.message}`);
-  } else {
-    fail(`unhelpful header limit error: ${e.message}`);
-  }
-}
+// 127 comes back negative and the text lays out inverted. This is a FONT-level
+// constraint, so dropInvalid cannot bypass it.
+refuses('a line height beyond the header int8',
+  [{ code: 0x41, w: 100, h: 100, x: 0, y: -20, dx: 60, bits: new Uint8Array(10000) }],
+  { height: 200, descent: 20 }, 'LINE_BOX_TOO_TALL');
 
 // Degenerate glyphs: a zero-size glyph (space) and an all-ink block.
 roundtrip('edge', [

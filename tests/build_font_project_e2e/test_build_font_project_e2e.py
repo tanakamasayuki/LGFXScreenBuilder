@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -21,7 +22,12 @@ def test_browser_generated_project_font_renders(request):
         pytest.skip("run tests/fontgen/editor_integration.mjs with LGFX_FONT_TOOL_E2E_HEADER first")
 
     source = HEADER.read_text(encoding="utf-8")
-    assert "lgfx-font-tool 1.0.0" in source
+    assert "lgfx-font-tool 1.1.0" in source
+    # The sketch prints the version baked into the header it compiled. Deriving
+    # the expectation from that same header keeps the pin above the ONLY place
+    # the version is written down — a second literal here silently went stale.
+    version = re.search(r'#define LGFX_FONT_TOOL_E2E_VERSION "([^"]+)"', source)
+    assert version, "the generated header carries no LGFX_FONT_TOOL_E2E_VERSION"
     assert "static const uint8_t kFontData_PanelFont[" in source
     assert "lgfx::U8g2font kFont_PanelFont" in source
     assert "&kFont_PanelFont" in source
@@ -52,7 +58,7 @@ def test_browser_generated_project_font_renders(request):
     bars = dut.expect(r"BARS ink=(\d+) hash=([0-9a-f]+)", timeout=5)
     assert int(bars.group(1)) > 10, "embedded Il1 glyphs did not draw"
     assert bars.group(2) not in {actual_hash, celsius_hash, missing_hash}
-    dut.expect("VERSION 1.0.0", timeout=5)
+    dut.expect(f"VERSION {version.group(1)}", timeout=5)
     dut.expect("TEST done", timeout=5)
 
     png = SKETCH_DIR / "output" / "project-font.png"

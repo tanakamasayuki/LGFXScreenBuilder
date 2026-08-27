@@ -448,11 +448,12 @@ flash rather than a full CJK font.
 uint8_t*)`), the generator emits **u8g2**: it is 1bpp so a CJK set stays affordable, it
 is `constexpr` and lives in flash with no RAM cost and no runtime loading, and it is what
 LovyanGFX's own `fonts::lgfxJapanGothic_*` / `fonts::efont*` already are — so nothing new
-runs on the device. The encoder (`docs/src/fontgen/u8g2enc.js`) is written against
-LovyanGFX's decoder in `src/lgfx/v1/lgfx_fonts.cpp`, and `tests/fontgen/u8g2_roundtrip.mjs`
-holds a mirror of that decoder, checks it against a real bundled font, and round-trips the
-encoder through it. Glyphs are addressed with a uint16 encoding, so codepoints above
-U+FFFF cannot be represented and are reported as dropped rather than silently lost.
+runs on the device. The encoder lives in LGFXFontToolJs and is written against
+LovyanGFX's decoder in `src/lgfx/v1/lgfx_fonts.cpp`; `tests/fontgen/u8g2_roundtrip.mjs`
+holds an independent mirror of that decoder, checks it against a real bundled font, and
+round-trips the library's encoder through it. Glyphs are addressed with a uint16
+encoding, so codepoints above U+FFFF cannot be represented and are reported as dropped
+rather than silently lost.
 
 **Rasterizing — the browser's own text engine.** Glyphs are drawn through `FontFace` +
 a 2D canvas rather than a bundled font parser. That accepts anything the browser accepts
@@ -534,11 +535,11 @@ output pixels, at 1:1 by default.
 independent axes — Latin/European, kana and Japanese punctuation, han, hangul, symbols —
 plus free-form extra characters and `U+xxxx-U+yyyy` ranges. Everything is unioned.
 
-- **Every set is derived from Unicode's own data** (`tools/gen-charsets.mjs`): Unihan's
-  `kJoyoKanji`, `kJinmeiyoKanji`, `kJis0`, `kGB0`, `kBigFive` and `kKoreanEducationHanja`,
-  plus `KSC5601.TXT`. Sizes match the published standards exactly (JIS level 1 = 2,965,
-  GB 2312 level 1 = 3,755, KS X 1001 hangul = 2,350, …), so a set is auditable rather than
-  something to take on faith.
+- **Every set is derived from Unicode's own data** (in LGFXFontToolJs, which owns the
+  character-set vocabulary): Unihan's `kJoyoKanji`, `kJinmeiyoKanji`, `kJis0`, `kGB0`,
+  `kBigFive` and `kKoreanEducationHanja`, plus `KSC5601.TXT`. Sizes match the published
+  standards exactly (JIS level 1 = 2,965, GB 2312 level 1 = 3,755, KS X 1001 hangul =
+  2,350, …), so a set is auditable rather than something to take on faith.
 - **Han is per language, unioned.** Japanese, Simplified, Traditional and Korean are
   different repertoires, not points on one scale — measured against the sets this replaced,
   "CJK" was missing 536 characters that "Japanese" had, including the 社/祉/祈 variant forms.

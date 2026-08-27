@@ -35,11 +35,8 @@
 
 #include <stdint.h>
 
-// LovyanGFX (or M5GFX / M5Unified, which re-export the same types) must be
-// included before this header so lgfx::U8g2font is visible.
-#if !defined(LGFX_USE_V1) && !defined(__LOVYANGFX_HPP__) && !defined(_M5GFX_H_)
-  #include <LovyanGFX.hpp>
-#endif
+// Include LovyanGFX (or M5GFX / M5Unified) before this header so
+// lgfx::U8g2font is available.
 
 #ifndef LGFXSB_FONT_PROGMEM
   #if defined(PROGMEM)

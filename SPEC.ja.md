@@ -438,11 +438,12 @@ Arduino 出力では、LovyanGFX/M5GFX で扱いやすいフォント参照方�
 **u8g2** を出力する。1bpp なので CJK でも現実的なサイズに収まり、`constexpr` でフラッシュに
 置かれ RAM を使わず実行時ロードも不要で、なにより LovyanGFX 自身の
 `fonts::lgfxJapanGothic_*` / `fonts::efont*` がまさにこの形式なので、実機側に新しいコードが
-一切増えない。エンコーダ（`docs/src/fontgen/u8g2enc.js`）は LovyanGFX の
-`src/lgfx/v1/lgfx_fonts.cpp` のデコーダを仕様として実装し、
-`tests/fontgen/u8g2_roundtrip.mjs` がそのデコーダのミラーを持ち、実際の同梱フォントで
-ミラー自体を検証したうえでエンコーダを往復させる。グリフは uint16 で参照されるため
-U+FFFF を超えるコードポイントは表現できず、黙って落とさず「除外した」と報告する。
+一切増えない。エンコーダは LGFXFontToolJs 側にあり、LovyanGFX の
+`src/lgfx/v1/lgfx_fonts.cpp` のデコーダを仕様として実装している。
+`tests/fontgen/u8g2_roundtrip.mjs` はそのデコーダの独立したミラーを持ち、実際の同梱
+フォントでミラー自体を検証したうえで、ライブラリのエンコーダを往復させる。グリフは
+uint16 で参照されるため U+FFFF を超えるコードポイントは表現できず、黙って落とさず
+「除外した」と報告する。
 
 **ラスタライズはブラウザ自身のテキストエンジン。** グリフはフォントパーサを同梱せず
 `FontFace` ＋ 2D canvas で描く。ブラウザが読めるものは全て読め（TTF、OTF/CFF、WOFF/WOFF2、
@@ -515,7 +516,8 @@ CSS の `font-size` でもない。行ボックスは書体ごとの差が大き
 ラテン・欧文／かな・和文約物／漢字／ハングル／記号——に加えて自由入力の追加文字と
 `U+xxxx-U+yyyy` 範囲があり、すべて和集合になる。
 
-- **すべてのセットは Unicode 自身のデータから導出する**（`tools/gen-charsets.mjs`）。
+- **すべてのセットは Unicode 自身のデータから導出する**（導出は文字集合の語彙を所有する
+  LGFXFontToolJs 側で行う）。
   Unihan の `kJoyoKanji` / `kJinmeiyoKanji` / `kJis0` / `kGB0` / `kBigFive` /
   `kKoreanEducationHanja` と `KSC5601.TXT` を使い、字数は公表された規格値と完全に一致する
   （JIS第1水準 2,965、GB 2312 一級 3,755、KS X 1001 ハングル 2,350 …）。
