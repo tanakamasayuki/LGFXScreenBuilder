@@ -11,7 +11,7 @@ import {
 } from './model.js';
 import { loadMetrics, metricsFor, fontDetailUrl } from './fonts.js';
 import { cachedFont } from './fontgen/build.js';
-import { createBitmap, drawString, loadFont, measureText } from 'lgfx-font-tool';
+import { createBitmap, drawString, getPixel, loadFont, measureText } from 'lgfx-font-tool';
 import { aiLayoutJson, parseAiLayout } from './ailayout.js';
 import { downloadText } from './persist.js';
 import { flash } from './toast.js';
@@ -76,7 +76,13 @@ function drawExactText(canvas, font, text, size, color) {
   const style = { sizeX: size, sizeY: size, datum: 'top-left' };
   const m = measureText(font, text, style);
   const w = Math.max(1, m.width), h = Math.max(1, m.height);
-  const bmp = createBitmap(w, h, 1);
+  // An anti-aliased font (VLW / BFF) carries per-pixel coverage, and the library
+  // only keeps it when the target bitmap can hold it — a 1bpp target lights any
+  // non-zero coverage, which would show a 4bpp font as if it were 1bpp and hide
+  // exactly what it is being paid for. `drawProfile` is the library's own signal
+  // for which glyphs carry coverage.
+  const aa = font.meta?.drawProfile === 'vlw';
+  const bmp = createBitmap(w, h, aa ? 8 : 1);
   drawString(bmp, font, text, 0, 0, style);
   canvas.width = w;
   canvas.height = h;
@@ -85,10 +91,13 @@ function drawExactText(canvas, font, text, size, color) {
   const [r, g, b] = rgbOf(color);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const byte = bmp.data[y * bmp.stride + (x >> 3)];
-      if (!(byte & (0x80 >> (x & 7)))) continue;
+      // Coverage becomes alpha, so the canvas composites it over whatever the
+      // scene actually draws behind the text — which is what the device does.
+      const v = getPixel(bmp, x, y);
+      if (!v) continue;
       const i = (y * w + x) * 4;
-      img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = b; img.data[i + 3] = 255;
+      img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = b;
+      img.data[i + 3] = aa ? v : 255;
     }
   }
   ctx.putImageData(img, 0, 0);

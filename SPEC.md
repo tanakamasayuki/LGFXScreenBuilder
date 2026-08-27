@@ -443,17 +443,37 @@ character set, and emit it as data the sketch carries. Because only the requeste
 characters are included, a Japanese UI that needs 300 characters costs 300 characters of
 flash rather than a full CJK font.
 
-**Output format — u8g2.** Of the three embeddable formats LovyanGFX can draw
-(`lgfx::U8g2font`, `lgfx::GFXfont` with `EncodeRange`, and VLW via `loadFont(const
-uint8_t*)`), the generator emits **u8g2**: it is 1bpp so a CJK set stays affordable, it
-is `constexpr` and lives in flash with no RAM cost and no runtime loading, and it is what
-LovyanGFX's own `fonts::lgfxJapanGothic_*` / `fonts::efont*` already are — so nothing new
-runs on the device. The encoder lives in LGFXFontToolJs and is written against
-LovyanGFX's decoder in `src/lgfx/v1/lgfx_fonts.cpp`; `tests/fontgen/u8g2_roundtrip.mjs`
-holds an independent mirror of that decoder, checks it against a real bundled font, and
-round-trips the library's encoder through it. Glyphs are addressed with a uint16
-encoding, so codepoints above U+FFFF cannot be represented and are reported as dropped
-rather than silently lost.
+**Output format — selectable, u8g2 by default.** A recipe carries a `format` of `u8g2`,
+`gfx`, `bff` or `vlw`, plus a `bpp` that only BFF uses; both default to the u8g2 1bpp case,
+so a recipe written before formats were selectable produces byte-identical output. The
+encoders live in LGFXFontToolJs and are written against LovyanGFX's own decoders in
+`src/lgfx/v1/lgfx_fonts.cpp`; `tests/fontgen/u8g2_roundtrip.mjs` holds an independent
+mirror of the u8g2 decoder, checks it against a real bundled font, and round-trips the
+library's encoder through it. Glyphs are addressed with a uint16 encoding in every format,
+so codepoints above U+FFFF cannot be represented and are reported as dropped rather than
+silently lost. [docs/FONT_FORMATS.md](docs/FONT_FORMATS.md) carries the measured sizes and
+timings behind the choice.
+
+u8g2 stays the default because it is 1bpp (so a CJK set stays affordable), lives in flash
+as a `const` object with no RAM cost and no load step, and is what LovyanGFX's own
+`fonts::lgfxJapanGothic_*` / `fonts::efont*` already are. GFXfont is the same size class
+without u8g2's 63px advance and 255-byte-per-glyph ceilings. BFF (2/4bpp) and VLW (8bpp)
+are anti-aliased.
+
+**Run-time formats.** VLW and BFF are not constants: LovyanGFX parses their tables at run
+time, so the generated header emits the font object plus a `PointerWrapper` over the byte
+array, and a `detail::initRuntimeFonts()` that `Screen::begin()` calls. `display.loadFont()`
+is deliberately not used — `LGFXBase` holds a single `_runtime_font` and `setFont()` resets
+it, so two run-time fonts in one project would destroy each other. Until `begin()` runs
+those fonts have no glyphs; `Renderer::usableFont()` detects that and falls back to the
+default font rather than dereferencing null tables.
+
+**Anti-aliasing blends toward the scene background.** A Text is drawn with the one-argument
+`setTextColor()`, which leaves `back_rgb888 == fore_rgb888`; LovyanGFX then blends partial
+coverage toward `getBaseColor()`, which defaults to black. The renderer therefore sets
+`setBaseColor(project.background)` per scene, without which anti-aliased glyphs acquire a
+dark halo on any non-black background. This is exact for text on the background and
+approximate for text over a Rect of another colour.
 
 **Rasterizing — the browser's own text engine.** Glyphs are drawn through `FontFace` +
 a 2D canvas rather than a bundled font parser. That accepts anything the browser accepts

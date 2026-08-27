@@ -10,6 +10,9 @@ import {
 } from './model.js';
 import { buildAiLayout, AI_LAYOUT_DOC_URL } from './ailayout.js';
 import { FORMAT_VERSION } from './version.js';
+// GFXfont is emitted as C structs rather than an opaque blob, so the container
+// the encoder returns has to be taken apart here.
+import { unpackGfxContainer } from 'lgfx-font-tool';
 
 const PART_ENUM = { Rect: 'Rect', Line: 'Line', Circle: 'Circle', Text: 'Text', Image: 'Image' };
 // Authoring datum code (TL…BR) -> lgfxsb::Datum member name. The C++ names are
@@ -40,6 +43,51 @@ function fontNotice(fd) {
     if (src.origin) out.push(`  Source: ${src.origin}`);
   });
   return out.join('\n');
+}
+
+// One `static const uint8_t name[N] = {...}` table, 16 bytes to a line.
+function byteArray(ident, data) {
+  let out = `static const uint8_t ${ident}[${data.length}] = {\n`;
+  for (let i = 0; i < data.length; i += 16) {
+    out += '  ' + Array.from(data.slice(i, i + 16), (b) => '0x' + b.toString(16).padStart(2, '0')).join(', ') +
+      (i + 16 < data.length ? ',' : '') + '\n';
+  }
+  return out + '};\n';
+}
+
+// GFXfont, as the structs LovyanGFX expects. A font whose codepoints form one
+// contiguous run is plain Adafruit-GFX compatible; a scattered one (any CJK set)
+// needs LovyanGFX's EncodeRange extension, which is why the type differs.
+function emitGfxFont(n, fd) {
+  const gfx = unpackGfxContainer(fd.data);
+  const ranged = gfx.ranges.length > 0;
+  let out = byteArray(`kFontBitmaps_${n}`, gfx.bitmap);
+  const glyphType = ranged ? 'lgfx::v1::GFXglyph' : 'GFXglyph';
+  out += `static const ${glyphType} kFontGlyphs_${n}[] = {\n`;
+  gfx.glyphs.forEach((g, i) => {
+    out += `  { ${g.bitmapOffset}, ${g.width}, ${g.height}, ${g.xAdvance}, ${g.xOffset}, ${g.yOffset} }` +
+      (i + 1 < gfx.glyphs.length ? ',' : '') + '\n';
+  });
+  out += '};\n';
+  if (!ranged) {
+    out += `static const GFXfont kFont_${n} = {\n`;
+    out += `  (uint8_t*)kFontBitmaps_${n},\n  (GFXglyph*)kFontGlyphs_${n},\n`;
+    out += `  0x${gfx.first.toString(16)}, 0x${gfx.last.toString(16)}, ${gfx.yAdvance} };\n\n`;
+    return out;
+  }
+  out += `// ${gfx.ranges.length} EncodeRange entries: GFXfont indexes glyphs by offset\n`;
+  out += `// within a range, so a scattered character set needs one per contiguous run.\n`;
+  out += `static const lgfx::v1::EncodeRange kFontRanges_${n}[] = {\n`;
+  gfx.ranges.forEach((r, i) => {
+    out += `  { 0x${r.start.toString(16)}, 0x${r.end.toString(16)}, 0x${r.base.toString(16)} }` +
+      (i + 1 < gfx.ranges.length ? ',' : '') + '\n';
+  });
+  out += '};\n';
+  out += `static const lgfx::v1::GFXfont kFont_${n} = {\n`;
+  out += `  (uint8_t*)kFontBitmaps_${n},\n  (lgfx::v1::GFXglyph*)kFontGlyphs_${n},\n`;
+  out += `  0x${gfx.first.toString(16)}, 0x${gfx.last.toString(16)}, ${gfx.yAdvance},\n`;
+  out += `  ${gfx.ranges.length}, (lgfx::v1::EncodeRange*)kFontRanges_${n} };\n\n`;
+  return out;
 }
 
 const hex = (css) => '0x' + (css || '#000000').replace('#', '').padStart(6, '0').toLowerCase();
@@ -115,14 +163,19 @@ export function generateHeader(project, opts = {}) {
   s += `namespace detail {\n\n`;
 
   // Generated custom fonts (§8.7.7): the glyph bytes live in this header, so
-  // the sketch needs no font files and no runtime loading. Only fonts enabled
-  // on an exported profile are emitted — the same flash policy that keeps
-  // preset fonts from linking where they are not used (§8.7.4).
+  // the sketch needs no font files. Only fonts enabled on an exported profile
+  // are emitted — the same flash policy that keeps preset fonts from linking
+  // where they are not used (§8.7.4).
+  //
+  // u8g2 and GFXfont become `const` objects the layout table points straight at.
+  // BFF and VLW cannot: LovyanGFX parses their tables at run time, so they get a
+  // font object plus a wrapper over the byte array, loaded once by begin().
   const fontData = opts.fontData || new Map();
   const usedCustom = [...new Set(profiles.flatMap((pr) => profileFonts(project, pr.id)))]
     .filter((n) => isCustomFont(project, n))
     .sort();
   const emittedFonts = new Set();
+  const runtimeFonts = [];
   for (const n of usedCustom) {
     const fd = fontData.get(n);
     if (!fd) {
@@ -132,16 +185,46 @@ export function generateHeader(project, opts = {}) {
       s += `//          Text using it falls back to the default font.\n\n`;
       continue;
     }
-    s += `// --- ${n}: ${fd.stats.glyphCount} glyphs, ${fd.stats.height}px, ${fd.data.length} bytes\n`;
+    const fmt = fd.format || 'u8g2';
+    const depth = fmt === 'bff' ? `${fd.bpp || 1}bpp` : fmt === 'vlw' ? '8bpp' : '1bpp';
+    s += `// --- ${n}: ${fd.stats.glyphCount} glyphs, ${fd.stats.height}px, ` +
+      `${fd.data.length} bytes, ${fmt} ${depth}\n`;
     s += `// ${fontNotice(fd).split('\n').join('\n// ')}\n`;
-    s += `static const uint8_t kFontData_${n}[${fd.data.length}] = {\n`;
-    for (let i = 0; i < fd.data.length; i += 16) {
-      s += '  ' + Array.from(fd.data.slice(i, i + 16), (b) => '0x' + b.toString(16).padStart(2, '0')).join(', ') +
-        (i + 16 < fd.data.length ? ',' : '') + '\n';
+    if (fmt === 'gfx') {
+      s += emitGfxFont(n, fd);
+    } else {
+      s += byteArray(`kFontData_${n}`, fd.data);
+      if (fmt === 'u8g2') {
+        s += `static const lgfx::U8g2font kFont_${n}(kFontData_${n});\n\n`;
+      } else {
+        // The wrapper is what the font reads glyph bytes through at DRAW time
+        // (RunTimeFont::_fontData), so it has to outlive every draw, not just
+        // the load. Both are file-scope statics for exactly that reason.
+        const type = fmt === 'bff' ? 'BFFfont' : 'VLWfont';
+        if (fmt === 'bff') {
+          s += `// BFF needs LovyanGFX 1.2.21+ / M5GFX 0.2.21+ (earlier versions have no BFFfont).\n`;
+        }
+        s += `static lgfx::v1::PointerWrapper kFontWrap_${n};\n`;
+        s += `static lgfx::v1::${type} kFont_${n};\n\n`;
+        runtimeFonts.push(n);
+      }
     }
-    s += `};\n`;
-    s += `static const lgfx::U8g2font kFont_${n}(kFontData_${n});\n\n`;
     emittedFonts.add(n);
+  }
+
+  if (runtimeFonts.length) {
+    s += `// Parses the tables of every run-time font above. Idempotent, and called\n`;
+    s += `// from Screen::begin() — until it runs, those fonts have no glyphs and the\n`;
+    s += `// renderer draws their Text in the default font instead (§8.7.7).\n`;
+    s += `inline void initRuntimeFonts() {\n`;
+    s += `  static bool done = false;\n`;
+    s += `  if (done) return;\n`;
+    s += `  done = true;\n`;
+    runtimeFonts.forEach((n) => {
+      s += `  kFontWrap_${n}.set(kFontData_${n});\n`;
+      s += `  kFont_${n}.loadFont(&kFontWrap_${n});\n`;
+    });
+    s += `}\n\n`;
   }
 
   s += `static const lgfxsb::PartDesc kParts[] = {\n`;
@@ -279,6 +362,11 @@ export function generateHeader(project, opts = {}) {
   });
   s += ` public:\n`;
   s += `  explicit Screen(lgfx::LGFX_Device& gfx) : Base(gfx, project) {}\n`;
+  if (runtimeFonts.length) {
+    s += `  // BFF / VLW fonts are parsed at run time, so this hook is required for\n`;
+    s += `  // them — without it their Text draws in the default font (§8.7.7).\n`;
+    s += `  void begin() { Base::begin(); detail::initRuntimeFonts(); }\n`;
+  }
   s += `  void setProfile(Profile p) { _profile = static_cast<uint8_t>(p); }\n`;
   s += `  void show(lgfxsb::SceneId id) { renderScene(id, nullptr, 0); }\n`;
   project.scenes.forEach((sc) => {

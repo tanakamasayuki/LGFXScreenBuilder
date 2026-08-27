@@ -15,7 +15,7 @@
 import { loadGoogleFont } from './googlefonts.js';
 import { codepointsOf } from './charsets.js';
 import {
-  createBitmap, drawString, generateFont, loadTtf, unloadTtf,
+  createBitmap, drawString, generateFont, getPixel, loadTtf, unloadTtf,
 } from 'lgfx-font-tool';
 
 /** Draw a neutral LGFXFontTool model with the pixel-exact LovyanGFX renderer. */
@@ -33,7 +33,10 @@ export function drawModel(canvas, model, text, scale = 1, colors = {}) {
   });
   const widthOf = (cell) => cell.why ? tofuW + 1 : Math.max(0, cell.glyph.xAdvance);
   const w = Math.max(1, cells.reduce((sum, cell) => sum + widthOf(cell), 0));
-  const bmp = createBitmap(w, h, 1);
+  // See design.js: a 1bpp target would flatten an anti-aliased font's coverage,
+  // so the preview would look identical for every depth.
+  const aa = model.meta?.drawProfile === 'vlw';
+  const bmp = createBitmap(w, h, aa ? 8 : 1);
   let pen = 0;
   let drawn = 0;
   for (const cell of cells) {
@@ -54,10 +57,14 @@ export function drawModel(canvas, model, text, scale = 1, colors = {}) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = colors.fg || '#7fe3a0';
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    if (bmp.data[y * bmp.stride + (x >> 3)] & (0x80 >> (x & 7))) {
-      ctx.fillRect(x * scale, y * scale, scale, scale);
-    }
+    const v = getPixel(bmp, x, y);
+    if (!v) continue;
+    // The background is already painted, so alpha blends against it the same way
+    // LovyanGFX blends against its base color on the device.
+    ctx.globalAlpha = aa ? v / 255 : 1;
+    ctx.fillRect(x * scale, y * scale, scale, scale);
   }
+  ctx.globalAlpha = 1;
   const marker = { missing: colors.missing || '#ff6b6b', excluded: colors.excluded || '#e8a33d' };
   pen = 0;
   for (const cell of cells) {

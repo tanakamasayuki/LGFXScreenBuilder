@@ -27,12 +27,31 @@ const localFiles = new Map(); // name -> ArrayBuffer
 // changes nothing about the primary) does not rasterize the whole set again.
 const primedPasses = new Map(); // name -> { key, result }
 
+// Output format (§8.7.7). u8g2 stays the default: it is what every project
+// generated before formats were selectable, and what a CJK set can afford.
+export const formatOf = (r) => r.format || 'u8g2';
+
+// Coverage depth. Only BFF offers a choice; the others are fixed by the format,
+// so this is derived rather than stored for them.
+export const bppOf = (r) => {
+  const f = formatOf(r);
+  if (f === 'vlw') return 8;
+  if (f === 'bff') return r.bpp || 1;
+  return 1;
+};
+
+// Anything storing more than one bit per pixel has to be rasterized from
+// coverage, not from a threshold — the neutral model must be 8bpp and the
+// encoder quantizes down. Switching this changes the glyphs, not just the
+// packing, which is why it belongs in the cache key below.
+export const isAntiAliased = (r) => bppOf(r) > 1;
+
 // Identifies a recipe, so an edit invalidates the cached bytes but a no-op
 // re-render does not.
 export const recipeKey = (r) => JSON.stringify([
   r.source?.kind, r.source?.family, r.source?.weight, r.source?.italic,
   r.size, r.threshold, setsOf(r).slice().sort(), r.customText, r.customRanges,
-  r.fallback || null,
+  r.fallback || null, formatOf(r), bppOf(r),
 ]);
 
 // A recipe's set list. Set meaning and resolution belong to LGFXFontToolJs.
@@ -62,6 +81,8 @@ export async function buildFont(name, recipe, { onProgress } = {}) {
     throw new Error(`"${name}": the local font file is not available in this session`);
   }
 
+  const format = formatOf(recipe);
+  const bpp = bppOf(recipe);
   const { model, missing, sources, primed } = await composeFont({
     source: { kind: recipe.source.kind, family: recipe.source.family, buffer },
     fallback: recipe.fallback || null,
@@ -69,17 +90,23 @@ export async function buildFont(name, recipe, { onProgress } = {}) {
     codepoints: cps,
     style,
     threshold: recipe.threshold,
+    bpp: isAntiAliased(recipe) ? 8 : 1,
     primed: primedPasses.get(name) || null,
     onProgress,
   });
   primedPasses.set(name, primed);
   if (!model.glyphs.size) throw new Error(`"${name}": the typeface has none of the selected characters`);
 
-  const check = canEncode(model, 'u8g2');
+  const check = canEncode(model, format);
+  // A font-level error cannot be dropped away, so surface it as the build
+  // failure it is rather than letting encode() throw an opaque error later.
+  const fatal = check.issues.find((i) => i.level === 'error' && i.codepoint === undefined);
+  if (fatal) throw new Error(`"${name}": ${format} cannot hold this font (${fatal.code})`);
   const skipped = [...new Map(check.issues
     .filter((i) => i.level === 'error' && i.codepoint !== undefined)
     .map((i) => [i.codepoint, { code: i.codepoint, reason: i.code }])).values()];
-  const data = encode(model, { format: 'u8g2', dropInvalid: true });
+  // `bpp` is a BFF-only option; passing it elsewhere is meaningless, not wrong.
+  const data = encode(model, { format, dropInvalid: true, ...(format === 'bff' ? { bpp } : {}) });
   const entry = {
     key: recipeKey(recipe),
     data,
@@ -90,6 +117,8 @@ export async function buildFont(name, recipe, { onProgress } = {}) {
     // The first source is the typeface asked for; the rest filled in gaps.
     source: sources[0],
     charset: { presets: setsOf(recipe), codepoints: cps },
+    format,
+    bpp,
     stats: {
       height: model.ascent + model.descent, ascent: model.ascent, descent: model.descent,
       glyphCount: model.glyphs.size - skipped.length, bytes: data.length,

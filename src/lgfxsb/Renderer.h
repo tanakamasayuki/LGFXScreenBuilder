@@ -36,6 +36,35 @@ namespace lgfxsb
   // renderTransparent() has to be a preprocessor conditional.
   static constexpr bool kTransparentScenes = (LGFXSB_TRANSPARENT_SCENES != 0);
 
+  // Resolve a PartLayout::font pointer to a font that is safe to draw with.
+  //
+  // u8g2 and GFXfont are `const` objects that are complete the moment they are
+  // linked. VLW and BFF are not: LovyanGFX parses their tables at run time, and
+  // until the generated detail::initRuntimeFonts() has run (from Screen::begin(),
+  // §8.7.7) their glyph tables are null pointers. Drawing through one in that
+  // state walks those nulls, so a sketch that forgot begin() would fault instead
+  // of showing text. Falling back to the default font makes the mistake visible
+  // as plain-looking text rather than a crash.
+  //
+  // BFFfont reports itself as ft_ttf, which is why both types are checked here.
+  inline const lgfx::v1::IFont *usableFont(const void *font)
+  {
+    if (font == nullptr)
+    {
+      return &lgfx::v1::fonts::Font0;
+    }
+    const auto *f = static_cast<const lgfx::v1::IFont *>(font);
+    const auto type = f->getType();
+    if (type == lgfx::v1::IFont::font_type_t::ft_vlw || type == lgfx::v1::IFont::font_type_t::ft_ttf)
+    {
+      if (!static_cast<const lgfx::v1::RunTimeFont *>(f)->_fontLoaded)
+      {
+        return &lgfx::v1::fonts::Font0;
+      }
+    }
+    return f;
+  }
+
   template <class Canvas>
   class RendererT
   {
@@ -126,6 +155,25 @@ namespace lgfxsb
                      const Value *values, uint16_t valueCount,
                      OverlayThunk overlay, const void *scene, const void *fnp)
     {
+      // Anti-aliased fonts (VLW / BFF) blend their partial-coverage pixels toward
+      // LovyanGFX's BASE color, not toward what is already on the canvas: a Text
+      // is drawn with the one-argument setTextColor(), which leaves
+      // back_rgb888 == fore_rgb888, and lgfx_fonts.cpp then falls back to
+      // getBaseColor(). That defaults to black, so on any non-black background an
+      // anti-aliased glyph would come out ringed with a dark halo. Point it at the
+      // color the text actually sits on.
+      //
+      // VLW self-corrects on a READABLE panel — it reads the framebuffer back and
+      // blends against the real pixels (lgfx_fonts.cpp "alpha blend mode"). BFF
+      // never does: draw_alpha_bitmap_common has no such branch and always uses
+      // the base color. So this is required for BFF everywhere, and for VLW on
+      // the many SPI panels that cannot be read back.
+      //
+      // This is per SCENE, so it is right for text on the background and only
+      // approximate for text on top of a Rect of some other color (§8.7.7).
+      // A 1bpp font ignores it entirely — it writes solid pixels or nothing.
+      g.setBaseColor(_project.background);
+
       // A transparent scene must NOT paint a background: buffered mode has
       // already auto-cleared the tile with the color key (LGFXVirtualCanvas SPEC
       // §22.3), and in direct mode leaving the pixels alone IS the transparency.
@@ -203,11 +251,10 @@ namespace lgfxsb
           snprintf(buf, sizeof(buf), "%ld", v.i);
           content = buf;
         }
-        // Preset font (§8.7.5): the descriptor stores &lgfx::v1::fonts::X as a
-        // void* (null = default). Set it on every Text so the previous Text's
-        // font does not leak into this one.
-        g.setFont(lo.font ? static_cast<const lgfx::v1::IFont *>(lo.font)
-                          : &lgfx::v1::fonts::Font0);
+        // Font (§8.7.5): the descriptor stores &lgfx::v1::fonts::X, or the address
+        // of a generated font object, as a void* (null = default). Set it on
+        // every Text so the previous Text's font does not leak into this one.
+        g.setFont(usableFont(lo.font));
         g.setTextColor(color565(lo.color));
         g.setTextSize(lo.size);
         g.setTextDatum(static_cast<lgfx::textdatum_t>(lo.datum));

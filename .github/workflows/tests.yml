@@ -71,6 +71,13 @@ jobs:
       - name: Check the character-set model
         run: node tests/fontgen/charsets.mjs
 
+      # SPEC §8.7.7: the device test for every output format needs its header.
+      # Generating it here (rather than committing it) keeps it from drifting
+      # from the codegen, and it needs no browser — the glyphs come from a font
+      # LovyanGFX already ships.
+      - name: Generate the font-format device fixture
+        run: node tests/build_font_formats/gen.mjs
+
       # The rasterizer runs on FontFace + canvas, so the generator and the
       # editor's custom-font flow can only be exercised in a real browser.
       - name: Install Chromium for the font-generator tests

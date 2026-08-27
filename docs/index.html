@@ -372,6 +372,27 @@
         <div class="field"><label data-i18n="fg.threshold">Ink threshold</label><input id="cf-threshold" type="number" min="1" max="255" value="128"></div>
       </div>
 
+      <!-- Output format (SPEC 8.7.7). The depth selector only appears for BFF,
+           the one format that lets you choose it. -->
+      <div class="fg-row">
+        <div class="field"><label data-i18n="fg.format">Output format</label>
+          <select id="cf-format">
+            <option value="u8g2" selected>u8g2 (1bpp)</option>
+            <option value="gfx">GFXfont (1bpp)</option>
+            <option value="bff">BFF (anti-aliased)</option>
+            <option value="vlw">VLW (8bpp anti-aliased)</option>
+          </select>
+        </div>
+        <div class="field" id="cf-bpp-field"><label data-i18n="fg.bpp">Depth</label>
+          <select id="cf-bpp">
+            <option value="1">1bpp</option>
+            <option value="2" selected>2bpp</option>
+            <option value="4">4bpp</option>
+          </select>
+        </div>
+      </div>
+      <p class="sub" id="cf-format-note"></p>
+
       <!-- Live preview sits with the typeface/size controls, not below the
            dialog: those are the settings you cannot judge from numbers. -->
       <div class="fg-row">

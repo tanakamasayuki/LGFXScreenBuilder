@@ -433,17 +433,36 @@ Arduino 出力では、LovyanGFX/M5GFX で扱いやすいフォント参照方�
 データとして出力する。必要な文字しか含まないので、300 文字で足りる日本語 UI は 300 文字ぶんの
 フラッシュしか使わない。
 
-**出力形式は u8g2。** LovyanGFX が描画できる埋め込み可能形式は 3 つある（`lgfx::U8g2font`、
-`EncodeRange` 付き `lgfx::GFXfont`、`loadFont(const uint8_t*)` 経由の VLW）が、生成器は
-**u8g2** を出力する。1bpp なので CJK でも現実的なサイズに収まり、`constexpr` でフラッシュに
-置かれ RAM を使わず実行時ロードも不要で、なにより LovyanGFX 自身の
-`fonts::lgfxJapanGothic_*` / `fonts::efont*` がまさにこの形式なので、実機側に新しいコードが
-一切増えない。エンコーダは LGFXFontToolJs 側にあり、LovyanGFX の
-`src/lgfx/v1/lgfx_fonts.cpp` のデコーダを仕様として実装している。
-`tests/fontgen/u8g2_roundtrip.mjs` はそのデコーダの独立したミラーを持ち、実際の同梱
+**出力形式は選択式で、既定は u8g2。** レシピは `format`（`u8g2` / `gfx` / `bff` / `vlw`）と、
+BFF だけが使う `bpp` を持つ。どちらも u8g2 の 1bpp を既定値とするので、形式が選べる前に
+書かれたレシピはバイト単位で同一の出力になる。エンコーダは LGFXFontToolJs 側にあり、
+LovyanGFX の `src/lgfx/v1/lgfx_fonts.cpp` のデコーダを仕様として実装している。
+`tests/fontgen/u8g2_roundtrip.mjs` は u8g2 デコーダの独立したミラーを持ち、実際の同梱
 フォントでミラー自体を検証したうえで、ライブラリのエンコーダを往復させる。グリフは
-uint16 で参照されるため U+FFFF を超えるコードポイントは表現できず、黙って落とさず
-「除外した」と報告する。
+どの形式でも uint16 で参照されるため U+FFFF を超えるコードポイントは表現できず、
+黙って落とさず「除外した」と報告する。実測したサイズと速度は
+[docs/FONT_FORMATS.ja.md](docs/FONT_FORMATS.ja.md) にある。
+
+u8g2 が既定なのは、1bpp で CJK でも現実的なサイズに収まり、`const` オブジェクトとして
+フラッシュに置かれ RAM もロード処理も不要で、なにより LovyanGFX 自身の
+`fonts::lgfxJapanGothic_*` / `fonts::efont*` がまさにこの形式だからである。GFXfont は
+同じサイズ帯で、u8g2 の 63px advance 上限と 255バイト/グリフ上限を持たない。
+BFF（2/4bpp）と VLW（8bpp）はアンチエイリアス付き。
+
+**実行時ロード形式。** VLW と BFF は定数ではない。LovyanGFX が実行時にテーブルを解析するため、
+生成ヘッダはフォントオブジェクトとバイト配列の `PointerWrapper`、そして `Screen::begin()` が
+呼ぶ `detail::initRuntimeFonts()` を出力する。`display.loadFont()` は意図的に使わない
+——`LGFXBase` は `_runtime_font` を 1 本しか持たず `setFont()` がそれを reset するため、
+1 プロジェクトに実行時フォントが 2 本あると互いを破棄してしまう。`begin()` が走るまで
+それらのフォントはグリフを持たないので、`Renderer::usableFont()` がその状態を検知し、
+ヌルのテーブルを参照せず既定フォントへフォールバックする。
+
+**アンチエイリアスはシーン背景に向けて合成する。** Text は 1 引数の `setTextColor()` で
+描かれ、`back_rgb888 == fore_rgb888` のままになる。LovyanGFX はこのとき部分被覆を
+`getBaseColor()` へ向けて合成し、その既定値は黒である。そこでレンダラはシーンごとに
+`setBaseColor(project.background)` を設定する。これが無いと、黒以外の背景では AA の
+グリフに暗いハロが付く。背景の上のテキストには厳密に正しく、別の色の Rect の上に載る
+テキストには近似となる。
 
 **ラスタライズはブラウザ自身のテキストエンジン。** グリフはフォントパーサを同梱せず
 `FontFace` ＋ 2D canvas で描く。ブラウザが読めるものは全て読め（TTF、OTF/CFF、WOFF/WOFF2、

@@ -12,7 +12,8 @@ import { renderCharmap } from './charmap.js';
 import { drawModel, createLivePreview, autoSample } from './preview.js';
 import { FONTS, FALLBACK_CHAIN } from './googlefonts.js';
 import { probeFallback, FALLBACK_AUTO } from './compose.js';
-import { buildFont, cachedFont, isCached, rememberLocalFile, hasLocalFile, forgetFont, recipeKey } from './build.js';
+import { buildFont, cachedFont, isCached, rememberLocalFile, hasLocalFile, forgetFont, recipeKey,
+         formatOf, bppOf, isAntiAliased } from './build.js';
 
 const $ = (id) => document.getElementById(id);
 const fmtBytes = (n) => (n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(2)} MB`);
@@ -43,6 +44,11 @@ const blankRecipe = () => ({
   // an embedded font costs flash on every profile it is enabled for.
   size: 24,
   threshold: 128,
+  // Output format (§8.7.7). u8g2 is 1bpp, costs no RAM and needs no load step,
+  // which is what makes a CJK set affordable; the others trade that away for
+  // anti-aliasing or for the format limits u8g2 imposes.
+  format: 'u8g2',
+  bpp: 2,
   // Flat list of set ids (see charsets.js); the picker groups them into axes.
   sets: ['ascii', 'hiragana', 'katakana', 'jaPunct', 'hanJa1', 'symUnits'],
   customText: '',
@@ -50,6 +56,29 @@ const blankRecipe = () => ({
   // null until the user accepts the offer: fallback never happens unasked.
   fallback: null,
 });
+
+// What each format actually costs, so the choice is not made on the name alone.
+// Sizes are the same six glyphs encoded four ways (u8g2 123B / BFF-2bpp 256B /
+// BFF-4bpp 365B / VLW 621B); the draw figures are from the same measurement on
+// an off-screen sprite, where u8g2 and VLW came out level and BFF about 3x.
+const FORMAT_NOTES = {
+  u8g2: 'Smallest, no RAM, no load step. 1bpp. Advance is capped at 63px and a glyph at 255 bytes.',
+  gfx: 'Same 1bpp size class, without u8g2\u2019s 63px advance and 255-byte glyph limits \u2014 so it reaches sizes u8g2 refuses. Glyph lookup is a linear scan, which is slow for a scattered (CJK) set.',
+  bff: 'Anti-aliased at 2 or 4bpp for roughly 2\u20133x the flash. Decoded per character while drawing, so it is the slowest of the four. Needs LovyanGFX 1.2.21+ / M5GFX 0.2.21+.',
+  vlw: 'Full 8bpp anti-aliasing, and as fast to draw as u8g2. Costs about 5x the flash and 9 bytes of RAM per glyph, permanently \u2014 affordable for a small set, not for a CJK one.',
+};
+
+// BFF is the only format with a depth to choose; u8g2 and GFXfont are 1bpp and
+// VLW is 8bpp by definition. Anything above 1bpp also makes the ink threshold
+// meaningless, because coverage is kept instead of being cut at a value.
+function syncFormatUI() {
+  if (!dlg) return;
+  const fmt = formatOf(dlg.recipe);
+  $('cf-bpp-field').hidden = fmt !== 'bff';
+  const thresholdField = $('cf-threshold').closest('.field');
+  if (thresholdField) thresholdField.hidden = isAntiAliased(dlg.recipe);
+  $('cf-format-note').textContent = FORMAT_NOTES[fmt] || '';
+}
 
 // --- right-pane list ------------------------------------------------------
 
@@ -166,6 +195,9 @@ export function openDialog(name = null) {
   $('cf-name').disabled = !!name; // renaming would orphan the Text refs
   $('cf-size').value = dlg.recipe.size;
   $('cf-threshold').value = dlg.recipe.threshold;
+  $('cf-format').value = formatOf(dlg.recipe);
+  $('cf-bpp').value = String(dlg.recipe.bpp || 2);
+  syncFormatUI();
   $('cf-weight').value = dlg.recipe.source.weight;
   $('cf-custom').value = dlg.recipe.customText;
   $('cf-ranges').value = dlg.recipe.customRanges;
@@ -312,6 +344,21 @@ export function initCustomFonts() {
   $('cf-weight').addEventListener('change', () => { dlg.recipe.source.weight = Number($('cf-weight').value); forgetFallback(); live.refresh(0); });
   $('cf-size').addEventListener('input', () => { dlg.recipe.size = Number($('cf-size').value) || 32; updateCount(); live.refresh(); });
   $('cf-threshold').addEventListener('input', () => { dlg.recipe.threshold = Number($('cf-threshold').value) || 128; live.refresh(); });
+  // Changing format or depth changes the GLYPHS, not just the packing: a binary
+  // pass and an anti-aliased one rasterize differently, so the built bytes are
+  // dropped and the preview re-rendered rather than reused.
+  $('cf-format').addEventListener('change', () => {
+    dlg.recipe.format = $('cf-format').value;
+    dlg.built = null;
+    syncFormatUI();
+    live.refresh(0);
+  });
+  $('cf-bpp').addEventListener('change', () => {
+    dlg.recipe.bpp = Number($('cf-bpp').value) || 2;
+    dlg.built = null;
+    syncFormatUI();
+    live.refresh(0);
+  });
 
   // Live preview beside the controls: only the sample string is rasterized, so
   // it stays instant no matter how large the character set is.

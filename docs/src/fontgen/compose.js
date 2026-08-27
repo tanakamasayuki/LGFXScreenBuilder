@@ -24,10 +24,10 @@ export const FALLBACK_AUTO = 'auto';
 // Identifies a primary rasterization, so accepting a fallback offer can reuse
 // the pass already done instead of redoing the whole set. Cheap FNV-1a over the
 // codepoints plus the settings that change how a glyph is drawn.
-function primaryKey(source, size, threshold, style, codepoints) {
+function primaryKey(source, size, threshold, style, codepoints, bpp) {
   let h = 0x811c9dc5;
   for (const c of codepoints) { h ^= c; h = Math.imul(h, 0x01000193); }
-  return [source.kind, source.family, size, threshold, style.weight, style.italic,
+  return [source.kind, source.family, size, threshold, bpp, style.weight, style.italic,
     codepoints.length, h >>> 0].join('|');
 }
 
@@ -63,7 +63,10 @@ async function acquire(source, codepoints, style) {
  *   size       - character height in px
  *   codepoints - what to include (BMP only; the caller splits)
  *   style      - { weight, italic }
- *   threshold  - 1bpp alpha cutoff
+ *   bpp        - glyph coverage depth: 1 (binary) or 8 (anti-aliased). Formats
+ *                that store more than one bit per pixel need the 8bpp model;
+ *                BFF quantizes it down to 2 or 4 at encode time.
+ *   threshold  - 1bpp alpha cutoff, ignored at 8bpp
  *   onProgress - ({ done, total, family }) during rasterizing
  *   primed     - a previous run's `primed`, to skip re-rasterizing the primary
  *   chain      - families to try, overriding the automatic order (the offer
@@ -74,11 +77,11 @@ async function acquire(source, codepoints, style) {
  *   characters it supplied.
  */
 export async function composeFont({
-  source, fallback = null, size, codepoints, style = {}, threshold = 128, onProgress,
+  source, fallback = null, size, codepoints, style = {}, threshold = 128, bpp = 1, onProgress,
   primed = null, chain: plan = null,
 } = {}) {
   const open = [];
-  const key = primaryKey(source, size, threshold, style, codepoints);
+  const key = primaryKey(source, size, threshold, style, codepoints, bpp);
   try {
     let primaryCss = null;
     let first = primed && primed.key === key ? primed.result : null;
@@ -87,7 +90,7 @@ export async function composeFont({
       primaryCss = primary.family;
       open.push(...primary.faces);
       const made = await generateFont({
-        family: primary.family, px: size, codepoints, style, threshold,
+        family: primary.family, px: size, codepoints, style, threshold, bpp,
         familyName: source.family,
         onProgress: (p) => onProgress?.({ ...p, family: source.family }),
       });
@@ -128,7 +131,7 @@ export async function composeFont({
           const fb = await acquire({ kind: 'google', family }, missing, style);
           open.push(...fb.faces);
           const probe = await rasterizeSet({
-            family: fb.family, size, codepoints: missing, style, threshold,
+            family: fb.family, size, codepoints: missing, style, threshold, bpp,
             sizing: first.sizing,
           });
           if (!probe.glyphs.length) continue;
@@ -157,7 +160,7 @@ export async function composeFont({
           open.push(...primary.faces);
         }
         const made = await generateFont({
-          family: primaryCss, fallbacks, px: size, codepoints, style, threshold,
+          family: primaryCss, fallbacks, px: size, codepoints, style, threshold, bpp,
           familyName: source.family,
           onProgress: (p) => onProgress?.({ ...p, family: source.family }),
         });

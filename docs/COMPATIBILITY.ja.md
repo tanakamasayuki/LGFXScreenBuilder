@@ -50,6 +50,9 @@
 | 透過シーンが不透明に描かれる | 上と同じ。`screen.supportsTransparentScenes()` が false になっているはず |
 | ちらつく／`isBuffered()` が false | バージョン問題ではなく **include 順**です。`<LGFXVirtualCanvas.h>` を生成ヘッダより前に |
 | 複数 `.cpp` でリンクがおかしい | 翻訳単位ごとに include の有無が食い違うと `Canvas` の型が変わり ODR 違反になります。ビルドフラグでプロジェクト全体にモードを固定してください |
+| `'lgfx::v1::BFFfont' has not been declared` | BFF フォントを使っている。`BFFfont` は **LovyanGFX 1.2.21 / M5GFX 0.2.21** から。更新するか、そのフォントを u8g2 / GFXfont / VLW で再生成する |
+| アンチエイリアス文字に暗いハロが出る | レンダラは `setBaseColor(project.background)` を設定している。シーンを自前で描く場合や、別色の Rect の上に AA 文字を置く場合は、実際に文字が載る色を base color に設定する |
+| 生成フォントが意図と違う字で描かれる | BFF / VLW なら `screen.begin()` を呼んでいない。これらは実行時に解析されるため、それまでレンダラは既定フォントへフォールバックする |
 | 生成ヘッダを手で直したら壊れた | `.h` は手編集しない前提です。編集はツール側で行い、再出力してください |
 
 ## 実践的な習慣

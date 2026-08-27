@@ -55,6 +55,9 @@ required.
 | A transparent scene renders opaque | Same cause; `screen.supportsTransparentScenes()` will be false |
 | Flicker, or `isBuffered()` is false | Not a version problem — **include order**. `<LGFXVirtualCanvas.h>` must come before the generated header |
 | Odd link errors across multiple `.cpp` files | If translation units disagree about the include, the `Canvas` type differs and that is an ODR violation. Pin the mode project-wide with a build flag |
+| `'lgfx::v1::BFFfont' has not been declared` | The project uses a BFF font. `BFFfont` arrived in **LovyanGFX 1.2.21 / M5GFX 0.2.21**; update, or regenerate that font as u8g2 / GFXfont / VLW |
+| Anti-aliased text has a dark halo | The renderer sets `setBaseColor(project.background)` for this. If you draw the scene yourself, or put anti-aliased text over a Rect of a different colour, set the base colour to what the text actually sits on |
+| A generated font draws in the wrong face | If it is a BFF or VLW font, `screen.begin()` was not called — those are parsed at run time and the renderer falls back to the default font until then |
 | You hand-edited the header and it broke | The `.h` is not meant to be edited — its first line says so. Change it in the tool and re-export |
 
 ## Habits that keep this painless
