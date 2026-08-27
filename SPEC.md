@@ -468,12 +468,22 @@ it, so two run-time fonts in one project would destroy each other. Until `begin(
 those fonts have no glyphs; `Renderer::usableFont()` detects that and falls back to the
 default font rather than dereferencing null tables.
 
-**Anti-aliasing blends toward the scene background.** A Text is drawn with the one-argument
+**Anti-aliasing blends toward a per-Text background.** A Text is drawn with the one-argument
 `setTextColor()`, which leaves `back_rgb888 == fore_rgb888`; LovyanGFX then blends partial
-coverage toward `getBaseColor()`, which defaults to black. The renderer therefore sets
-`setBaseColor(project.background)` per scene, without which anti-aliased glyphs acquire a
-dark halo on any non-black background. This is exact for text on the background and
-approximate for text over a Rect of another colour.
+coverage toward `getBaseColor()`, which defaults to black — so without setting it,
+anti-aliased glyphs acquire a dark halo on any non-black background. `PartLayout::bg` carries
+the colour each Text sits on, defaulting to `kInheritBackground` (the screen fill), and the
+renderer applies it per part. The field is emitted only when the project has an anti-aliased
+font, so a project without one generates byte-identical output (§10.1).
+
+Per Text rather than per scene because text sits on Rects at least as often as on the
+background. The value is explicit rather than derived from the layout: auto-detection would
+make rendering a function of unrelated parts, and would still guess for text over an Image or
+spanning two colours. The editor previews the same blend, so a wrong value shows as a halo on
+the canvas.
+
+The base colour is not text state — LovyanGFX also fills `clear()`, `clearDisplay()` and the
+`setScrollRect()` gap with it — so `drawSceneTo` saves and restores it around the scene.
 
 **Rasterizing — the browser's own text engine.** Glyphs are drawn through `FontFace` +
 a 2D canvas rather than a bundled font parser. That accepts anything the browser accepts

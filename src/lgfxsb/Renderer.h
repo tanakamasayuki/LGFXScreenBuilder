@@ -155,24 +155,12 @@ namespace lgfxsb
                      const Value *values, uint16_t valueCount,
                      OverlayThunk overlay, const void *scene, const void *fnp)
     {
-      // Anti-aliased fonts (VLW / BFF) blend their partial-coverage pixels toward
-      // LovyanGFX's BASE color, not toward what is already on the canvas: a Text
-      // is drawn with the one-argument setTextColor(), which leaves
-      // back_rgb888 == fore_rgb888, and lgfx_fonts.cpp then falls back to
-      // getBaseColor(). That defaults to black, so on any non-black background an
-      // anti-aliased glyph would come out ringed with a dark halo. Point it at the
-      // color the text actually sits on.
-      //
-      // VLW self-corrects on a READABLE panel — it reads the framebuffer back and
-      // blends against the real pixels (lgfx_fonts.cpp "alpha blend mode"). BFF
-      // never does: draw_alpha_bitmap_common has no such branch and always uses
-      // the base color. So this is required for BFF everywhere, and for VLW on
-      // the many SPI panels that cannot be read back.
-      //
-      // This is per SCENE, so it is right for text on the background and only
-      // approximate for text on top of a Rect of some other color (§8.7.7).
-      // A 1bpp font ignores it entirely — it writes solid pixels or nothing.
-      g.setBaseColor(_project.background);
+      // Text sets the base color per part (see drawPart), and the base color is
+      // not text state: LovyanGFX also fills clear() / clearDisplay() and the
+      // setScrollRect() gap with it. Leaving a part's value behind would mean a
+      // later display.clear() in the sketch painted the screen in whatever colour
+      // the last anti-aliased Text happened to use, so the scene puts it back.
+      const uint32_t savedBase = g.getBaseColor();
 
       // A transparent scene must NOT paint a background: buffered mode has
       // already auto-cleared the tile with the color key (LGFXVirtualCanvas SPEC
@@ -192,6 +180,7 @@ namespace lgfxsb
       }
       if (overlay)
         overlay(g, scene, fnp);
+      g.setBaseColor(savedBase);
     }
 
     void drawPart(Canvas &g, const PartDesc &pd, const PartLayout &lo, const Value &v)
@@ -251,6 +240,20 @@ namespace lgfxsb
           snprintf(buf, sizeof(buf), "%ld", v.i);
           content = buf;
         }
+        // An anti-aliased font (VLW / BFF) blends partial coverage toward the BASE
+        // color, not toward what is already on the canvas: setTextColor() below
+        // is the one-argument form, which leaves back_rgb888 == fore_rgb888, and
+        // lgfx_fonts.cpp then falls back to getBaseColor(). Point it at the color
+        // this text actually sits on, or at the screen fill when it has no
+        // override. A 1bpp font ignores it — it writes solid pixels or nothing.
+        //
+        // VLW self-corrects on a READABLE panel (it reads the framebuffer back
+        // and blends against the real pixels — lgfx_fonts.cpp "alpha blend
+        // mode"). BFF never does: draw_alpha_bitmap_common has no such branch.
+        // So this matters for BFF everywhere, and for VLW on the many SPI panels
+        // that cannot be read back.
+        g.setBaseColor(lo.bg == kInheritBackground ? _project.background : lo.bg);
+
         // Font (§8.7.5): the descriptor stores &lgfx::v1::fonts::X, or the address
         // of a generated font object, as a void* (null = default). Set it on
         // every Text so the previous Text's font does not leak into this one.

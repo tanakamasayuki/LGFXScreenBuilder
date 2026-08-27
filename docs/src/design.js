@@ -5,7 +5,7 @@ import { store, update, mutate, checkpoint } from './store.js';
 import {
   DATUMS, DATUM_FX, DATUM_FY, orient, dispDims, pxOf, sceneById, profileById, partDef, placement,
   addPart, removePart, renamePart, addScene, removeScene, renameScene, moveScene,
-  absOrigin, reorderPart, assetById, profileFonts,
+  absOrigin, reorderPart, assetById, profileFonts, fontEntry,
   reconcileAiLayout, applyAiLayout,
   isTransparentScene, transparentColorOf, to565,
 } from './model.js';
@@ -67,12 +67,25 @@ function loadingTextBox(text, fontName, size) {
   return { w: Math.max(scale, units * h), h };
 }
 
+// Only VLW / BFF read the base colour, so the background-colour field is shown
+// only where it changes anything. A preset or a 1bpp generated font ignores it.
+function isAaFont(name) {
+  const rec = name ? fontEntry(store.project, name) : null;
+  const fmt = rec?.custom?.format;
+  return fmt === 'bff' || fmt === 'vlw';
+}
+
+// The colour an anti-aliased glyph blends against: the part's own override, or
+// the screen fill when it has none. Mirrors Renderer::drawPart exactly, which is
+// what keeps the canvas honest about halos.
+const bgOf = (e) => e.bgColor || store.project.background || '#000000';
+
 const rgbOf = (css) => {
   const n = parseInt(String(css || '#ffffff').replace('#', ''), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 };
 
-function drawExactText(canvas, font, text, size, color) {
+function drawExactText(canvas, font, text, size, color, bgColor) {
   const style = { sizeX: size, sizeY: size, datum: 'top-left' };
   const m = measureText(font, text, style);
   const w = Math.max(1, m.width), h = Math.max(1, m.height);
@@ -89,15 +102,22 @@ function drawExactText(canvas, font, text, size, color) {
   const ctx = canvas.getContext('2d');
   const img = ctx.createImageData(w, h);
   const [r, g, b] = rgbOf(color);
+  const [br, bgc, bb] = rgbOf(bgColor);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      // Coverage becomes alpha, so the canvas composites it over whatever the
-      // scene actually draws behind the text — which is what the device does.
       const v = getPixel(bmp, x, y);
       if (!v) continue;
       const i = (y * w + x) * 4;
-      img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = b;
-      img.data[i + 3] = aa ? v : 255;
+      // Deliberately NOT alpha over the real backdrop. LovyanGFX blends partial
+      // coverage against the base colour, so a base colour that does not match
+      // what is behind produces a halo on the panel. Reproducing the same blend
+      // here means the canvas shows that halo instead of hiding it — the editor
+      // looking worse than the device is the point.
+      const a = aa ? v / 255 : 1;
+      img.data[i] = Math.round(br + (r - br) * a);
+      img.data[i + 1] = Math.round(bgc + (g - bgc) * a);
+      img.data[i + 2] = Math.round(bb + (b - bb) * a);
+      img.data[i + 3] = 255;
     }
   }
   ctx.putImageData(img, 0, 0);
@@ -196,7 +216,7 @@ function renderCanvas() {
         const cv = document.createElement('canvas');
         cv.className = d.className;
         cv.dataset.id = def.id;
-        const box = drawExactText(cv, exact, e.text, e.size, e.color);
+        const box = drawExactText(cv, exact, e.text, e.size, e.color, bgOf(e));
         bw = box.w; bh = box.h;
         scr.appendChild(cv);
         target = cv;
@@ -367,6 +387,17 @@ function renderInspector() {
       (e.font && fontDetailUrl(e.font)
         ? ` <a class="font-detail" href="${fontDetailUrl(e.font)}" target="_blank" rel="noopener" title="${t('font.detailTitle')}">${t('font.detail')} ↗</a>` : '') +
       `</div>`;
+    // Only an anti-aliased font blends against a background, so the control
+    // appears only where it does something. The value shown when unset is the
+    // screen fill, which is what the renderer falls back to.
+    if (isAaFont(e.font)) {
+      h += `<div class="field"><label>${t('field.textBg')}</label>` +
+        `<span class="colorrow"><input type="color" data-k="bgColor" value="${bgOf(e)}">` +
+        `<code>${bgOf(e).toUpperCase()}</code>` +
+        (e.bgColor ? `<button class="mini" data-act="clear-bg">${t('field.textBgClear')}</button>` : '') +
+        `</span>` +
+        `<p class="sub">${t('field.textBgHint')}</p></div>`;
+    }
   } else if (def.type === 'Line') {
     h += `<div class="two">${row('x', t('field.x1'), 'number', e.x)}${row('y', t('field.y1'), 'number', e.y)}</div>`;
     h += `<div class="two">${row('x2', t('field.x2'), 'number', e.x2)}${row('y2', t('field.y2'), 'number', e.y2)}</div>`;
@@ -420,6 +451,13 @@ function renderInspector() {
       renderCanvas(); renderParts(); renderStatus();
     });
   });
+  // "Follow the screen fill" is a real state, not just a colour that happens to
+  // match: clearing the override means the text keeps tracking the background.
+  const clearBg = el.querySelector('[data-act="clear-bg"]');
+  if (clearBg) clearBg.onclick = () => {
+    delete e.bgColor;
+    renderCanvas(); renderInspector();
+  };
   const dsc = el.querySelector('#p-desc');
   if (dsc) dsc.oninput = (ev2) => { def.desc = ev2.target.value; };
   // Rename on commit (change, not input): no-op on invalid/duplicate id.

@@ -73,16 +73,35 @@ void setup()
   Serial.println("TEST start build_font_formats");
 
   lcd.init();
-  // begin() is what loads the run-time fonts (§8.7.7). Report the base color it
-  // leaves behind, because that is the value anti-aliasing blends toward.
   screen.begin();
-  screen.show(Scene::Main::id);
 
-  Serial.printf("BASECOLOR %06x\n", (unsigned)lcd.getBaseColor());
+  // The renderer sets the base colour per Text, and the base colour is NOT text
+  // state — LovyanGFX also fills clear() / clearDisplay() and the scroll gap
+  // with it. So a scene must put back what it found, or a later display.clear()
+  // in the sketch would paint in whatever colour the last Text happened to use.
+  // A deliberately odd value in, the same value out.
+  lcd.setBaseColor((uint32_t)0x123456u);
+  const uint32_t baseBefore = lcd.getBaseColor();
+  screen.show(Scene::Main::id);
+  Serial.printf("BASECOLOR before=%06x after=%06x\n",
+                (unsigned)baseBefore, (unsigned)lcd.getBaseColor());
   Serial.printf("PANEL %dx%d\n", (int)lcd.width(), (int)lcd.height());
   // An untouched corner IS the background, whatever depth the panel uses.
   const uint32_t bg = lcd.readPixel(lcd.width() - 4, lcd.height() - 4);
   Serial.printf("BG %06x bgGreen=%d\n", (unsigned)bg, (int)((bg >> 5) & 0x3f));
+
+  // The halo pair: same font, same light band, only PartLayout::bg differs.
+  // HaloGood is told the band's colour; HaloBad follows the dark screen fill,
+  // so its soft edges are dragged toward BLACK instead of toward the band —
+  // putting pixels darker than the correct blend can ever produce.
+  {
+    const uint32_t band = lcd.readPixel(190, 126);
+    int goodInk = 0, goodSh = 0, goodMin = 0, badInk = 0, badSh = 0, badMin = 0;
+    census(Row{"good", 124}, band, &goodInk, &goodSh, &goodMin);
+    census(Row{"bad", 144}, band, &badInk, &badSh, &badMin);
+    Serial.printf("HALO band=%06x good_shades=%d good_min=%d bad_shades=%d bad_min=%d\n",
+                  (unsigned)band, goodSh, goodMin, badSh, badMin);
+  }
 
   for (const auto &r : kRows)
   {

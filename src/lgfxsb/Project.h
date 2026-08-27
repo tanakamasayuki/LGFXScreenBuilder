@@ -17,6 +17,10 @@
 namespace lgfxsb
 {
 
+  // Not a color: 0xRRGGBB never reaches the top byte, so this is unambiguous as
+  // "no explicit value" for PartLayout::bg.
+  static constexpr uint32_t kInheritBackground = 0xFFFFFFFFu;
+
   // Static definition of a part (the profile-independent portion). All parts of
   // all scenes are laid out in a single array, sliced by SceneDesc.
   struct PartDesc
@@ -45,6 +49,16 @@ namespace lgfxsb
     const char *text = nullptr; // Text design/preview string for THIS profile (§8.7).
                           // Used when no dynamic value is supplied, so each profile
                           // can show its own fixed-label text. null = empty.
+
+    // Color an anti-aliased font blends its partial-coverage pixels against
+    // (§8.7.7). Only VLW / BFF read it; a 1bpp font writes solid pixels or
+    // nothing and ignores it entirely.
+    //
+    // kInheritBackground means "whatever the screen is filled with", which is
+    // right for text sitting on the background and wrong for text on top of a
+    // Rect — hence the per-part override. Appended per the evolution rule above,
+    // so a header from an older tool simply omits it.
+    uint32_t bg = kInheritBackground;
   };
 
   struct SceneDesc

@@ -163,14 +163,25 @@ fore* — which the font code reads as "no background fill" and falls back to
 `getBaseColor()`. That defaults to **black**.
 
 So on any non-black background, an anti-aliased font drawn without setting the base colour
-gets a dark halo. The renderer sets it per scene:
+gets a dark halo. The renderer sets it **per Text**, from that part's own background colour
+or the screen fill when it has none:
 
 ```cpp
-g.setBaseColor(_project.background);
+g.setBaseColor(lo.bg == kInheritBackground ? _project.background : lo.bg);
 ```
 
-That is right for text on the scene background and approximate for text on top of a Rect of
-some other colour. Two details are worth knowing:
+Per Text rather than per scene, because text lands on Rects at least as often as it lands on
+the background — in this project's own demo, five of its Texts sit on a header band or a
+dialog panel, not on the screen fill. The editor exposes the colour on any Text using an
+anti-aliased font and previews the same blend, so a mismatched value shows up as a halo on
+the canvas rather than only on the panel.
+
+The base colour is **not** text state: LovyanGFX also fills `clear()`, `clearDisplay()` and
+the `setScrollRect()` gap with it. So the renderer saves it on entering a scene and restores
+it on the way out — otherwise a `display.clear()` in the sketch would paint the screen in
+whatever colour the last anti-aliased Text happened to use.
+
+Three details are worth knowing:
 
 * **VLW self-corrects on a readable panel.** It reads the framebuffer back and blends
   against the real pixels ("alpha blend mode" in `lgfx_fonts.cpp`). Many SPI panels cannot
@@ -178,6 +189,11 @@ some other colour. Two details are worth knowing:
 * **BFF never self-corrects.** `draw_alpha_bitmap_common` has no such branch.
 * **The halo only appears at 4bpp and up.** 2bpp's lowest non-zero coverage is already 1/3
   — too strong to fall below a mid-tone background.
+* **There is no auto-detection.** Deriving the colour from whatever Rect happens to be
+  underneath was considered and rejected: it makes the base colour a function of the layout,
+  so moving an unrelated Rect would silently change how a Text renders, and it still guesses
+  for text over an Image, over a Circle, or spanning two backgrounds. An explicit value the
+  preview shows you is wrong beats a hidden rule that is quietly wrong.
 
 `tests/build_font_formats/` measures exactly this.
 

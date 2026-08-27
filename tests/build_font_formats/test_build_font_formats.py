@@ -24,12 +24,38 @@ def _rows(dut):
 def test_build_font_formats(dut):
     dut.expect("TEST start build_font_formats", timeout=15)
 
-    # begin() is what parses the run-time fonts. It also leaves the base colour
-    # the anti-aliasing blends toward, so this doubles as proof the hook ran.
-    base = dut.expect(r"BASECOLOR ([0-9a-f]{6})", timeout=5).group(1).decode()
-    assert base == "1e2a30", f"Screen::begin() did not set the scene base colour (got {base})"
+    # The base colour is not text state: LovyanGFX also fills clear() /
+    # clearDisplay() and the scroll gap with it. The renderer sets it per Text,
+    # so it must put back what it found - otherwise a display.clear() in the
+    # sketch would paint in whatever colour the last Text happened to use.
+    m = dut.expect(r"BASECOLOR before=([0-9a-f]{6}) after=([0-9a-f]{6})", timeout=5)
+    before, after = m.group(1).decode(), m.group(2).decode()
+    assert before == after, (
+        f"rendering a scene leaked its base colour ({before} -> {after}); "
+        f"drawSceneTo must restore it"
+    )
 
     bg_green = int(dut.expect(r"BG [0-9a-f]{6} bgGreen=(\d+)", timeout=5).group(1))
+
+    # The halo pair: one 4bpp font, one light band, two Texts on it. HaloGood
+    # carries the band's colour in PartLayout::bg; HaloBad is left following the
+    # dark screen fill. Dark text on a light band means the wrong base colour
+    # drags the soft edges toward black, so the two must not read alike.
+    halo = dut.expect(
+        r"HALO band=[0-9a-f]{6} good_shades=(\d+) good_min=(\d+) bad_shades=(\d+) bad_min=(\d+)",
+        timeout=5)
+    good_shades, good_min, bad_shades, bad_min = (int(halo.group(i)) for i in (1, 2, 3, 4))
+    assert (good_shades, good_min) != (bad_shades, bad_min), (
+        "the two Texts drew identically, so PartLayout::bg is not reaching "
+        "LovyanGFX's base colour"
+    )
+    # The signature of the halo itself: blending toward black instead of toward
+    # the band puts pixels BELOW anything the correct blend can produce.
+    assert bad_min < good_min, (
+        f"expected a dark halo without the override (bad_min {bad_min} "
+        f"should be under good_min {good_min})"
+    )
+
     rows = _rows(dut)
     dut.expect("TEST done", timeout=5)
 

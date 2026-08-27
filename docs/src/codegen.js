@@ -249,7 +249,13 @@ export function generateHeader(project, opts = {}) {
   s += `};\n\n`;
 
   // layouts [profile][part]
-  s += `// {x, y, w, h, x2, y2, r, datum, size, color, fill, visible, font, text}\n`;
+  //
+  // The trailing bg field only appears when the project actually has an
+  // anti-aliased font, so a project without one generates byte-for-byte what it
+  // did before the field existed (§10.1, the same rule transparent scenes follow).
+  const anyAaFont = [...fontData.values()].some((fd) => fd.format === 'bff' || fd.format === 'vlw');
+  s += `// {x, y, w, h, x2, y2, r, datum, size, color, fill, visible, font, text` +
+    (anyAaFont ? ', bg' : '') + `}\n`;
   s += `static const lgfxsb::PartLayout kLayouts[] = {\n`;
   profiles.forEach((pr) => {
     // Only fonts enabled for this profile may be referenced — that is the
@@ -276,7 +282,10 @@ export function generateHeader(project, opts = {}) {
         : isCustomFont(project, e.font) ? (emittedFonts.has(e.font) ? `&kFont_${e.font}` : 'nullptr')
         : `&lgfx::v1::fonts::${e.font}`;
       const text = isText ? cstr(e.text || '') : 'nullptr';
-      s += `  {${x}, ${y}, ${w}, ${h}, ${x2}, ${y2}, ${r}, ${datum}, ${fmtFloat(size)}, ${color}, ${fill}, ${vis}, ${font}, ${text}},  // ${f.sceneId}.${f.part.id}\n`;
+      // Only Text reads bg, and only an anti-aliased font acts on it. Omitting it
+      // leaves PartLayout's kInheritBackground default, i.e. the screen fill.
+      const bg = (anyAaFont && isText && e.bgColor) ? `, ${hex(e.bgColor)}` : (anyAaFont ? ', lgfxsb::kInheritBackground' : '');
+      s += `  {${x}, ${y}, ${w}, ${h}, ${x2}, ${y2}, ${r}, ${datum}, ${fmtFloat(size)}, ${color}, ${fill}, ${vis}, ${font}, ${text}${bg}},  // ${f.sceneId}.${f.part.id}\n`;
     });
   });
   s += `};\n\n`;

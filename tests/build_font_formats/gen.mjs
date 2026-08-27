@@ -100,6 +100,19 @@ const parts = FORMATS.map((f, i) => ({
   x: 4, y: 4 + i * 20, datum: 'top_left', size: 1, color: '#ffffff', font: f.name, text: SAMPLE,
 }));
 
+// The halo pair. Both sit on the SAME panel-coloured band, both use the same
+// 4bpp font; only the background colour differs. One is told what it sits on,
+// the other is left following the screen fill. If PartLayout::bg is not reaching
+// LovyanGFX's base colour, the two draw identically and the test says so.
+const BAND = { x: 0, y: 120, w: 200, h: 44, color: '#c8d8e0' };
+parts.push({ id: 'HaloBand', type: 'Rect', ...BAND, r: 0, fill: true, visible: true });
+// Correct: told the band's colour.
+parts.push({ id: 'HaloGood', type: 'Text', x: 4, y: 124, datum: 'top_left', size: 1,
+  color: '#102028', font: 'FmtBff4', text: SAMPLE, bgColor: BAND.color });
+// Wrong on purpose: follows the (dark) screen fill while sitting on a light band.
+parts.push({ id: 'HaloBad', type: 'Text', x: 4, y: 144, datum: 'top_left', size: 1,
+  color: '#102028', font: 'FmtBff4', text: SAMPLE });
+
 const project = {
   formatVersion: 1,
   name: 'FormatsScreen',
@@ -111,9 +124,11 @@ const project = {
   profiles: [{
     id: 'Host', w: 320, h: 240, rotation: 0,
     fonts: FORMATS.map((f) => f.name),
+    // parts[] already carries every placement, halo pair included.
+
     layout: { Main: Object.fromEntries(parts.map((p) => [p.id, p])) },
   }],
-  scenes: [{ id: 'Main', parts: FORMATS.map((f) => ({ id: f.name, type: 'Text' })) }],
+  scenes: [{ id: 'Main', parts: parts.map((p) => ({ id: p.id, type: p.type })) }],
   fonts: FORMATS.map((f) => ({ name: f.name, custom: { format: f.format, bpp: f.bpp, size: 16, sets: ['ascii'] } })),
   assets: [],
 };
