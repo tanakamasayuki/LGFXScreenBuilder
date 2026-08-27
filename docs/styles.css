@@ -227,3 +227,8 @@ pre.code { margin: 0; padding: 12px; border-radius: 8px; background: #10181c; co
 /* AI layout import dialog textarea. */
 .paste-area { width: 100%; box-sizing: border-box; min-height: 160px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.4; border: 1px solid var(--line); border-radius: 6px; padding: 8px; background: var(--soft); color: var(--text); }
 .dialog .paste-area:focus { outline: none; border-color: var(--accent); }
+
+/* A colour input next to its own hex code: a dark key colour is otherwise
+   indistinguishable from black in the swatch alone. */
+.colorrow { display: inline-flex; align-items: center; gap: 8px; }
+.colorrow code { font-size: 12px; color: var(--muted); letter-spacing: .04em; }

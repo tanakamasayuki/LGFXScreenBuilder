@@ -15,8 +15,44 @@
 import { loadGoogleFont } from './googlefonts.js';
 import { codepointsOf } from './charsets.js';
 import {
-  createBitmap, drawString, generateFont, getPixel, loadTtf, unloadTtf,
+  createBitmap, createFont, drawString, generateFont, getPixel, loadTtf, setPixel, unloadTtf,
 } from 'lgfx-font-tool';
+
+/**
+ * Re-quantize an 8bpp model's coverage to the depth the chosen format will
+ * actually store, so the preview shows what the device draws rather than the
+ * full-coverage source.
+ *
+ * BFF keeps 2 or 4 bits per pixel, and its encoder rounds coverage to that grid
+ * (`round(a * maxAlpha / 255)`); decoding scales it back. Reproducing both
+ * halves here is what makes a 2bpp preview visibly coarser than a 4bpp one. VLW
+ * keeps all 8 bits, so it needs nothing.
+ *
+ * @param {number} bpp target depth: 1, 2, 4 or 8
+ */
+export function quantizeCoverage(model, bpp) {
+  if (!(bpp === 2 || bpp === 4)) return model;
+  const maxA = (1 << bpp) - 1;
+  const glyphs = new Map();
+  for (const [cp, g] of model.glyphs) {
+    if (g.bitmap.bpp !== 8) { glyphs.set(cp, g); continue; }
+    const { width: w, height: h } = g.bitmap;
+    const out = createBitmap(w, h, 8);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const a = getPixel(g.bitmap, x, y);
+        setPixel(out, x, y, Math.round((Math.round((a * maxA) / 255) * 255) / maxA));
+      }
+    }
+    glyphs.set(cp, { ...g, bitmap: out });
+  }
+  return createFont({
+    familyName: model.familyName, styleName: model.styleName,
+    ascent: model.ascent, descent: model.descent, lineHeight: model.lineHeight,
+    glyphs, defaultCodepoint: model.defaultCodepoint, kerning: model.kerning,
+    meta: model.meta,
+  });
+}
 
 /** Draw a neutral LGFXFontTool model with the pixel-exact LovyanGFX renderer. */
 export function drawModel(canvas, model, text, scale = 1, colors = {}) {
@@ -260,15 +296,21 @@ export function createLivePreview({ canvas, statusEl, settings, t }) {
       say(t('pv.loading'));
       const font = await acquireFont({ ...s, codepoints: cps });
       if (mine !== generation) return;
+      // The preview is only worth having if it shows the depth being paid for,
+      // so it rasterizes coverage whenever the format stores more than one bit
+      // and then quantizes to what that format actually keeps.
+      const bpp = s.bpp || 1;
       const made = await generateFont({
         family: font.cssFamily,
         px: s.size,
         codepoints: cps,
         style: { weight: s.weight, italic: s.italic },
         threshold: s.threshold,
+        bpp: bpp > 1 ? 8 : 1,
       });
       if (mine !== generation) return;
-      const drawn = drawModel(canvas, made.font, text, s.scale || 1, { allowed: s.allowed });
+      const shown = quantizeCoverage(made.font, bpp);
+      const drawn = drawModel(canvas, shown, text, s.scale || 1, { allowed: s.allowed });
       // Both numbers matter: the character height is what was asked for, the
       // line height is what it costs per row on the panel.
       const notes = [t('pv.ok', {

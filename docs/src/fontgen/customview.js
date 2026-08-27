@@ -9,7 +9,7 @@ import { t } from '../i18n.js';
 import { ALL_SET_IDS, resolveCharset, splitBmp, codepointsOfSet, migrateSets, countOf } from './charsets.js';
 import { createCharsetUI } from './charsetui.js';
 import { renderCharmap } from './charmap.js';
-import { drawModel, createLivePreview, autoSample } from './preview.js';
+import { drawModel, createLivePreview, autoSample, quantizeCoverage } from './preview.js';
 import { FONTS, FALLBACK_CHAIN } from './googlefonts.js';
 import { probeFallback, FALLBACK_AUTO } from './compose.js';
 import { buildFont, cachedFont, isCached, rememberLocalFile, hasLocalFile, forgetFont, recipeKey,
@@ -78,6 +78,77 @@ function syncFormatUI() {
   const thresholdField = $('cf-threshold').closest('.field');
   if (thresholdField) thresholdField.hidden = isAntiAliased(dlg.recipe);
   $('cf-format-note').textContent = FORMAT_NOTES[fmt] || '';
+}
+
+// --- typeface picker ------------------------------------------------------
+
+// What each group's cards spell out. A Latin sample tells you nothing about a
+// Japanese face, so the string follows the script the family is curated for.
+const FACE_SAMPLE = {
+  latin: 'Aa Bb 123', display: 'Aa 12:34', symbol: 'Aa 123',
+  japanese: 'あア漢 12', cjk: '漢字 12',
+};
+const FACE_GROUPS = [
+  ['latin', 'Latin / UI'], ['display', 'Display / clock'],
+  ['japanese', 'Japanese'], ['cjk', 'CJK'], ['symbol', 'Symbols'],
+];
+const sampleFor = (f) => FACE_SAMPLE[f.script] || FACE_SAMPLE.latin;
+
+// Load the preview faces themselves, subset with Google Fonts' `text=` to just
+// the characters the cards show — a few hundred bytes per family instead of a
+// full webfont. Requested per group, because `text=` applies to every family in
+// a request and a Latin face has nothing to return for 漢.
+let facesRequested = false;
+function ensurePreviewFaces() {
+  if (facesRequested || typeof document === 'undefined') return;
+  facesRequested = true;
+  for (const [script] of FACE_GROUPS) {
+    const fams = FONTS.filter((f) => f.script === script);
+    if (!fams.length) continue;
+    const text = [...new Set(fams.map(sampleFor).join('') + fams.map((f) => f.family).join(''))].join('');
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?' +
+      fams.map((f) => 'family=' + encodeURIComponent(f.family)).join('&') +
+      '&text=' + encodeURIComponent(text) + '&display=swap';
+    document.head.appendChild(link);
+  }
+}
+
+function renderFamilyGrid() {
+  const grid = $('cf-family-grid');
+  if (!grid || !dlg) return;
+  ensurePreviewFaces();
+  const q = ($('cf-family-search').value || '').trim().toLowerCase();
+  const selected = dlg.recipe.source.family;
+  let html = '';
+  for (const [script, label] of FACE_GROUPS) {
+    const fams = FONTS.filter((f) => f.script === script &&
+      (!q || f.family.toLowerCase().includes(q) || (f.by || '').toLowerCase().includes(q)));
+    if (!fams.length) continue;
+    html += `<div class="fg-facehead">${label}</div>`;
+    for (const f of fams) {
+      const css = `'${f.family}', system-ui, sans-serif`;
+      html += `<button type="button" class="fg-face${f.family === selected ? ' on' : ''}" ` +
+        `data-family="${f.family}" title="${f.by || ''}">` +
+        `<span class="fg-face-sample" style="font-family:${css}">${sampleFor(f)}</span>` +
+        `<span class="fg-face-name">${f.family}</span>` +
+        `<span class="fg-face-lic">${f.license.id}</span></button>`;
+    }
+  }
+  grid.innerHTML = html || `<div class="fg-facehead">${t('fg.familyNone')}</div>`;
+  grid.querySelectorAll('.fg-face').forEach((b) => {
+    b.addEventListener('click', () => pickFamily(b.dataset.family));
+  });
+}
+
+function pickFamily(family) {
+  if (!dlg || dlg.recipe.source.family === family) return;
+  dlg.recipe.source.family = family;
+  $('cf-family').value = family;
+  forgetFallback();
+  renderFamilyGrid();
+  live.refresh(0);
 }
 
 // --- right-pane list ------------------------------------------------------
@@ -204,6 +275,8 @@ export function openDialog(name = null) {
   $('cf-family').innerHTML = FONTS
     .map((f) => `<option value="${f.family}">${f.family} — ${f.license.id}</option>`).join('');
   $('cf-family').value = dlg.recipe.source.kind === 'google' ? dlg.recipe.source.family : FONTS[0].family;
+  $('cf-family-search').value = '';
+  renderFamilyGrid();
   $('cf-filename').textContent = dlg.recipe.source.kind === 'local' ? dlg.recipe.source.family : '';
   $('cf-err').textContent = '';
   $('cf-status').textContent = '';
@@ -328,7 +401,9 @@ function drawPreview(entry) {
   const text = ['Hello 25.6℃', 'あア漢字 12:34', 'ABC abc 0123']
     .find((s) => [...s].every((c) => have.has(c.codePointAt(0))))
     || glyphs.slice(0, 20).map((c) => String.fromCodePoint(c)).join('');
-  drawModel($('cf-preview'), entry.model, text, 1);
+  // The built model is 8bpp for any anti-aliased format; show it at the depth
+  // the encoder kept, not at full coverage.
+  drawModel($('cf-preview'), quantizeCoverage(entry.model, entry.bpp || 1), text, 1);
   $('cf-preview-wrap').hidden = false;
 }
 
@@ -337,10 +412,10 @@ export function initCustomFonts() {
 
   $('cf-add').addEventListener('click', () => openDialog(null));
   $('cf-cancel').addEventListener('click', closeDialog);
-  $('cf-tab-google').addEventListener('click', () => { setTab('google'); dlg.recipe.source.family = $('cf-family').value; });
+  $('cf-tab-google').addEventListener('click', () => { setTab('google'); dlg.recipe.source.family = $('cf-family').value; renderFamilyGrid(); });
   $('cf-tab-local').addEventListener('click', () => setTab('local'));
 
-  $('cf-family').addEventListener('change', () => { dlg.recipe.source.family = $('cf-family').value; forgetFallback(); live.refresh(0); });
+  $('cf-family-search').addEventListener('input', renderFamilyGrid);
   $('cf-weight').addEventListener('change', () => { dlg.recipe.source.weight = Number($('cf-weight').value); forgetFallback(); live.refresh(0); });
   $('cf-size').addEventListener('input', () => { dlg.recipe.size = Number($('cf-size').value) || 32; updateCount(); live.refresh(); });
   $('cf-threshold').addEventListener('input', () => { dlg.recipe.threshold = Number($('cf-threshold').value) || 128; live.refresh(); });
@@ -375,6 +450,7 @@ export function initCustomFonts() {
       italic: !!dlg.recipe.source.italic,
       size: dlg.recipe.size,
       threshold: dlg.recipe.threshold,
+      bpp: bppOf(dlg.recipe),
       localBuffer: dlg.pendingFile || null,
       sample: $('cf-live-sample').value,
       scale: Number($('cf-live-zoom').value),

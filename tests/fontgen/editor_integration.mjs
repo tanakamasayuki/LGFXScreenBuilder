@@ -118,6 +118,13 @@ await page.waitForSelector('#cf-overlay:not([hidden])');
 // Defaults: a CJK-capable face at the character height where legibility has
 // already flattened but flash has not — 24px, not 32 (SPEC §8.7.7).
 check(await page.inputValue('#cf-family') === 'Noto Sans JP', 'the dialog defaults to Noto Sans JP');
+// The picker is a grid of cards drawn in each face, not a name list — a name
+// alone does not tell you what a typeface looks like. The selected card is the
+// one carrying the value, so check the two agree.
+check(await page.getAttribute('#cf-family-grid .fg-face.on', 'data-family') === 'Noto Sans JP',
+  'the typeface grid marks the selected face');
+check((await page.$$('#cf-family-grid .fg-face')).length > 20,
+  'the typeface grid offers the whole curated list');
 check(await page.inputValue('#cf-size') === '24', 'the dialog defaults to a 24px character height');
 
 // The dialog carries the live preview too, beside the controls it previews.
@@ -139,7 +146,8 @@ check(dlgInk > 100, `the dialog's live preview drew glyphs (${dlgInk} px)`);
 
 await page.fill('#cf-name', 'PanelFont');
 await page.fill('#cf-size', '16');
-await page.selectOption('#cf-family', 'Roboto');
+await page.click('#cf-family-grid .fg-face[data-family="Roboto"]');
+check(await page.inputValue('#cf-family') === 'Roboto', 'clicking a face card selects it');
 await settled(16);
 check(true, 'changing typeface and size updates the dialog preview');
 

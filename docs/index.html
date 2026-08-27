@@ -207,7 +207,9 @@
             <p class="sub" data-i18n="export.bufferedHint">Tiled double-buffering reduces flicker. Needs the LGFXVirtualCanvas library; off = direct drawing.</p>
           </div>
           <div class="field" id="export-transp-field" hidden><label data-i18n="export.transparentColor">Transparent color key</label>
-            <input type="color" id="export-transp">
+            <!-- The default (#002400, RGB565 TFT_TRANSPARENT) reads as plain black
+                 in a small swatch, so the code is spelled out beside it. -->
+            <span class="colorrow"><input type="color" id="export-transp"><code id="export-transp-code"></code></span>
             <p class="sub" data-i18n="export.transparentColorHint">The color transparent scenes leave out of the transfer. Never paint a part in it — it becomes a hole. Shown because this project has a transparent scene.</p>
           </div>
           <div class="field"><label data-i18n="export.embedAi">Embed AI layouts (comment)</label>
@@ -349,7 +351,14 @@
       </div>
 
       <div id="cf-src-google">
-        <div class="field"><label data-i18n="cf.family">Typeface</label><select id="cf-family"></select></div>
+        <!-- A name alone does not tell you what a typeface looks like, so each
+             candidate is rendered in its own face. The hidden select stays as
+             the value holder so the rest of the dialog reads one place. -->
+        <div class="field"><label data-i18n="cf.family">Typeface</label>
+          <input type="search" id="cf-family-search" data-i18n-placeholder="fg.familySearch" placeholder="Filter typefaces">
+          <div id="cf-family-grid" class="fg-facegrid"></div>
+          <select id="cf-family" hidden></select>
+        </div>
         <p class="sub" data-i18n="fg.googleNote"></p>
       </div>
       <div id="cf-src-local" hidden>

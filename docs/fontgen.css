@@ -115,3 +115,29 @@
   white-space: pre;
 }
 .fg-howto .fg-code { max-height: none; }
+
+/* The generator moved from a standalone page (max-width 940px) into a dialog,
+   which left it inheriting .dialog's 360px. That is far too narrow for a
+   typeface picker, a character-set matrix, a charmap and a live preview side by
+   side, so it gets its own width back. */
+.cf-dialog { width: 940px; }
+@media (max-width: 980px) { .cf-dialog { width: 92vw; } }
+
+/* Typeface picker: one card per family, each drawn in the family it offers.
+   Kept scrollable rather than paged so Ctrl+F and the filter box both work on
+   the whole list. */
+.fg-facegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px; max-height: 300px; overflow-y: auto; padding: 4px; margin-top: 6px;
+  border: 1px solid var(--line); border-radius: 8px; }
+.fg-facegrid .fg-facehead { grid-column: 1 / -1; font-size: 11px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted); padding: 6px 2px 0; }
+.fg-face { display: grid; gap: 2px; text-align: left; padding: 8px 10px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--panel); cursor: pointer; min-height: auto; }
+.fg-face:hover { border-color: var(--accent); }
+.fg-face.on { border-color: var(--accent); background: var(--accent-soft); }
+/* The sample is the point of the card, so it gets the size; the metadata does
+   not inherit the family, or every row would be unreadable in a pixel face. */
+.fg-face-sample { font-size: 19px; line-height: 1.25; color: var(--text); }
+.fg-face-name { font-family: inherit; font-size: 12px; color: var(--text); }
+.fg-face-lic { font-size: 11px; color: var(--muted); }
+.fg-face-name, .fg-face-lic { font-family: system-ui, sans-serif; }

@@ -167,6 +167,10 @@ export function renderExport() {
   // hidden until then rather than adding noise to every project (§8.16).
   $('export-transp-field').hidden = !hasTransparentScene(store.project);
   $('export-transp').value = transparentColorOf(store.project);
+  // Spelled out beside the swatch: the default #002400 is a very dark green and
+  // is easy to mistake for black, which makes "why is my part disappearing?"
+  // needlessly hard to diagnose.
+  $('export-transp-code').textContent = transparentColorOf(store.project).toUpperCase();
   $('export-embed-ai').checked = embedAi();
   reconcile();
   renderFiles();
